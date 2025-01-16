@@ -8,13 +8,12 @@ out/
 *.slo
 *.lo
 *.o
-*.obj
 
 # Precompiled Headers
 *.gch
 *.pch
 *.ipch
- 
+
 
 # Compiled Dynamic libraries
 *.so
@@ -32,6 +31,6 @@ out/
 #*.lib
 
 # Executables
-#*.exe
+*.exe
 *.out
 *.app

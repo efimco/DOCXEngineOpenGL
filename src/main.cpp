@@ -11,6 +11,7 @@
 #include <iomanip>
 #include "camera.h"
 #include "objReader.h"
+#include "sceneObject.h"
 
 
 int32_t width = 800;
@@ -20,7 +21,10 @@ bool wireframeKeyPressed = false;
 bool rightKeyPressed = false;
 float increasedSpeed = camera.speed *3;
 float defaultSpeed = camera.speed;
-glm::mat4 defaultMatrix = camera.getViewMatrix();
+std::vector<glm::vec3> defaultCameraMatrix = {camera.position,camera.front,camera.up};
+float defaultCameraRotation[] = {camera.pitch, camera.yaw};
+bool cameraReseted = true;
+
 void processInput(GLFWwindow* window,bool* isWireframe, float deltaTime)
 {
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window,true);
@@ -44,12 +48,12 @@ void processInput(GLFWwindow* window,bool* isWireframe, float deltaTime)
 			rightKeyPressed = true;
 			glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
 		}
-		if(glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard(FORWARD,deltaTime);
-		if(glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard(BACKWARD,deltaTime);
-		if(glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard(LEFT,deltaTime);
-		if(glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(RIGHT,deltaTime);
-		if(glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) camera.processKeyboard(DOWN,deltaTime);
-		if(glfwGetKey(window,GLFW_KEY_E) == GLFW_PRESS) camera.processKeyboard(UP,deltaTime);
+		if(glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard(FORWARD,deltaTime) , cameraReseted = true;
+		if(glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard(BACKWARD,deltaTime) , cameraReseted = true;
+		if(glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard(LEFT,deltaTime) , cameraReseted = true;
+		if(glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(RIGHT,deltaTime) , cameraReseted = true;
+		if(glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) camera.processKeyboard(DOWN,deltaTime) , cameraReseted = true;
+		if(glfwGetKey(window,GLFW_KEY_E) == GLFW_PRESS) camera.processKeyboard(UP,deltaTime) , cameraReseted = true;
 	}else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
 	{
 		if (rightKeyPressed) glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
@@ -59,14 +63,15 @@ void processInput(GLFWwindow* window,bool* isWireframe, float deltaTime)
 
 	if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) camera.speed = increasedSpeed;
 	else camera.speed = defaultSpeed;
-	//if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) defaultMatrix
 
+	if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
 
 }
 
 float lastX = (float)(width / 2), lastY = (float) (height / 2);
 bool firstMouse = true;
 float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
+
 void mouseCallback(GLFWwindow* window, double xPos, double yPos)
 {
 	if (firstMouse)
@@ -182,51 +187,46 @@ void framebufferSizeCallback(GLFWwindow* window, int32_t newWidth, int32_t newHe
 
 void draw(GLFWwindow* window)
 {
-	ObjReader objReader;
-	//std::string path =  "C:\\Users\\Efim\\Desktop\\123.obj"; 
+	ObjReader objReader,objReader1;
+	std::string path1 =  "C:\\Users\\Efim\\Desktop\\123.obj"; 
 	std::string path =  "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\res\\Ufo_C.obj";
-	objReader.readObj(path);
+	std::string boxPath = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\res\\box.obj";
+	// objReader.readObj(path);
+	objReader1.readObj(path1);
+	objReader.readObj(boxPath);
+
 
 	glEnable(GL_DEPTH_TEST);
 	std::string fShaderPath = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\src\\shaders\\frag.glsl";
 	std::string vShaderPath = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\src\\shaders\\vertex.glsl";
-	Shader myShader (vShaderPath,fShaderPath);
-	Shader myShader1 (vShaderPath,fShaderPath);
 
+	std::string fLightShaderPath = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\src\\shaders\\fragLight.glsl";
+	std::string vLightShaderPath = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\src\\shaders\\vertLight.glsl";
+	Shader myShader (vShaderPath, fShaderPath);
+	Shader myShader1 (vShaderPath, fShaderPath);
+	Shader lightShader (vLightShaderPath, fLightShaderPath);
 
-	uint32_t VAO, VBO, UFOVAO, UFOVBO;
-	glGenVertexArrays(1, &VAO); //generates vertex array objects
-	glGenBuffers(1, &VBO); //generates vertex buffer objects
-
-	glBindVertexArray(VAO); //bind
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); //bind
-	glBufferData(GL_ARRAY_BUFFER, vertices.size()*4, vertices.data(), GL_STATIC_DRAW);	
-
-	//position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), nullptr);
-	glEnableVertexAttribArray(0);
-	//texCoord attribute
-	// glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	// glEnableVertexAttribArray(1);
+	//SceneObject ufo(objReader.finalData,myShader1);
+	SceneObject cube(objReader1.finalData, myShader);
+	SceneObject light(objReader.finalData, lightShader);
 	
+	// ufo.init();
+	cube.init();
+	light.init();
+	light.model = glm::translate(light.model, glm::vec3(0,3,0));
+
+	// ufo.model = glm::scale(ufo.model, glm::vec3(.1,.1,.1));
+
+	cube.model = glm::scale(cube.model, glm::vec3(.5,.5,.5));
+	cube.model = glm::translate(cube.model,glm::vec3(3,0,0));
+
 	
-	glGenVertexArrays(1,&UFOVAO);
-	glGenBuffers(1,&UFOVBO);
-	glBindVertexArray(UFOVAO);
-	glBindBuffer(GL_ARRAY_BUFFER,UFOVBO);
-	glBufferData(GL_ARRAY_BUFFER,objReader.finalData.size()*4,objReader.finalData.data(),GL_STATIC_DRAW);
-	glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,8*sizeof(float),nullptr);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)(5 * sizeof(float)));
-	glEnableVertexAttribArray(2);
+	// light.shader.use();
+	// light.shader.setVec3("lightPos", light.model[3]);
 
 
-
-	uint32_t texture1, texture2;
-	loadTexture(&texture1,"../res/textures/container.jpg");
-	loadTexture(&texture2,"../res/textures/deloSdelano.png");
+	uint32_t texture1;
+	loadTexture(&texture1,"C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\res\\textures\\Ufo_C_Ufo_O.png");
 
 
 	
@@ -237,36 +237,35 @@ void draw(GLFWwindow* window)
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 460");
 
-	uint32_t* activeTexture = &texture1;
+
 	GLenum polygonMode = GL_FILL;
 	static bool isWireframe = false;
-	static int selectedTexture = 0;
-
 
 	float lastFrame = 0;
 	float deltaTime = 0;
 	glm::mat4 view = 		glm::mat4(1.0f);
 	glm::mat4 projection = 	glm::mat4(1.0f);
-	glm::mat4 model =  		glm::mat4(1.0f);
+
+
 	while(!glfwWindowShouldClose(window))
 	{   
 		float time = (float)glfwGetTime();
 		deltaTime = time - lastFrame;
 		lastFrame = time;
 		processInput(window,&isWireframe,deltaTime);
-		//imgui
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGui::Begin("Tools");
-		//ImGui::ColorEdit4("BG Color", clearColor);
+		ImGui::ColorEdit4("BG Color", clearColor);
+		ImGui::DragFloat3("Position1: ", glm::value_ptr(light.model[3]));
+		glm::vec3 lightScale(light.model[0][0], light.model[1][1], light.model[2][2]);
+		ImGui::DragFloat3("Scale1: ", glm::value_ptr(lightScale));
+		light.model[0][0] = lightScale[0];
+		light.model[1][1] = lightScale[1];
+		light.model[2][2] = lightScale[2];
+		ImGui::DragFloat3("Position2: ", glm::value_ptr(cube.model[3]));
 		ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
-		if(ImGui::Combo("Chose Active texture",&selectedTexture,"Texture 1\0Texture 2\0"))
-		{		
-
-			if (selectedTexture == 0) activeTexture = &texture1;
-			if (selectedTexture == 1) activeTexture = &texture2;
-		}
 		ImGui::Checkbox("Wireframe Mode",&isWireframe);
 		polygonMode = isWireframe ? GL_LINE : GL_FILL;
 		glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
@@ -275,58 +274,46 @@ void draw(GLFWwindow* window)
 		glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, *activeTexture);
-
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texture2);
-
-
+		if(!cameraReseted && glm::length(camera.position - defaultCameraMatrix[0]) > .01 )
+		{	
+			float speed = 10 * deltaTime;
+			camera.position = glm::mix(camera.position, defaultCameraMatrix[0], speed);
+			camera.front = glm::mix(camera.front, defaultCameraMatrix[1], speed);
+			camera.up = glm::mix(camera.up, defaultCameraMatrix[2], speed);
+			camera.pitch = glm::mix(camera.pitch, defaultCameraRotation[0], speed);
+			camera.yaw = glm::mix(camera.yaw, defaultCameraRotation[1], speed);
+		}
+		else cameraReseted = true;
 
 		glfwGetWindowSize(window,&width, &height);
-
-		projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);	
-		view = camera.getViewMatrix();
-
-		myShader.use();
-		glBindVertexArray(VAO);
-		for(uint32_t i = 0; i < 10; i++)
-		{			
-			model =  		glm::mat4(1.0f);
-			model = glm::translate(model, cubePositions[i]);
-			float angle = 20.0f * i; 
-			model = glm::rotate(model, glm::radians(angle)*time, glm::vec3(1.0f, 0.3f, 0.5f));
-			myShader.setMat4("projection",projection);
-			myShader.setMat4("view",view);			
-			myShader.setMat4("model",model);
-			glDrawArrays(GL_TRIANGLES,0,36);
+		if( width != 0 && height != 0) 
+		{
+			projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);	
+			view = camera.getViewMatrix();
 		}
 
-
-		glBindVertexArray(UFOVAO);
-		myShader1.use();
-		model = glm::mat4(1.0f);
-		model = glm::scale(model, glm::vec3(0.3,0.3,0.3));
-		myShader1.setMat4("projection",projection);
-		myShader1.setMat4("view",view);
-		myShader1.setMat4("model",model);
-		glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(objReader.finalData.size() / 8));
-
+		// ufo.passTexture(texture1);
+		// ufo.draw(projection,view);
+		cube.shader.use();
+		cube.passTexture(texture1);
+		cube.shader.setInt("texture1", 0);
+        cube.shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+        cube.shader.setVec3("lightPos", light.model[3]);
+		cube.draw(projection,view);
+		light.draw(projection,view);
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();    
 	}
-
-
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
+	light.clean();
+	cube.clean();
+	// ufo.clean();
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-
 }
 
 
@@ -357,7 +344,6 @@ int main()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
-
 
 	draw(window);
 

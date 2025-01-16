@@ -19,8 +19,8 @@ add_executable(OpenGLLearn
     src/main.cpp 
     src/glad.c
     src/shader.h
-    src/shader.cpp
     src/objReader.h
+    src/sceneObject.h
     ${IMGUI_SRC}
 )
 

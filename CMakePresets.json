@@ -2,7 +2,7 @@
 	"version": 8,
 	"configurePresets": [
 		{
-			"name": "Efim Lantsman",
+			"name": "Main",
 			"displayName": "Visual Studio Community 2022 Release - amd64",
 			"description": "Using compilers for Visual Studio 17 2022 (x64 architecture)",
 			"generator": "Visual Studio 17 2022",
@@ -18,9 +18,9 @@
 	],
 	"buildPresets": [
 		{
-			"name": "Efim Lantsman-debug",
+			"name": "Main-debug",
 			"displayName": "Visual Studio Community 2022 Release - amd64 - Debug",
-			"configurePreset": "Efim Lantsman",
+			"configurePreset": "Main",
 			"configuration": "Debug"
 		}
 	]

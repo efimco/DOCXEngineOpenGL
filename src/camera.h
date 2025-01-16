@@ -36,7 +36,7 @@ class Camera
 		float speed;
 		float sensitivity;
 
-		Camera(glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 upv = glm::vec3(0.0f,1.0f,0.0f), float yawf = YAW, float pitchf = PITCH) :
+		Camera(glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 upv = glm::vec3(0.0f,1.0f,0.0f), float yaw = YAW, float pitch = PITCH) :
 		front(glm::vec3(0.0f,0.0f,-1.0f)),
 		speed(SPEED),
 		zoom(ZOOM),
@@ -44,12 +44,12 @@ class Camera
 		{
 			position = pos;
 			worldUp = upv; 
-			yaw = yawf;
-			pitch = pitch;
+			this -> yaw = yaw;
+			this -> pitch = pitch;
 			updateCameraVecotrs();
 		}
 
-		Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw = YAW, float pitchf = PITCH) :
+		Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw = YAW, float pitch = PITCH) :
 		front(glm::vec3(0.0f,0.0f,-1.0f)),
 		speed(SPEED),
 		zoom(ZOOM),
@@ -57,8 +57,8 @@ class Camera
 		{
 			position = glm::vec3(posX,posY,posZ);
 			worldUp = glm::vec3(upX,upY,upZ);
-			yaw = yaw;
-			pitch = pitchf;
+			this -> yaw = yaw;
+			this -> pitch = pitch;
 			updateCameraVecotrs();
 		}
 

@@ -98,27 +98,6 @@ class ObjReader
 
 		void assembleFinalData()
 		{
-			// std::cout << faces.size()  << std::endl;
-			// std::cout << position.size() << std::endl;
-			// std::cout << texCoords.size() << std::endl;
-			// std::cout << normals.size() << std::endl;
-			// for (int i = 0; i < normals.size(); i++)
-			// {
-			// 	glm::vec3 pos = position[i];
-			// 	pos = glm::normalize(pos);
-			// 	finalData.push_back(pos.x);
-			// 	finalData.push_back(pos.y);
-			// 	finalData.push_back(pos.z);
-
-			// 	finalData.push_back(0.0f);
-			// 	finalData.push_back(0.0f);
-			// 	finalData.push_back(0.0f);
-
-			// 	finalData.push_back(normals[i].x);
-			// 	finalData.push_back(normals[i].y);
-			// 	finalData.push_back(normals[i].z);
-			// }
-			// for (auto e: finalData) std::cout << e << std::endl;
 			for (int i = 0; i< faces.size();i++)
 			{		
 					auto vert = faces[i];
