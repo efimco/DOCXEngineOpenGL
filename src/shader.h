@@ -61,45 +61,74 @@ class Shader
 			glDeleteShader(fragmentShader); 
 		}
 		
-		void use() 
+		void use() const
 		{
 			glUseProgram(shaderProgram);
 		}
 
 		void setBool(const std::string &name, bool value) const
 		{
+			use();
 			glUniform1i(glGetUniformLocation(shaderProgram,name.c_str()),(int)value);
 		}
 		void setInt(const std::string &name, int32_t value) const
 		{
-			glUniform1f(glGetUniformLocation(shaderProgram, name.c_str()),value);
+			use();
+			glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()),value);
 		}
 		void setFloat(const std::string &name, float value) const
 		{
-			glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()), value);
+			use();
+			glUniform1f(glGetUniformLocation(shaderProgram, name.c_str()), value);
 		}
 		void setMat4(const std::string &name, glm::mat4 value) const
 		{
+			use();
 			glUniformMatrix4fv(glGetUniformLocation(shaderProgram,name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
 		}
 		void setVec3(const std::string &name, float x, float y, float z) const
 		{
-		
+			use();
 			glUniform3f(glGetUniformLocation(shaderProgram,name.c_str()), x, y, z );
 		}
 		void setVec3(const std::string &name, glm::vec3 value) const
 		{
+			use();
 			glUniform3fv(glGetUniformLocation(shaderProgram,name.c_str()),1, glm::value_ptr(value));
 		}
 
 		void setVec4(const std::string &name, float x, float y, float z, float w) const
 		{
-		
+			use();
 			glUniform4f(glGetUniformLocation(shaderProgram,name.c_str()), x, y, z, w );
 		}
 		void setVec4(const std::string &name, glm::vec4 value) const
 		{
+			use();
 			glUniform4fv(glGetUniformLocation(shaderProgram,name.c_str()),1, glm::value_ptr(value));
+		}
+
+		float getFLoat(const std::string &name) const
+		{
+			use();
+			float value;
+			glGetUniformfv(shaderProgram, glGetUniformLocation(shaderProgram, name.c_str()), &value);
+			return value;
+		}
+
+		glm::vec4 getVec4(const std::string &name) const
+		{
+			use();
+			float value[4];
+			glGetUniformfv(shaderProgram, glGetUniformLocation(shaderProgram, name.c_str()), value);
+			return glm::vec4(value[0], value[1], value[2], value[3]);
+		}
+		glm::vec3 getVec3(const std::string &name) const
+		{
+			use();
+			float value[3];
+			glGetUniformfv(shaderProgram, glGetUniformLocation(shaderProgram, name.c_str()), value);
+			return glm::vec3(value[0], value[1], value[2]);
 		}
 
 

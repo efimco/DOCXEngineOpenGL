@@ -4,6 +4,13 @@
 #include "shader.h"
 #include <glm/glm.hpp>
 
+
+enum TEXTURE_TYPE
+{
+	DIFFUSE,
+	SPECULAR,
+	NORMAL
+};
 class SceneObject
 {
 	public:
@@ -14,15 +21,15 @@ class SceneObject
 		glm::mat4 view = 		glm::mat4(1.0f);
 		glm::mat4 projection = 	glm::mat4(1.0f);
 		glm::mat4 model =  		glm::mat4(1.0f);
-		uint32_t texture;
+		uint32_t tDiffuse;
+		uint32_t tSpecular;
+		uint32_t tNormal;
 		SceneObject(std::vector<float> data, Shader shader) : data(data), shader(shader){};
 
 		void init()
 		{
 			glGenVertexArrays(1,&VAO);
 			glGenBuffers(1, &VBO);
-			glGenTextures(1, &texture);
-			glBindTexture(GL_TEXTURE_2D, texture);
 			glBindVertexArray(VAO);
 			glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
@@ -35,17 +42,34 @@ class SceneObject
 			glEnableVertexAttribArray(2);
 		}
 
-		void passTexture(uint32_t texture)
+		void passTexture(TEXTURE_TYPE type, uint32_t texture)
 		{
-			this -> texture = texture;
+			switch (type)
+			{
+			case DIFFUSE:
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, texture);
+				shader.setInt("tDiffuse", 0);
+				break;
+			
+			case SPECULAR:
+
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, texture);
+				shader.setInt("tSpecular", 1);
+				break;
+			case NORMAL:
+				glActiveTexture(GL_TEXTURE2);
+				glBindTexture(GL_TEXTURE_2D, texture);
+				shader.setInt("tNormal", 2);
+				break;
+			}
 		}
 
 		void draw(glm::mat4 projection, glm::mat4 view)
-		{		
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, texture);
+		{
+			
 			glBindVertexArray(VAO);
-			shader.use();
 			shader.setMat4("projection", projection);
 			shader.setMat4("view", view);
 			shader.setMat4("model", model);

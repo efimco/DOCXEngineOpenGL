@@ -40,21 +40,21 @@ class ObjReader
 				{
 					glm::vec3 position;
 					lineStream >> position.x >> position.y >> position.z;
-					this -> position.push_back(position);
+					this->position.push_back(position);
 				}
-				if (type == "vt")
+				else if (type == "vt")
 				{
 					glm::vec2 texCoords;
 					lineStream >> texCoords.x >> texCoords.y;
-					this -> texCoords.push_back(texCoords);
+					this->texCoords.push_back(texCoords);
 				}
-				if (type == "vn")
+				else if (type == "vn")
 				{
 					glm::vec3 normals;
 					lineStream >> normals.x >> normals.y >> normals.z;
-					this -> normals.push_back(normals);
+					this->normals.push_back(normals);
 				}
-				if (type == "f")
+				else if (type == "f")
 				{
 					for (int i = 0; i < 3; i++)
 					{
@@ -66,11 +66,8 @@ class ObjReader
 						int positionInd, texCoordInd, normalInd;
 						vertexStream >> positionInd >> texCoordInd >> normalInd;
 
-						Vertex vertex(positionInd, texCoordInd, normalInd);
-						this->faces.push_back(vertex);
+						this->faces.emplace_back(positionInd, texCoordInd, normalInd);
 					}
-					
-					
 				}
 			}
 		}

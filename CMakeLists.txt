@@ -19,8 +19,8 @@ add_executable(OpenGLLearn
     src/main.cpp 
     src/glad.c
     src/shader.h
-    src/objReader.h
-    src/sceneObject.h
+    src/mesh.h
+    src/model.h
     ${IMGUI_SRC}
 )
 
@@ -31,7 +31,9 @@ target_include_directories(OpenGLLearn PRIVATE
 target_link_directories(OpenGLLearn PRIVATE 
     thirdparty/lib
 )
+
 target_link_libraries(OpenGLLearn PRIVATE 
     glfw3
 	opengl32
+    assimp-vc143-mtd
 )
