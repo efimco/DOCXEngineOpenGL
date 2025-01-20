@@ -223,6 +223,14 @@ void draw(GLFWwindow* window)
 		ImGui::Checkbox("Wireframe Mode", &isWireframe);
 		polygonMode = isWireframe ? GL_LINE : GL_FILL;
 		glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
+
+		if (ImGui::Button("Reload Shaders")) 
+		{
+            cube.shader.reload(vShaderPath.c_str(), fShaderPath.c_str());
+            lightCube.shader.reload(vLightShaderPath.c_str(), fLightShaderPath.c_str());
+            std::cout << "Shaders reloaded successfully!" << std::endl;
+        }
+
 		ImGui::End();
 
 		glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
@@ -247,7 +255,7 @@ void draw(GLFWwindow* window)
 		}
 
 
-			
+
 		lightCube.shader.setMat4("projection",projection);
 		lightCube.shader.setMat4("view",view);
 		lightCube.shader.setFloat("lightIntensity",lightIntensity);
@@ -263,10 +271,9 @@ void draw(GLFWwindow* window)
 		cube.shader.setVec3("light.position", lightmodel[3]);
 		cube.shader.setVec3("light.diffuse", lightColor);
 		cube.shader.setVec3("light.ambient", glm::vec3(0.05,0.1,0.2));
-		cube.shader.setVec3("light.specualr", glm::vec3(1));
+		cube.shader.setVec3("light.specular", glm::vec3(1));
 		cube.shader.setFloat("light.intensity", lightIntensity);
-		cube.shader.setVec3("light.specular",glm::vec3 (.01));
-		cube.shader.setFloat("material.shininess;", 32);
+		cube.shader.setFloat("material.shininess;", 32.0f);
 		cube.draw();
 
 

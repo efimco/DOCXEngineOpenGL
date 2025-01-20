@@ -131,6 +131,13 @@ class Shader
 			return glm::vec3(value[0], value[1], value[2]);
 		}
 
+		void reload(const char* vertexPath, const char* fragmentPath) 
+		{
+			glDeleteProgram(shaderProgram); // Delete the existing shader program
+			Shader newShader(vertexPath, fragmentPath); // Recompile and link the shader
+			*this = newShader; // Replace the old shader with the new one
+		}
+
 
 	private:
 		std::string vertexCode;
