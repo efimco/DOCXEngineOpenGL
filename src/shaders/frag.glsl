@@ -6,13 +6,13 @@ in vec3 FragPos;
 
 
 uniform vec3 viewPos;
+uniform float gamma;
 
 struct Material 
 {
     sampler2D tDiffuse1;
     sampler2D tSpecular1;
     float shininess;
-
 };
 
 struct Light
@@ -40,13 +40,19 @@ void main()
     
     // specular
     vec3 viewDir = normalize( viewPos - FragPos);
-    vec3 halfwayDir  = normalize(lightDir + viewDir);
-    float spec = pow(max(dot(Normal, halfwayDir), 0.0), material.shininess);
-    vec3 specular = light.specular * spec  * texture(material.tSpecular1, TexCoords).rgb;  
+    vec3 halfwayDir  = normalize(lightDir + viewDir);   
+
+    float spec = pow(max(dot(Normal, halfwayDir), 0.0),8);
+    vec3 specular = light.specular * spec * texture(material.tSpecular1, TexCoords).rgb;  
     float distance = length(light.position - FragPos);
-    float attenuation = 1/ (1 + 0.9 * distance +  0.032 * (distance*distance) );
-    vec3 result = (ambient + diffuse + specular ) * attenuation * light.intensity;
-    FragColor = vec4(result, 1.0);
+    float attenuation = 1/  (distance*distance) ;
+    vec3 result = (ambient + diffuse + specular )  * light.intensity * attenuation;
+    
+    //depth buffer
+    float normalizedDepth =gl_FragCoord.z*2 -1;
+    float linearDepth = 20 / ((1 - normalizedDepth)*100);
+    FragColor = vec4(result,1);
+    FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
     
 } 
 

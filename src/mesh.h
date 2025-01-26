@@ -36,6 +36,7 @@ public:
     vector<unsigned int> indices;
     vector<Texture>      textures;
     unsigned int VAO;
+    glm::mat4 model;
 
     // constructor
     Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
@@ -71,6 +72,7 @@ public:
             // now set the sampler to the correct texture unit
             glUniform1i(glGetUniformLocation(shader.shaderProgram, (name + number).c_str()), i);
             // and finally bind the texture
+            shader.setMat4("model",model);
             glBindTexture(GL_TEXTURE_2D, textures[i].id);
         }
         

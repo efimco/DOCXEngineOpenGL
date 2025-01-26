@@ -1,0 +1,56 @@
+# Blender 4.3.0 MTL File: 'SceneForRednerDemo.blend'
+# www.blender.org
+
+newmtl Material.001
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Box_Mat_Base_Color.png
+map_Ns C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Box_Mat_Roughness.png
+map_refl C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Box_Mat_Metallic.png
+
+newmtl Material.002
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Clip_and_Tape_Mat_Base_Color.png
+map_Ns C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Clip_and_Tape_Mat_Roughness.png
+map_refl C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Clip_and_Tape_Mat_Metallic.png
+
+newmtl Material.003
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 2
+map_Kd C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Glass_Mat_Base_Color.png
+map_Ns C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Glass_Mat_Roughness.png
+map_refl C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Glass_Mat_Metallic.png
+map_d C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Glass_Mat_Opacity.png
+
+newmtl Material.004
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Main_Body_Mat_Base_Color.png
+map_Ns C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Main_Body_Mat_Roughness.png
+map_refl C:/Users/Efim/Downloads/VHS Scene (1)/VHS_Main_Body_Mat_Metallic.png
+
+newmtl Material.005
+Ns 32.997234
+Ka 1.000000 1.000000 1.000000
+Kd 0.000000 0.000000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2

@@ -17,9 +17,11 @@ class Model
 		std::vector<Texture> textures_loaded;
 		Shader shader;
 		bool gammaCorrection;
+		glm::mat4 model;
 
 		Model(const char* path, Shader shader, bool gamma = false) : gammaCorrection(gamma), shader(shader)
 		{
+			model = glm::mat4(1.0f);
 			loadModel(path);
 		}
 
@@ -27,6 +29,7 @@ class Model
 		{
 			for (uint32_t i = 0; i < meshes.size(); i++)
 			{
+				meshes[i].model = this->model;
 				meshes[i].draw(shader);
 			}
 		}
@@ -53,13 +56,13 @@ class Model
 			for (uint32_t i = 0; i < node->mNumMeshes; i++)
 			{
 				aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-				meshes.push_back(processMesh(mesh,scene));
+				meshes.push_back(processMesh(mesh, scene));
 			}
-			for(unsigned int i = 0; i < node->mNumChildren; i++)
+			for (unsigned int i = 0; i < node->mNumChildren; i++)
 			{
 				processNode(node->mChildren[i], scene);
 			}
-		};
+		}
 
 		Mesh processMesh(aiMesh* mesh, const aiScene* scene)
 		{
@@ -94,13 +97,16 @@ class Model
 				else vertex.texCoords = glm::vec2(0.0f, 0.0f);  
 
 				vertices.push_back(vertex);
-
-				for(unsigned int i = 0; i < mesh->mNumFaces; i++)
+			}
+			for(unsigned int i = 0; i < mesh->mNumFaces; i++)
 				{
 					aiFace face = mesh->mFaces[i];
-					for(unsigned int j = 0; j < face.mNumIndices; j++) indices.push_back(face.mIndices[j]);
-				} 
-			}
+					for(unsigned int j = 0; j < face.mNumIndices; j++) 
+					{
+						indices.push_back(face.mIndices[j]);
+					}
+				}
+			
 				aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];    
 
 				std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "material.tDiffuse");

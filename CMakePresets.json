@@ -3,7 +3,7 @@
 	"configurePresets": [
 		{
 			"name": "Debug",
-			"displayName": "Visual Studio Community 2022 Release - amd64",
+			"displayName": "Visual Studio Community 2022 Release",
 			"description": "Using compilers for Visual Studio 17 2022 (x64 architecture)",
 			"generator": "Visual Studio 17 2022",
 			"architecture": "x64",
@@ -18,7 +18,7 @@
 	"buildPresets": [
 		{
 			"name": "Debug-debug",
-			"displayName": "Visual Studio Community 2022 Release - amd64 - Debug",
+			"displayName": "Visual Studio Community 2022 Release - Debug",
 			"configurePreset": "Debug",
 			"configuration": "Debug"
 		}
