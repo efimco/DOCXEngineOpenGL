@@ -1,5 +1,4 @@
 #define GLM_ENABLE_EXPERIMENTAL
-#define STB_IMAGE_IMPLEMENTATION
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -10,6 +9,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "model.h"
+#include "gltfImIporter.h"
 
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_glfw.h>
@@ -166,19 +166,19 @@ void framebufferSizeCallback(GLFWwindow* window, int32_t newWidth, int32_t newHe
 
 void draw(GLFWwindow* window)
 {
-    std::string path = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\res\\123_smooth.obj";
-	std::string tentPath = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\res\\textures\\SciFiTent\\Tent.obj";
-	std::string boxPath = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\res\\box.obj";
+    std::string path = "..\\..\\res\\123_smooth.obj";
+	std::string tentPath = "..\\..\\res\\textures\\SciFiTent\\Tent.obj";
+	std::string boxPath = "..\\..\\res\\box.obj";
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS );
 	glEnable(GL_STENCIL_TEST);
 	glStencilMask(0x00);
-	std::string fShaderPath = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\src\\shaders\\frag.glsl";
-	std::string vShaderPath = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\src\\shaders\\vertex.glsl";
+	std::string fShaderPath = "..\\..\\src\\shaders\\frag.glsl";
+	std::string vShaderPath = "..\\..\\src\\shaders\\vertex.glsl";
 
-	std::string fLightShaderPath = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\src\\shaders\\fragLight.glsl";
-	std::string vLightShaderPath = "C:\\Users\\Efim\\Desktop\\junkyard\\OpenGLLearn\\src\\shaders\\vertLight.glsl";
+	std::string fLightShaderPath = "..\\..\\src\\shaders\\fragLight.glsl";
+	std::string vLightShaderPath = "..\\..\\src\\shaders\\vertLight.glsl";
 
 	Shader cubeShader (vShaderPath, fShaderPath);
 	Shader tentShader (vShaderPath, fShaderPath);
@@ -188,6 +188,9 @@ void draw(GLFWwindow* window)
 	Model tent(tentPath.c_str(),cubeShader);
 	Model lightCube(boxPath.c_str(),lightShader);
 	
+	GLTFModel gltfTent("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf",cubeShader);
+
+
 	//imgui
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
@@ -212,6 +215,7 @@ void draw(GLFWwindow* window)
 	cube.model = glm::scale(cube.model, glm::vec3(.1f));
 	cube.model = glm::translate(cube.model, glm::vec3(3.0f,.0f,10));
 	tent.model = glm::translate(tent.model, glm::vec3(0.0f,.0f,2));
+	gltfTent.model = glm::translate(gltfTent.model, glm::vec3(0.0f,0.0f,0));
 	float gamma = 1;
 	while(!glfwWindowShouldClose(window))
 	{   
@@ -230,15 +234,15 @@ void draw(GLFWwindow* window)
 		ImGui::DragFloat3("LightPos", glm::value_ptr(lightPos));
 		lightmodel[3] = glm::vec4(lightPos, 1.0f);
 		ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
-		ImGui::SliderFloat("Gamma", &gamma,0.01,5);
+		ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
 		ImGui::Checkbox("Wireframe Mode", &isWireframe);
 		polygonMode = isWireframe ? GL_LINE : GL_FILL;
 		glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
 
 		if (ImGui::Button("Reload Shaders")) 
 		{
-            cube.shader.reload(vShaderPath.c_str(), fShaderPath.c_str());
-            lightCube.shader.reload(vLightShaderPath.c_str(), fLightShaderPath.c_str());
+            cube.shader.reload(cube.shader.vPath.c_str(), cube.shader.fPath.c_str());
+            lightCube.shader.reload(lightCube.shader.vPath.c_str(), lightCube.shader.fPath.c_str());
 			tent.shader.reload(vShaderPath.c_str(), fShaderPath.c_str());
             std::cout << "Shaders reloaded successfully!" << std::endl;
         }
@@ -267,7 +271,7 @@ void draw(GLFWwindow* window)
 		}
 
 
-
+		lightCube.shader.use();
 		lightCube.shader.setMat4("projection",projection);
 		lightCube.shader.setMat4("view",view);
 		lightCube.shader.setFloat("lightIntensity",lightIntensity);
@@ -275,6 +279,11 @@ void draw(GLFWwindow* window)
 		lightCube.shader.setMat4("model",lightmodel);
 		lightCube.draw();
 
+		
+		gltfTent.draw(camera,width,height);
+
+
+		cube.shader.use();
 		cube.shader.setMat4("projection",projection);
 		cube.shader.setMat4("view",view);
 		cube.shader.setVec3("viewPos", camera.position);
@@ -287,6 +296,7 @@ void draw(GLFWwindow* window)
 		cube.shader.setFloat("gamma", gamma);
 		cube.draw();
 
+		tent.shader.use();
 		tent.shader.setMat4("projection",projection);
 		tent.shader.setMat4("view",view);
 		tent.shader.setVec3("viewPos", camera.position);
@@ -298,6 +308,7 @@ void draw(GLFWwindow* window)
 		tent.shader.setFloat("material.shininess", 32);
 		tent.shader.setFloat("gamma", gamma);
 		tent.draw();
+
 
 
 		ImGui::Render();
@@ -321,7 +332,7 @@ int main()
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+	// glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); 
 	
@@ -343,7 +354,6 @@ int main()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
-
 	draw(window);
 
 	glfwTerminate();

@@ -21,6 +21,7 @@ add_executable(OpenGLLearn
     src/shader.h
     src/mesh.h
     src/model.h
+    src/gltfImIporter.h
     ${IMGUI_SRC}
 )
 
