@@ -9,7 +9,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "model.h"
-#include "gltfImIporter.h"
+#include "objectManager.h"
 
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_glfw.h>
@@ -83,7 +83,10 @@ void mouseCallback(GLFWwindow* window, double xPos, double yPos)
 	{	lastX = (float)xPos;
 		lastY = (float)yPos;
 		firstMouse = false;
-	}
+	}	
+
+	glm::mat4 view = 		glm::mat4(1.0f);
+	glm::mat4 projection = 	glm::mat4(1.0f);
 
 	float xOffset = (float)xPos - (float)lastX;
 	float yOffset = lastY - (float)yPos ;
@@ -189,7 +192,8 @@ void draw(GLFWwindow* window)
 	Model lightCube(boxPath.c_str(),lightShader);
 	
 	GLTFModel gltfTent("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf",cubeShader);
-
+	gltfTent.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,3)));
+	ObjectManager::addPrimitives(gltfTent.primitives);
 
 	//imgui
 	ImGui::CreateContext();
@@ -203,20 +207,22 @@ void draw(GLFWwindow* window)
 
 	float lastFrame = 0;
 	float deltaTime = 0;
+
 	glm::mat4 view = 		glm::mat4(1.0f);
 	glm::mat4 projection = 	glm::mat4(1.0f);
 	glm::mat4 model = glm::mat4(1.0f);
+
 	float lightIntensity = 1.0f;
 	glm::vec3 lightColor = glm::vec3(1.0f);
-
 	glm::mat4 lightmodel = glm::mat4(1.0f);
+
 	lightmodel = glm::translate(lightmodel, glm::vec3(0.0f, 5.0f, 0.0f));
 	lightmodel = glm::scale(lightmodel, glm::vec3(1.0f, 1.0f, 1.0f));
 	cube.model = glm::scale(cube.model, glm::vec3(.1f));
 	cube.model = glm::translate(cube.model, glm::vec3(3.0f,.0f,10));
 	tent.model = glm::translate(tent.model, glm::vec3(0.0f,.0f,2));
-	gltfTent.model = glm::translate(gltfTent.model, glm::vec3(0.0f,0.0f,0));
 	float gamma = 1;
+
 	while(!glfwWindowShouldClose(window))
 	{   
 		float time = (float)glfwGetTime();
@@ -280,7 +286,7 @@ void draw(GLFWwindow* window)
 		lightCube.draw();
 
 		
-		gltfTent.draw(camera,width,height);
+		ObjectManager::draw(camera,width,height);
 
 
 		cube.shader.use();
@@ -317,8 +323,6 @@ void draw(GLFWwindow* window)
 		glfwSwapBuffers(window);
 		glfwPollEvents();    
 	}
-
-
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
