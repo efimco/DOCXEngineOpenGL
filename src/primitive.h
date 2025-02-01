@@ -1,0 +1,78 @@
+#pragma once
+#include "shader.h"
+#include <vector>
+#include "glm/glm.hpp"
+#include "camera.h"
+
+struct Primitive 
+{
+	uint32_t vao;
+	uint32_t vbo;
+	uint32_t ebo;
+	Shader shader;
+	Shader outlineShader;
+	size_t indexCount;
+	glm::mat4 transform;
+	glm::mat4 scaledTransform;
+	bool selected;
+
+	Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader shader, size_t indexCount, glm::mat4 transform)
+		: vao(vao), vbo(vbo), ebo(ebo), shader(shader), indexCount(indexCount), transform(transform),
+		outlineShader("..\\..\\src\\shaders\\outlineVert.glsl", "..\\..\\src\\shaders\\outlineFrag.glsl"), selected(false){}
+
+	Primitive(const Primitive&) = delete;
+	Primitive& operator=(const Primitive&) = delete;
+
+	Primitive(Primitive&& other) noexcept
+		: vao(other.vao), vbo(other.vbo), ebo(other.ebo), shader(std::move(other.shader)),
+		indexCount(other.indexCount), transform(other.transform), outlineShader("..\\..\\src\\shaders\\outlineVert.glsl", "..\\..\\src\\shaders\\outlineFrag.glsl"),selected(false) {
+		other.vao = 0;
+		other.vbo = 0;
+		other.ebo = 0;
+	}
+	
+	~Primitive()
+	{
+		glDeleteVertexArrays(1, &vao);
+		glDeleteBuffers(1, &vbo);
+		glDeleteBuffers(1, &ebo);
+	}
+	
+	void draw(Camera& camera, int32_t width, int32_t height)
+	{
+		const auto view = camera.getViewMatrix();
+		const auto projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);	
+
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);
+		shader.use();
+		shader.setMat4("projection",projection);
+		shader.setMat4("view",view);
+		shader.setMat4("model",transform);
+		
+		glBindVertexArray(vao);
+		int eboSize = 0;
+		glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
+		int indexSize = eboSize / sizeof(int);
+		glDrawElements(GL_TRIANGLES,indexSize,GL_UNSIGNED_INT,(void*)0);
+
+		if (selected == true)
+		{
+			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+			glStencilMask(0x00); 
+			glDisable(GL_DEPTH_TEST);
+			scaledTransform = glm::scale(transform, glm::vec3(1.05f));
+			outlineShader.use();
+			outlineShader.setMat4("projection",projection);
+			outlineShader.setMat4("view",view);
+			outlineShader.setMat4("model",scaledTransform);
+			glDrawElements(GL_TRIANGLES,indexSize,GL_UNSIGNED_INT,(void*)0);
+			glStencilMask(0xFF);
+			glStencilFunc(GL_ALWAYS, 1, 0xFF); 
+			glEnable(GL_DEPTH_TEST);
+		}
+		
+		glBindVertexArray(0);
+		glActiveTexture(GL_TEXTURE0);
+	}
+};

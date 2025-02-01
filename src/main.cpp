@@ -2,14 +2,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "shader.h"
-#include "camera.h"
 #include "model.h"
 #include "objectManager.h"
+#include "objectPicking.h"
 
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_glfw.h>
@@ -76,7 +74,8 @@ void processInput(GLFWwindow* window,bool* isWireframe, float deltaTime)
 float lastX = (float)(width / 2), lastY = (float) (height / 2);
 bool firstMouse = true;
 float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
-
+glm::mat4 view = 		glm::mat4(1.0f);
+glm::mat4 projection = 	glm::mat4(1.0f);
 void mouseCallback(GLFWwindow* window, double xPos, double yPos)
 {
 	if (firstMouse)
@@ -85,8 +84,26 @@ void mouseCallback(GLFWwindow* window, double xPos, double yPos)
 		firstMouse = false;
 	}	
 
-	glm::mat4 view = 		glm::mat4(1.0f);
-	glm::mat4 projection = 	glm::mat4(1.0f);
+		
+	glfwGetWindowSize(window,&width, &height);
+	if( width != 0 && height != 0) 
+	{
+		projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);	
+		view = camera.getViewMatrix();
+		Primitive* primitive = PickObject(xPos, yPos, width, height,projection,view,camera.position, ObjectManager::primitives);
+		if (primitive != nullptr)
+		{
+			if (ObjectManager::selectedPrimitive != primitive)
+			{
+				if (ObjectManager::selectedPrimitive != nullptr) ObjectManager::selectedPrimitive->selected = false;
+				primitive->selected = true;
+				ObjectManager::selectedPrimitive = primitive;
+			}
+			std::cout << "\rVAO: " << primitive->vao << std::flush;
+		}
+	}
+
+	
 
 	float xOffset = (float)xPos - (float)lastX;
 	float yOffset = lastY - (float)yPos ;
@@ -145,16 +162,16 @@ std::vector<float> vertices = {
 };
 
 glm::vec3 cubePositions[] = {
-    glm::vec3( 0.0f,  0.0f,  0.0f), 
-    glm::vec3( 2.0f,  5.0f, -15.0f), 
-    glm::vec3(-1.5f, -2.2f, -2.5f),  
-    glm::vec3(-3.8f, -2.0f, -12.3f),  
-    glm::vec3( 2.4f, -0.4f, -3.5f),  
-    glm::vec3(-1.7f,  3.0f, -7.5f),  
-    glm::vec3( 1.3f, -2.0f, -2.5f),  
-    glm::vec3( 1.5f,  2.0f, -2.5f), 
-    glm::vec3( 1.5f,  0.2f, -1.5f), 
-    glm::vec3(-1.3f,  1.0f, -1.5f), 
+	glm::vec3( 0.0f,  0.0f,  0.0f), 
+	glm::vec3( 2.0f,  5.0f, -15.0f), 
+	glm::vec3(-1.5f, -2.2f, -2.5f),  
+	glm::vec3(-3.8f, -2.0f, -12.3f),  
+	glm::vec3( 2.4f, -0.4f, -3.5f),  
+	glm::vec3(-1.7f,  3.0f, -7.5f),  
+	glm::vec3( 1.3f, -2.0f, -2.5f),  
+	glm::vec3( 1.5f,  2.0f, -2.5f), 
+	glm::vec3( 1.5f,  0.2f, -1.5f), 
+	glm::vec3(-1.3f,  1.0f, -1.5f), 
 	
 };
 
@@ -169,14 +186,15 @@ void framebufferSizeCallback(GLFWwindow* window, int32_t newWidth, int32_t newHe
 
 void draw(GLFWwindow* window)
 {
-    std::string path = "..\\..\\res\\123_smooth.obj";
+	std::string path = "..\\..\\res\\123_smooth.obj";
 	std::string tentPath = "..\\..\\res\\textures\\SciFiTent\\Tent.obj";
 	std::string boxPath = "..\\..\\res\\box.obj";
 
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS );
+	glDepthFunc(GL_LESS);
 	glEnable(GL_STENCIL_TEST);
-	glStencilMask(0x00);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
+
 	std::string fShaderPath = "..\\..\\src\\shaders\\frag.glsl";
 	std::string vShaderPath = "..\\..\\src\\shaders\\vertex.glsl";
 
@@ -191,9 +209,12 @@ void draw(GLFWwindow* window)
 	Model tent(tentPath.c_str(),cubeShader);
 	Model lightCube(boxPath.c_str(),lightShader);
 	
-	GLTFModel gltfTent("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf",cubeShader);
+	GLTFModel gltfTent("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf", cubeShader);
 	gltfTent.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,3)));
+	GLTFModel gltfTent1("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf", cubeShader);
+	gltfTent1.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,4)));
 	ObjectManager::addPrimitives(gltfTent.primitives);
+	ObjectManager::addPrimitives(gltfTent1.primitives);
 
 	//imgui
 	ImGui::CreateContext();
@@ -208,8 +229,7 @@ void draw(GLFWwindow* window)
 	float lastFrame = 0;
 	float deltaTime = 0;
 
-	glm::mat4 view = 		glm::mat4(1.0f);
-	glm::mat4 projection = 	glm::mat4(1.0f);
+
 	glm::mat4 model = glm::mat4(1.0f);
 
 	float lightIntensity = 1.0f;
@@ -229,6 +249,7 @@ void draw(GLFWwindow* window)
 		deltaTime = time - lastFrame;
 		lastFrame = time;
 		processInput(window,&isWireframe,deltaTime);
+
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
@@ -238,20 +259,24 @@ void draw(GLFWwindow* window)
 		ImGui::DragFloat("Light intensity", &lightIntensity);
 		glm::vec3 lightPos = glm::vec3(lightmodel[3]);
 		ImGui::DragFloat3("LightPos", glm::value_ptr(lightPos));
+		if(ObjectManager::selectedPrimitive != nullptr)
+			ImGui::DragFloat4("Selected Object Pos", glm::value_ptr(ObjectManager::selectedPrimitive->transform[3]));
 		lightmodel[3] = glm::vec4(lightPos, 1.0f);
 		ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
 		ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
 		ImGui::Checkbox("Wireframe Mode", &isWireframe);
+
 		polygonMode = isWireframe ? GL_LINE : GL_FILL;
 		glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
 
 		if (ImGui::Button("Reload Shaders")) 
 		{
-            cube.shader.reload(cube.shader.vPath.c_str(), cube.shader.fPath.c_str());
-            lightCube.shader.reload(lightCube.shader.vPath.c_str(), lightCube.shader.fPath.c_str());
-			tent.shader.reload(vShaderPath.c_str(), fShaderPath.c_str());
-            std::cout << "Shaders reloaded successfully!" << std::endl;
-        }
+			cube.shader.reload();
+			lightCube.shader.reload();
+			tent.shader.reload();
+			ObjectManager::reloadShaders();
+			std::cout << "Shaders reloaded successfully!" << std::endl;
+		}
 
 		ImGui::End();
 
@@ -276,7 +301,7 @@ void draw(GLFWwindow* window)
 			view = camera.getViewMatrix();
 		}
 
-
+		glStencilMask(0x00);
 		lightCube.shader.use();
 		lightCube.shader.setMat4("projection",projection);
 		lightCube.shader.setMat4("view",view);

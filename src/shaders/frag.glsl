@@ -62,8 +62,8 @@ void main()
     float linearDepth = 20 / ((1 - normalizedDepth)*100);
     FragColor = vec4(result,1);
     FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
-    //FragColor = vec4(vec3(linearDepth),1);
-    FragColor = vec4(1);
+    FragColor = vec4(vec3(linearDepth),1);
+    // FragColor = vec4(1);
     
 } 
 

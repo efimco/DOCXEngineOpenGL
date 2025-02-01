@@ -23,6 +23,7 @@ add_executable(OpenGLLearn
     src/model.h
     src/gltfImIporter.h
     src/objectPicking.h
+    src/primitive.h
     ${IMGUI_SRC}
 )
 
