@@ -5,38 +5,39 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
 set (
-    IMGUI_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_draw.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_widgets.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_impl_glfw.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_impl_opengl3.cpp 
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_tables.cpp
-    )
+	IMGUI_SRC
+	${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_draw.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_widgets.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_impl_glfw.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_impl_opengl3.cpp 
+	${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_tables.cpp
+	)
 
 
 add_executable(OpenGLLearn 
-    src/main.cpp 
-    src/glad.c
-    src/shader.h
-    src/mesh.h
-    src/model.h
-    src/gltfImIporter.h
-    src/objectPicking.h
-    src/primitive.h
-    ${IMGUI_SRC}
+	src/main.cpp 
+	src/glad.c
+	src/shader.h
+	src/mesh.h
+	src/model.h
+	src/gltfImIporter.h
+	src/objectPicking.h
+	src/primitive.h
+	src/material.h
+	${IMGUI_SRC}
 )
 
 target_include_directories(OpenGLLearn PRIVATE 
-    thirdparty/include
+	thirdparty/include
 )
 
 target_link_directories(OpenGLLearn PRIVATE 
-    thirdparty/lib
+	thirdparty/lib
 )
 
 target_link_libraries(OpenGLLearn PRIVATE 
-    glfw3
+	glfw3
 	opengl32
-    assimp-vc143-mtd
+	assimp-vc143-mtd
 )

@@ -20,7 +20,7 @@ class ObjectManager
 		{
 			for (auto& primitive : Primitives)
 			{
-				primitives.push_back(std::move(primitive));  // ✅ Move instead of copy
+				primitives.push_back(std::move(primitive)); 
 			}
 		}
 		

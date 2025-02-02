@@ -3,6 +3,7 @@
 #include <vector>
 #include "glm/glm.hpp"
 #include "camera.h"
+#include "material.h"
 
 struct Primitive 
 {
@@ -13,8 +14,8 @@ struct Primitive
 	Shader outlineShader;
 	size_t indexCount;
 	glm::mat4 transform;
-	glm::mat4 scaledTransform;
 	bool selected;
+	Mat material;
 
 	Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader shader, size_t indexCount, glm::mat4 transform)
 		: vao(vao), vbo(vbo), ebo(ebo), shader(shader), indexCount(indexCount), transform(transform),
@@ -40,12 +41,20 @@ struct Primitive
 	
 	void draw(Camera& camera, int32_t width, int32_t height)
 	{
+		glActiveTexture(GL_TEXTURE0);
 		const auto view = camera.getViewMatrix();
 		const auto projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);	
 
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		glStencilMask(0xFF);
 		shader.use();
+		if (material.diffuse.path != "")
+		{
+			glActiveTexture(GL_TEXTURE1);
+			shader.setInt(material.diffuse.type, 1);
+			glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
+
+		}
 		shader.setMat4("projection",projection);
 		shader.setMat4("view",view);
 		shader.setMat4("model",transform);
@@ -75,4 +84,6 @@ struct Primitive
 		glBindVertexArray(0);
 		glActiveTexture(GL_TEXTURE0);
 	}
+	private:
+			glm::mat4 scaledTransform;
 };

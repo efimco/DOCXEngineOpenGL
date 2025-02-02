@@ -28,6 +28,7 @@ bool RayIntersectsSphere(glm::vec3 rayOrigin, glm::vec3 rayDir, const Primitive&
     double discriminant = b * b - 4 * c;
     return (discriminant > 0);
 }
+
 Primitive* PickObject(
     double mouseX, double mouseY, int screenWidth, int screenHeight,
     glm::mat4 projection, glm::mat4 view, glm::vec3 cameraPos, std::vector<Primitive>& objects)

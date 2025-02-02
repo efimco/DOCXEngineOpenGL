@@ -1,9 +1,11 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <windows.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <commdlg.h> 
 
 #include "model.h"
 #include "objectManager.h"
@@ -28,6 +30,10 @@ std::vector<glm::vec3> defaultCameraMatrix = {camera.position,camera.front,camer
 float defaultCameraRotation[] = {camera.pitch, camera.yaw};
 bool cameraReseted = true;
 
+double mousePosx;
+double mousePosy;
+glm::mat4 view =		glm::mat4(1.0f);
+glm::mat4 projection = 	glm::mat4(1.0f);
 void processInput(GLFWwindow* window,bool* isWireframe, float deltaTime)
 {
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window,true);
@@ -42,6 +48,37 @@ void processInput(GLFWwindow* window,bool* isWireframe, float deltaTime)
 		}
 	}
 	else if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE) wireframeKeyPressed = false;
+
+	static bool wasMousePressed = false;
+	if( width != 0 && height != 0) 
+	{
+		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse) wasMousePressed = true;
+		else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMousePressed)
+		{
+			wasMousePressed = false;
+			projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);    
+			view = camera.getViewMatrix();
+			Primitive* primitive = PickObject(mousePosx, mousePosy, width, height,projection,view,camera.position, ObjectManager::primitives);
+			if (primitive != nullptr)
+			{
+				if (ObjectManager::selectedPrimitive != primitive)
+				{
+					if (ObjectManager::selectedPrimitive != nullptr) ObjectManager::selectedPrimitive->selected = false;
+					primitive->selected = true;
+					ObjectManager::selectedPrimitive = primitive;
+				}
+				std::cout << "\rVAO: " << primitive->vao << std::flush;
+			}
+			else
+			{
+				if (ObjectManager::selectedPrimitive != nullptr)
+				{
+					ObjectManager::selectedPrimitive->selected = false;
+					ObjectManager::selectedPrimitive = nullptr;
+				}
+			}
+		}
+	}
 
 
 	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
@@ -74,37 +111,18 @@ void processInput(GLFWwindow* window,bool* isWireframe, float deltaTime)
 float lastX = (float)(width / 2), lastY = (float) (height / 2);
 bool firstMouse = true;
 float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
-glm::mat4 view = 		glm::mat4(1.0f);
-glm::mat4 projection = 	glm::mat4(1.0f);
+
 void mouseCallback(GLFWwindow* window, double xPos, double yPos)
 {
 	if (firstMouse)
 	{	lastX = (float)xPos;
 		lastY = (float)yPos;
 		firstMouse = false;
-	}	
-
-		
-	glfwGetWindowSize(window,&width, &height);
-	if( width != 0 && height != 0) 
-	{
-		projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);	
-		view = camera.getViewMatrix();
-		Primitive* primitive = PickObject(xPos, yPos, width, height,projection,view,camera.position, ObjectManager::primitives);
-		if (primitive != nullptr)
-		{
-			if (ObjectManager::selectedPrimitive != primitive)
-			{
-				if (ObjectManager::selectedPrimitive != nullptr) ObjectManager::selectedPrimitive->selected = false;
-				primitive->selected = true;
-				ObjectManager::selectedPrimitive = primitive;
-			}
-			std::cout << "\rVAO: " << primitive->vao << std::flush;
-		}
 	}
-
+	mousePosx = xPos;
+	mousePosy = yPos;
+	glfwGetWindowSize(window,&width, &height);
 	
-
 	float xOffset = (float)xPos - (float)lastX;
 	float yOffset = lastY - (float)yPos ;
 	lastX = (float)xPos;
@@ -183,6 +201,31 @@ void framebufferSizeCallback(GLFWwindow* window, int32_t newWidth, int32_t newHe
 	glViewport(0, 0, width, height);
 }
 
+std::string OpenFileDialog()
+{
+	OPENFILENAMEA ofn;             // common dialog box structure
+	char fileName[260] = { 0 };    // buffer for file name
+
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = nullptr;       // Optionally set your window handle here
+	ofn.lpstrFile = fileName;
+	ofn.nMaxFile = sizeof(fileName);
+
+	// Filter: display image files by default (you can adjust as needed)
+	ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.jpeg;*.bmp\0All Files\0*.*\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrTitle = "Select a Texture";
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	// Open the dialog box
+	if (GetOpenFileNameA(&ofn) == TRUE)
+	{
+		return std::string(ofn.lpstrFile);
+	}
+
+	return std::string();
+}
 
 void draw(GLFWwindow* window)
 {
@@ -242,7 +285,7 @@ void draw(GLFWwindow* window)
 	cube.model = glm::translate(cube.model, glm::vec3(3.0f,.0f,10));
 	tent.model = glm::translate(tent.model, glm::vec3(0.0f,.0f,2));
 	float gamma = 1;
-
+	bool openFileDialog = false;
 	while(!glfwWindowShouldClose(window))
 	{   
 		float time = (float)glfwGetTime();
@@ -260,7 +303,24 @@ void draw(GLFWwindow* window)
 		glm::vec3 lightPos = glm::vec3(lightmodel[3]);
 		ImGui::DragFloat3("LightPos", glm::value_ptr(lightPos));
 		if(ObjectManager::selectedPrimitive != nullptr)
-			ImGui::DragFloat4("Selected Object Pos", glm::value_ptr(ObjectManager::selectedPrimitive->transform[3]));
+		{
+			ImGui::Begin("Object Inspector");
+			ImGui::DragFloat3("Position", glm::value_ptr(ObjectManager::selectedPrimitive->transform[3]));
+			ImGui::Image(ObjectManager::selectedPrimitive->material.diffuse.id, ImVec2(128, 128));
+			
+			if (ImGui::Button("Change Texture"))
+			{
+				std::string filePath = OpenFileDialog();
+				if (!filePath.empty())
+				{
+					// Update the object's texture path
+					ObjectManager::selectedPrimitive->material.diffuse.type = "material.tDiffuse1";
+					ObjectManager::selectedPrimitive->material.diffuse.SetPath(filePath);
+
+				}
+			}
+			ImGui::End();
+		}
 		lightmodel[3] = glm::vec4(lightPos, 1.0f);
 		ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
 		ImGui::SliderFloat("Gamma", &gamma,0.01f,5);

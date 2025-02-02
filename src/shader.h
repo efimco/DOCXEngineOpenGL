@@ -136,20 +136,20 @@ class Shader
 
 		void reload() 
 		{
-			glDeleteProgram(shaderProgram); // Delete the existing shader program
-			Shader newShader(vPath, fPath); // Recompile and link the shader
-			*this = newShader; // Replace the old shader with the new one
+			glDeleteProgram(shaderProgram);
+			Shader newShader(vPath, fPath);
+			*this = newShader; 
 		}
 
 		void setTexture(const std::string &slotName, GLuint textureID) const 
 		{
-			if (slotName == "material.tDiffuse")
+			if (slotName == "material.tDiffuse1")
 			{
 				glActiveTexture(GL_TEXTURE1);
 				glBindTexture(GL_TEXTURE_2D, textureID);
 				glUniform1i(glGetUniformLocation(shaderProgram, slotName.c_str()),1);
 			}
-			else if (slotName == "material.tSpecular")
+			else if (slotName == "material.tSpecular1")
 			{
 				glActiveTexture(GL_TEXTURE2);
 				glBindTexture(GL_TEXTURE_2D, textureID);
