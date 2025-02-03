@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <filesystem>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -137,27 +138,9 @@ class Shader
 		void reload() 
 		{
 			glDeleteProgram(shaderProgram);
-			Shader newShader(vPath, fPath);
-			*this = newShader; 
+
+			*this = Shader(vPath, fPath);
 		}
-
-		void setTexture(const std::string &slotName, GLuint textureID) const 
-		{
-			if (slotName == "material.tDiffuse1")
-			{
-				glActiveTexture(GL_TEXTURE1);
-				glBindTexture(GL_TEXTURE_2D, textureID);
-				glUniform1i(glGetUniformLocation(shaderProgram, slotName.c_str()),1);
-			}
-			else if (slotName == "material.tSpecular1")
-			{
-				glActiveTexture(GL_TEXTURE2);
-				glBindTexture(GL_TEXTURE_2D, textureID);
-				glUniform1i(glGetUniformLocation(shaderProgram, slotName.c_str()),2);
-			}
-
-		}
-
 
 	private:
 		std::string vertexCode;
@@ -174,12 +157,15 @@ class Shader
 			try
 			{
 				shaderFile.open(filePath);
+
 				shaderStream << shaderFile.rdbuf();
 				shaderFile.close();
 				shaderCode = shaderStream.str();
 			}
 			catch(const std::ifstream::failure e)
 			{
+				
+				std::cout << std::filesystem::absolute(filePath) << std::endl;
 				std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
 			}
 			return shaderCode;

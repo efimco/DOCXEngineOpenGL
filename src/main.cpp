@@ -19,8 +19,8 @@
 #include <filesystem>
 
 
-int32_t width = 800;
-int32_t height = 800;
+int32_t width = 1024;
+int32_t height = 1024;
 Camera camera(glm::vec3(0.0f,0.0f,3.0f));
 bool wireframeKeyPressed = false;
 bool rightKeyPressed = false;
@@ -229,7 +229,7 @@ std::string OpenFileDialog()
 
 void draw(GLFWwindow* window)
 {
-	std::string path = "..\\..\\res\\123_smooth.obj";
+	std::string path = std::filesystem::absolute("..\\..\\res\\123_smooth.obj").string();
 	std::string tentPath = "..\\..\\res\\textures\\SciFiTent\\Tent.obj";
 	std::string boxPath = "..\\..\\res\\box.obj";
 
@@ -238,11 +238,11 @@ void draw(GLFWwindow* window)
 	glEnable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
 
-	std::string fShaderPath = "..\\..\\src\\shaders\\frag.glsl";
-	std::string vShaderPath = "..\\..\\src\\shaders\\vertex.glsl";
+	std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\frag.glsl").string();
+	std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.glsl").string();
 
-	std::string fLightShaderPath = "..\\..\\src\\shaders\\fragLight.glsl";
-	std::string vLightShaderPath = "..\\..\\src\\shaders\\vertLight.glsl";
+	std::string fLightShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\fragLight.glsl").string();
+	std::string vLightShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertLight.glsl").string();
 
 	Shader cubeShader (vShaderPath, fShaderPath);
 	Shader tentShader (vShaderPath, fShaderPath);
@@ -280,7 +280,7 @@ void draw(GLFWwindow* window)
 	glm::mat4 lightmodel = glm::mat4(1.0f);
 
 	lightmodel = glm::translate(lightmodel, glm::vec3(0.0f, 5.0f, 0.0f));
-	lightmodel = glm::scale(lightmodel, glm::vec3(1.0f, 1.0f, 1.0f));
+	lightmodel = glm::scale(lightmodel, glm::vec3(.1f));
 	cube.model = glm::scale(cube.model, glm::vec3(.1f));
 	cube.model = glm::translate(cube.model, glm::vec3(3.0f,.0f,10));
 	tent.model = glm::translate(tent.model, glm::vec3(0.0f,.0f,2));

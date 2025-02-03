@@ -42,9 +42,9 @@ struct Primitive
 	void draw(Camera& camera, int32_t width, int32_t height)
 	{
 		glActiveTexture(GL_TEXTURE0);
-		const auto view = camera.getViewMatrix();
-		const auto projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);	
 
+		const auto view = camera.getViewMatrix();
+		const auto projection = glm::perspective(glm::radians(camera.zoom), float(width == 0 ? 1 : width)/float(height == 0 ? 1 : height),0.1f, 100.0f);	
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		glStencilMask(0xFF);
 		shader.use();
@@ -69,8 +69,11 @@ struct Primitive
 		{
 			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 			glStencilMask(0x00); 
-			glDisable(GL_DEPTH_TEST);
-			scaledTransform = glm::scale(transform, glm::vec3(1.05f));
+			glEnable(GL_POLYGON_OFFSET_FILL);
+			glPolygonOffset(-1.0f, -1.0f);
+			float camDistancece = (float)glm::length(camera.position - glm::vec3(transform[3]));
+			float outlineScale = 1.025f;
+			scaledTransform = glm::scale(transform, glm::vec3(outlineScale));
 			outlineShader.use();
 			outlineShader.setMat4("projection",projection);
 			outlineShader.setMat4("view",view);
@@ -78,7 +81,7 @@ struct Primitive
 			glDrawElements(GL_TRIANGLES,indexSize,GL_UNSIGNED_INT,(void*)0);
 			glStencilMask(0xFF);
 			glStencilFunc(GL_ALWAYS, 1, 0xFF); 
-			glEnable(GL_DEPTH_TEST);
+			glDisable(GL_POLYGON_OFFSET_FILL);
 		}
 		
 		glBindVertexArray(0);
