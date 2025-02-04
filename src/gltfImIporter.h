@@ -3,10 +3,6 @@
 #define TINYGLTF_NO_STB_IMAGE
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#ifdef APIENTRY
-#undef APIENTRY
-#endif
-
 #include "glad/glad.h"
 #include "tiny_gltf.h"
 #include "primitive.h"   // Your Primitive struct/class (should include members like vao, vbo, ebo, etc.)

@@ -1,5 +1,8 @@
 #version 460 core
 out vec4 FragColor;
+layout (location = 0) out vec4 gPosition;
+layout (location = 1) out vec3 gNormal;
+layout (location = 2) out vec4 gAlbedoSpec;
 in vec2 TexCoords;
 in vec3 Normal;
 in vec3 FragPos;
@@ -29,6 +32,12 @@ uniform Material material;
 
 void main()
 {   
+		// store the fragment position vector in the first gbuffer texture
+	// gPosition = vec4(FragPos.rgb, 0.0);
+	// also store the per-fragment normals into the gbuffer
+	// gNormal = normalize(Normal);
+	// and the diffuse per-fragment color, ignore specular
+	// gAlbedoSpec.rgb = vec3(0.95);
 	// ambient
 	vec3 ambient = light.ambient * texture(material.tDiffuse1, TexCoords).rgb;
 
@@ -59,10 +68,10 @@ void main()
 	
 	//depth buffer
 	float normalizedDepth =gl_FragCoord.z*2 -1;
-	float linearDepth = 20 / ((1 - normalizedDepth)*100);
+	float linearDepth = 50 / ((1 - normalizedDepth)*100);
 	FragColor = vec4(result,1);
 	FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
-	//FragColor = vec4(vec3(linearDepth),1);
+	FragColor = vec4(vec3(linearDepth),1);
 	// FragColor = vec4(1);
 	FragColor = texture(material.tDiffuse1,TexCoords);
 	// FragColor = vec4(TexCoords.xy,0,1);
