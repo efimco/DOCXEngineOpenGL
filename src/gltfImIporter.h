@@ -20,13 +20,12 @@ public:
 	std::vector<Primitive> primitives;
 	std::string path;
 
-	// Constructor: takes the file path and a Shader; calls setup() automatically.
-	GLTFModel(std::string Path, const Shader& shader) : path(Path), shader(shader)
+	GLTFModel(std::string path, const Shader& shader) : path(path), shader(shader)
 	{
 		setup();
 	}
 	
-	// Reads a glTF file from disk and returns a tinygltf::Model.
+
 	tinygltf::Model readGlb(const std::string &path)
 	{		
 		tinygltf::Model model;
@@ -43,8 +42,6 @@ public:
 		return model;
 	}
 
-	// Processes the glTF model: reads positions and, if available, texture coordinates.
-	// If texcoords exist, the vertex data is interleaved (positions and texcoords in one VBO).
 	void processGLTFModel(tinygltf::Model &model)
 	{
 		for (auto &mesh : model.meshes)

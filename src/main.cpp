@@ -1,8 +1,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
-#include <windows.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
+#include <windows.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -20,46 +19,47 @@
 #include <filesystem>
 
 
-int32_t width = 1024;
-int32_t height = 1024;
-Camera camera(glm::vec3(0.0f,0.0f,3.0f));
+int32_t WINDOW_WIDTH = 1024;
+int32_t WINDOW_HEIGHT = 1024;
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+
 bool wireframeKeyPressed = false;
 bool rightKeyPressed = false;
 float increasedSpeed = camera.speed *3;
 float defaultSpeed = camera.speed;
-std::vector<glm::vec3> defaultCameraMatrix = {camera.position,camera.front,camera.up};
+
+std::vector<glm::vec3> defaultCameraMatrix = {camera.position, camera.front, camera.up};
 float defaultCameraRotation[] = {camera.pitch, camera.yaw};
 bool cameraReseted = true;
 
-double mousePosx;
-double mousePosy;
-glm::mat4 view =		glm::mat4(1.0f);
-glm::mat4 projection = 	glm::mat4(1.0f);
-void processInput(GLFWwindow* window,bool* isWireframe, float deltaTime)
-{
-	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window,true);
+double mousePosx, mousePosy;
+glm::mat4 view = glm::mat4(1.0f);
+glm::mat4 projection = glm::mat4(1.0f);
 
-	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime)
+{
+	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window,true);
+
+	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && !wireframeKeyPressed)
 	{
-		if (!wireframeKeyPressed)
-		{
 			wireframeKeyPressed = true;
-			if(*isWireframe) *isWireframe = false;
-			else *isWireframe =  true;
-		}
+			isWireframe = !isWireframe;
 	}
-	else if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE) wireframeKeyPressed = false;
+
+	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE)
+		wireframeKeyPressed = false;
 
 	static bool wasMousePressed = false;
-	if( width != 0 && height != 0) 
+	if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
 	{
 		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse) wasMousePressed = true;
 		else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMousePressed)
 		{
 			wasMousePressed = false;
-			projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);    
+			projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);    
 			view = camera.getViewMatrix();
-			Primitive* primitive = PickObject(mousePosx, mousePosy, width, height,projection,view,camera.position, ObjectManager::primitives);
+			Primitive* primitive = PickObject(mousePosx, mousePosy, WINDOW_WIDTH, WINDOW_HEIGHT,projection,view,camera.position, ObjectManager::primitives);
 			if (primitive != nullptr)
 			{
 				if (ObjectManager::selectedPrimitive != primitive)
@@ -68,7 +68,7 @@ void processInput(GLFWwindow* window,bool* isWireframe, float deltaTime)
 					primitive->selected = true;
 					ObjectManager::selectedPrimitive = primitive;
 				}
-				std::cout << "\rVAO: " << primitive->vao << std::flush;
+				std::cout << "VAO: " << primitive->vao << std::endl;
 			}
 			else
 			{
@@ -80,7 +80,6 @@ void processInput(GLFWwindow* window,bool* isWireframe, float deltaTime)
 			}
 		}
 	}
-
 
 	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
 	{
@@ -95,21 +94,24 @@ void processInput(GLFWwindow* window,bool* isWireframe, float deltaTime)
 		if(glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(RIGHT,deltaTime) , cameraReseted = true;
 		if(glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) camera.processKeyboard(DOWN,deltaTime) , cameraReseted = true;
 		if(glfwGetKey(window,GLFW_KEY_E) == GLFW_PRESS) camera.processKeyboard(UP,deltaTime) , cameraReseted = true;
-	}else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
+	}
+	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
 	{
-		if (rightKeyPressed) glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+		if (rightKeyPressed) 
+			glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
 		rightKeyPressed = false;
-
 	} 
 
-	if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) camera.speed = increasedSpeed;
-	else camera.speed = defaultSpeed;
+	if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+		camera.speed = increasedSpeed;
+	else 
+		camera.speed = defaultSpeed;
 
 	if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
 
 }
 
-float lastX = (float)(width / 2), lastY = (float) (height / 2);
+float lastX = (float)(WINDOW_WIDTH / 2), lastY = (float) (WINDOW_HEIGHT / 2);
 bool firstMouse = true;
 float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 
@@ -122,7 +124,7 @@ void mouseCallback(GLFWwindow* window, double xPos, double yPos)
 	}
 	mousePosx = xPos;
 	mousePosy = yPos;
-	glfwGetWindowSize(window,&width, &height);
+	glfwGetWindowSize(window,&WINDOW_WIDTH, &WINDOW_HEIGHT);
 	
 	float xOffset = (float)xPos - (float)lastX;
 	float yOffset = lastY - (float)yPos ;
@@ -136,80 +138,21 @@ void scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
 	camera.processMouseScroll((float)yOffset);
 }
 
-std::vector<float> vertices = {
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-	0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-	0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-	0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-	0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
-
-glm::vec3 cubePositions[] = {
-	glm::vec3( 0.0f,  0.0f,  0.0f), 
-	glm::vec3( 2.0f,  5.0f, -15.0f), 
-	glm::vec3(-1.5f, -2.2f, -2.5f),  
-	glm::vec3(-3.8f, -2.0f, -12.3f),  
-	glm::vec3( 2.4f, -0.4f, -3.5f),  
-	glm::vec3(-1.7f,  3.0f, -7.5f),  
-	glm::vec3( 1.3f, -2.0f, -2.5f),  
-	glm::vec3( 1.5f,  2.0f, -2.5f), 
-	glm::vec3( 1.5f,  0.2f, -1.5f), 
-	glm::vec3(-1.3f,  1.0f, -1.5f), 
-	
-};
-
-
-void framebufferSizeCallback(GLFWwindow* window, int32_t newWidth, int32_t newHeight)
+void framebufferSizeCallback(GLFWwindow* window, int32_t newWINDOW_WIDTH, int32_t newWINDOW_HEIGHT)
 {
-	width = newWidth;
-	height = newHeight;
-	glViewport(0, 0, width, height);
+	WINDOW_WIDTH = newWINDOW_WIDTH;
+	WINDOW_HEIGHT = newWINDOW_HEIGHT;
+	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
 std::string OpenFileDialog()
 {
-	OPENFILENAMEA ofn;             // common dialog box structure
+	OPENFILENAMEA ofn;
 	char fileName[260] = { 0 };    // buffer for file name
 
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = nullptr;       // Optionally set your window handle here
+	ofn.hwndOwner = nullptr;
 	ofn.lpstrFile = fileName;
 	ofn.nMaxFile = sizeof(fileName);
 
@@ -228,16 +171,28 @@ std::string OpenFileDialog()
 	return std::string();
 }
 
+uint32_t lightSSBO;
+
+void CreateLightSSBO() 
+{
+	glGenBuffers(1, &lightSSBO);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
+};
+
+template <typename T>
+void UpdateLights(std::vector<T>& lights)
+{
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, &lightSSBO);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(T), lights.data,GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+}
+
 void draw(GLFWwindow* window)
 {
 	std::string path = std::filesystem::absolute("..\\..\\res\\123_smooth.obj").string();
 	std::string tentPath = "..\\..\\res\\textures\\SciFiTent\\Tent.obj";
 	std::string boxPath = "..\\..\\res\\box.obj";
-
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-	glEnable(GL_STENCIL_TEST);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
 
 	std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\frag.glsl").string();
 	std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.glsl").string();
@@ -252,11 +207,26 @@ void draw(GLFWwindow* window)
 	Model cube(path.c_str(),cubeShader);
 	Model tent(tentPath.c_str(),cubeShader);
 	Model lightCube(boxPath.c_str(),lightShader);
-	
-	GLTFModel gltfTent("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf", cubeShader);
+
+	glm::mat4 model = glm::mat4(1.0f);
+
+	float lightIntensity = 1.0f;
+	glm::vec3 lightColor = glm::vec3(1.0f);
+	glm::mat4 lightmodel = glm::mat4(1.0f);
+
+	lightmodel = glm::translate(lightmodel, glm::vec3(0.0f, 5.0f, 0.0f));
+	lightmodel = glm::scale(lightmodel, glm::vec3(.1f));
+	cube.model = glm::scale(cube.model, glm::vec3(.1f));
+	cube.model = glm::translate(cube.model, glm::vec3(3.0f,.0f,10));
+	tent.model = glm::translate(tent.model, glm::vec3(0.0f,.0f,2));
+
+	//import
+	GLTFModel gltfTent(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), cubeShader);
 	gltfTent.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,3)));
-	GLTFModel gltfTent1("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf", cubeShader);
+
+	GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), cubeShader);
 	gltfTent1.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,4)));
+
 	ObjectManager::addPrimitives(gltfTent.primitives);
 	ObjectManager::addPrimitives(gltfTent1.primitives);
 
@@ -274,25 +244,21 @@ void draw(GLFWwindow* window)
 	float deltaTime = 0;
 
 
-	glm::mat4 model = glm::mat4(1.0f);
-
-	float lightIntensity = 1.0f;
-	glm::vec3 lightColor = glm::vec3(1.0f);
-	glm::mat4 lightmodel = glm::mat4(1.0f);
-
-	lightmodel = glm::translate(lightmodel, glm::vec3(0.0f, 5.0f, 0.0f));
-	lightmodel = glm::scale(lightmodel, glm::vec3(.1f));
-	cube.model = glm::scale(cube.model, glm::vec3(.1f));
-	cube.model = glm::translate(cube.model, glm::vec3(3.0f,.0f,10));
-	tent.model = glm::translate(tent.model, glm::vec3(0.0f,.0f,2));
 	float gamma = 1;
 	bool openFileDialog = false;
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
+	CreateLightSSBO();
+
 	while(!glfwWindowShouldClose(window))
 	{   
 		float time = (float)glfwGetTime();
 		deltaTime = time - lastFrame;
 		lastFrame = time;
-		processInput(window,&isWireframe,deltaTime);
+		processInput(window,isWireframe,deltaTime);
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -307,9 +273,10 @@ void draw(GLFWwindow* window)
 		{
 			ImGui::Begin("Object Inspector");
 			ImGui::DragFloat3("Position", glm::value_ptr(ObjectManager::selectedPrimitive->transform[3]));
-			ImGui::Image(ObjectManager::selectedPrimitive->material.diffuse.id, ImVec2(128, 128));
-			
-			if (ImGui::Button("Change Texture"))
+			ImGui::Image(ObjectManager::selectedPrimitive->material.diffuse.id, ImVec2(64, 64));
+			ImGui::SameLine();
+			ImGui::Image(ObjectManager::selectedPrimitive->material.specular.id, ImVec2(64, 64));
+			if (ImGui::Button("Diffuse"))
 			{
 				std::string filePath = OpenFileDialog();
 				if (!filePath.empty())
@@ -320,13 +287,34 @@ void draw(GLFWwindow* window)
 
 				}
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Specular"))
+			{
+				std::string filePath = OpenFileDialog();
+				if (!filePath.empty())
+				{
+					// Update the object's texture path
+					ObjectManager::selectedPrimitive->material.specular.type = "material.tSpecular1";
+					ObjectManager::selectedPrimitive->material.specular.SetPath(filePath);
+
+				}
+			}
 			ImGui::End();
 		}
 		lightmodel[3] = glm::vec4(lightPos, 1.0f);
 		ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
 		ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
 		ImGui::Checkbox("Wireframe Mode", &isWireframe);
-
+		if (ImGui::Button("Import Model"))
+		{	
+			std::string filePath = OpenFileDialog();
+			if(!filePath.empty())
+			{
+				GLTFModel model(filePath, cubeShader);
+				model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
+				ObjectManager::addPrimitives(model.primitives);
+			}
+		}
 		polygonMode = isWireframe ? GL_LINE : GL_FILL;
 		glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
 
@@ -355,10 +343,10 @@ void draw(GLFWwindow* window)
 		}
 		else cameraReseted = true;
 
-		glfwGetWindowSize(window,&width, &height);
-		if( width != 0 && height != 0) 
+		glfwGetWindowSize(window,&WINDOW_WIDTH, &WINDOW_HEIGHT);
+		if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
 		{
-			projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);	
+			projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);	
 			view = camera.getViewMatrix();
 		}
 
@@ -372,21 +360,7 @@ void draw(GLFWwindow* window)
 		lightCube.draw();
 
 		
-		ObjectManager::draw(camera,width,height);
-
-
-		cube.shader.use();
-		cube.shader.setMat4("projection",projection);
-		cube.shader.setMat4("view",view);
-		cube.shader.setVec3("viewPos", camera.position);
-		cube.shader.setVec3("light.position", lightmodel[3]);
-		cube.shader.setVec3("light.diffuse", lightColor);
-		cube.shader.setVec3("light.ambient", glm::vec3(0.05,0.1,0.2));
-		cube.shader.setVec3("light.specular", glm::vec3(1));
-		cube.shader.setFloat("light.intensity", lightIntensity);
-		cube.shader.setFloat("material.shininess", 32);
-		cube.shader.setFloat("gamma", gamma);
-		cube.draw();
+		ObjectManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
 
 		tent.shader.use();
 		tent.shader.setMat4("projection",projection);
@@ -400,8 +374,6 @@ void draw(GLFWwindow* window)
 		tent.shader.setFloat("material.shininess", 32);
 		tent.shader.setFloat("gamma", gamma);
 		tent.draw();
-
-
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -426,7 +398,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); 
 	
-	window = glfwCreateWindow(width, height, "Main Window", NULL, NULL);
+	window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Main Window", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;

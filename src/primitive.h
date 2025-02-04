@@ -19,18 +19,28 @@ struct Primitive
 
 	Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader shader, size_t indexCount, glm::mat4 transform)
 		: vao(vao), vbo(vbo), ebo(ebo), shader(shader), indexCount(indexCount), transform(transform),
-		outlineShader("..\\..\\src\\shaders\\outlineVert.glsl", "..\\..\\src\\shaders\\outlineFrag.glsl"), selected(false){}
+		outlineShader(std::filesystem::absolute("..\\..\\src\\shaders\\outlineVert.glsl").string(),
+						std::filesystem::absolute("..\\..\\src\\shaders\\outlineFrag.glsl").string()),
+							selected(false){};
 
 	Primitive(const Primitive&) = delete;
 	Primitive& operator=(const Primitive&) = delete;
 
 	Primitive(Primitive&& other) noexcept
-		: vao(other.vao), vbo(other.vbo), ebo(other.ebo), shader(std::move(other.shader)),
-		indexCount(other.indexCount), transform(other.transform), outlineShader("..\\..\\src\\shaders\\outlineVert.glsl", "..\\..\\src\\shaders\\outlineFrag.glsl"),selected(false) {
+		:vao(other.vao),
+		vbo(other.vbo),
+		ebo(other.ebo),
+		shader(std::move(other.shader)),
+		indexCount(other.indexCount),
+		transform(other.transform),
+		outlineShader(std::filesystem::absolute("..\\..\\src\\shaders\\outlineVert.glsl").string(),
+						std::filesystem::absolute("..\\..\\src\\shaders\\outlineFrag.glsl").string()),
+						selected(false) 
+		{
 		other.vao = 0;
 		other.vbo = 0;
 		other.ebo = 0;
-	}
+		}
 	
 	~Primitive()
 	{
@@ -53,7 +63,13 @@ struct Primitive
 			glActiveTexture(GL_TEXTURE1);
 			shader.setInt(material.diffuse.type, 1);
 			glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
-
+		}
+		if (material.specular.path != "")
+		{
+			glActiveTexture(GL_TEXTURE2);
+			shader.setInt(material.specular.type, 2);
+			glBindTexture(GL_TEXTURE_2D, material.specular.id);
+			shader.setInt("material.shininess", 32);
 		}
 		shader.setMat4("projection",projection);
 		shader.setMat4("view",view);
