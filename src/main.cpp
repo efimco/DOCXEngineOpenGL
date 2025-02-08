@@ -7,7 +7,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <commdlg.h> 
 
-#include "model.h"
 #include "objectManager.h"
 #include "objectPicking.h"
 
@@ -42,7 +41,7 @@ void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime)
 		glfwSetWindowShouldClose(window,true);
 
 	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && !wireframeKeyPressed)
-	{
+		{
 			wireframeKeyPressed = true;
 			isWireframe = !isWireframe;
 	}
@@ -80,6 +79,7 @@ void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime)
 			}
 		}
 	}
+
 
 	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
 	{
@@ -180,21 +180,15 @@ void CreateLightSSBO()
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
 };
 
-template <typename T>
-void UpdateLights(std::vector<T>& lights)
+void UpdateLights(std::vector<Light>& lights)
 {
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, &lightSSBO);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(T), lights.data,GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(Light), lights.data(), GL_DYNAMIC_DRAW);
 }
 
 void draw(GLFWwindow* window)
 {
-	std::string path = std::filesystem::absolute("..\\..\\res\\123_smooth.obj").string();
-	std::string tentPath = "..\\..\\res\\textures\\SciFiTent\\Tent.obj";
-	std::string boxPath = "..\\..\\res\\box.obj";
-
-	std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\frag.glsl").string();
+	std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\fragMultipleLights.glsl").string();
 	std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.glsl").string();
 
 	std::string fLightShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\fragLight.glsl").string();
@@ -204,21 +198,12 @@ void draw(GLFWwindow* window)
 	Shader tentShader (vShaderPath, fShaderPath);
 	Shader lightShader (vLightShaderPath, fLightShaderPath);
 
-	Model cube(path.c_str(),cubeShader);
-	Model tent(tentPath.c_str(),cubeShader);
-	Model lightCube(boxPath.c_str(),lightShader);
-
+	
 	glm::mat4 model = glm::mat4(1.0f);
 
 	float lightIntensity = 1.0f;
 	glm::vec3 lightColor = glm::vec3(1.0f);
 	glm::mat4 lightmodel = glm::mat4(1.0f);
-
-	lightmodel = glm::translate(lightmodel, glm::vec3(0.0f, 5.0f, 0.0f));
-	lightmodel = glm::scale(lightmodel, glm::vec3(.1f));
-	cube.model = glm::scale(cube.model, glm::vec3(.1f));
-	cube.model = glm::translate(cube.model, glm::vec3(3.0f,.0f,10));
-	tent.model = glm::translate(tent.model, glm::vec3(0.0f,.0f,2));
 
 	//import
 	GLTFModel gltfTent(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), cubeShader);
@@ -253,6 +238,20 @@ void draw(GLFWwindow* window)
 	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
 	CreateLightSSBO();
 
+	Light pointLight;
+	pointLight.type = 0;
+	pointLight.intensity = 1;
+	pointLight.position = glm::vec3(1.0f, 0.5f, 2.0f);
+	pointLight.ambient   = glm::vec3(0.05f);
+	pointLight.diffuse   = glm::vec3(0.8f);
+	pointLight.specular  = glm::vec3(1.0f);
+	pointLight.constant  = 1.0f;
+	pointLight.linear    = 0.09f;
+	pointLight.quadratic = 0.032f;
+	pointLight.cutOff    = glm::cos(glm::radians(12.5f));
+	pointLight.outerCutOff = glm::cos(glm::radians(17.5f));
+	ObjectManager::addLight(pointLight);
+	UpdateLights(ObjectManager::lights);
 	while(!glfwWindowShouldClose(window))
 	{   
 		float time = (float)glfwGetTime();
@@ -282,7 +281,7 @@ void draw(GLFWwindow* window)
 				if (!filePath.empty())
 				{
 					// Update the object's texture path
-					ObjectManager::selectedPrimitive->material.diffuse.type = "material.tDiffuse1";
+					ObjectManager::selectedPrimitive->material.diffuse.type = "tDiffuse";
 					ObjectManager::selectedPrimitive->material.diffuse.SetPath(filePath);
 
 				}
@@ -294,7 +293,7 @@ void draw(GLFWwindow* window)
 				if (!filePath.empty())
 				{
 					// Update the object's texture path
-					ObjectManager::selectedPrimitive->material.specular.type = "material.tSpecular1";
+					ObjectManager::selectedPrimitive->material.specular.type = "tSpecular";
 					ObjectManager::selectedPrimitive->material.specular.SetPath(filePath);
 
 				}
@@ -320,9 +319,6 @@ void draw(GLFWwindow* window)
 
 		if (ImGui::Button("Reload Shaders")) 
 		{
-			cube.shader.reload();
-			lightCube.shader.reload();
-			tent.shader.reload();
 			ObjectManager::reloadShaders();
 			std::cout << "Shaders reloaded successfully!" << std::endl;
 		}
@@ -351,30 +347,7 @@ void draw(GLFWwindow* window)
 		}
 
 		glStencilMask(0x00);
-		lightCube.shader.use();
-		lightCube.shader.setMat4("projection",projection);
-		lightCube.shader.setMat4("view",view);
-		lightCube.shader.setFloat("lightIntensity",lightIntensity);
-		lightCube.shader.setVec3("lightColor",lightColor);
-		lightCube.shader.setMat4("model",lightmodel);
-		lightCube.draw();
-
-		
 		ObjectManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
-
-		tent.shader.use();
-		tent.shader.setMat4("projection",projection);
-		tent.shader.setMat4("view",view);
-		tent.shader.setVec3("viewPos", camera.position);
-		tent.shader.setVec3("light.position", lightmodel[3]);
-		tent.shader.setVec3("light.diffuse", lightColor);
-		tent.shader.setVec3("light.ambient", glm::vec3(0.05,0.1,0.2));
-		tent.shader.setVec3("light.specular", glm::vec3(1));
-		tent.shader.setFloat("light.intensity", lightIntensity);
-		tent.shader.setFloat("material.shininess", 32);
-		tent.shader.setFloat("gamma", gamma);
-		tent.draw();
-
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

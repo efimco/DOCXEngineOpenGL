@@ -69,8 +69,8 @@ struct Mat
 	uint32_t roughnessStrength;
 
 	Mat() : 
-		diffuse("", "material.tDiffuse1"),
-		specular("", "material.tSpecular1"),
+		diffuse("", "tDiffuse"),
+		specular("", "tSpecular"),
 		metallic("", "material.tMetallic"),
 		Roughness("", "material.tRoughness"),
 		specularStrength(0),

@@ -1,12 +1,13 @@
 #pragma once
 #include <vector>
 #include "gltfImIporter.h"
-
+#include "light.h"
 class ObjectManager
 {
 	public:
 		static std::vector<Primitive> primitives;
 		static Primitive* selectedPrimitive;
+		static std::vector<Light> lights;
 		static void draw(Camera& camera, int32_t width, int32_t height) 
 		{
 			for (auto& primitive:primitives)
@@ -24,6 +25,11 @@ class ObjectManager
 			}
 		}
 		
+		static void addLight(Light& light)
+		{
+				lights.push_back(light);
+		}
+
 		static void reloadShaders()
 		{
 			for (auto& primitive: primitives)
@@ -36,5 +42,6 @@ class ObjectManager
 
 std::vector<Primitive> ObjectManager::primitives; 
 Primitive* ObjectManager::selectedPrimitive = nullptr;
+std::vector<Light> ObjectManager::lights;
 
 

@@ -101,6 +101,28 @@ public:
 						}
 					}
 				}
+				std::vector<float> normalData;
+				// --- Process Normal attribute ---
+				if (primitive.attributes.find("NORMAL") == primitive.attributes.end())
+				{
+					std::cerr << "No NORMAL attribute found in mesh " << mesh.name << std::endl;
+					continue;
+				}
+				const auto &normalAccessor = model.accessors[primitive.attributes.at("NORMAL")];
+				const auto &normalBufferView = model.bufferViews[normalAccessor.bufferView];
+				const auto &normalBuffer = model.buffers[normalBufferView.buffer];
+				const float* pNormalData = reinterpret_cast<const float*>(
+					normalBuffer.data.data() + normalBufferView.byteOffset + normalAccessor.byteOffset);
+
+				int normalComponents = (normalAccessor.type == TINYGLTF_TYPE_VEC3) ? 3 : 0;
+				normalData.reserve(normalAccessor.count * normalComponents);
+				for (size_t i = 0; i < normalAccessor.count; i++)
+				{
+					for (int j = 0; j < normalComponents; j++)
+					{
+						normalData.push_back(pNormalData[i * normalComponents + j]);
+					}
+				}
 
 				// --- Process indices if available ---
 				size_t indexCount = 0;
@@ -138,7 +160,7 @@ public:
 				if (hasTexCoords)
 				{
 					// Interleave positions and texture coordinates.
-					int strideComponents = posComponents + texComponents; // e.g., 3 + 2 = 5
+					int strideComponents = posComponents + texComponents + normalComponents; // e.g., 3 + 2 + 3 = 8
 					std::vector<float> interleavedData;
 					interleavedData.resize(vertexCount * strideComponents);
 					for (size_t i = 0; i < vertexCount; i++)
@@ -153,6 +175,11 @@ public:
 						{
 							interleavedData[i * strideComponents + posComponents + j] = texCoordData[i * texComponents + j];
 						}
+						// Copy normal data.
+						for (int j = 0; j < normalComponents; j++)
+						{
+							interleavedData[i * strideComponents + posComponents + texComponents + j] = normalData[i * normalComponents + j];
+						}
 					}
 					glCreateBuffers(1, &vbo);
 					glNamedBufferData(vbo, interleavedData.size() * sizeof(float),
@@ -165,9 +192,13 @@ public:
 					glVertexArrayAttribBinding(vao, 0, 0);
 
 					// Set attribute 1: texture coordinates (next texComponents floats).
+					glEnableVertexArrayAttrib(vao, 1);
+					glVertexArrayAttribFormat(vao, 1, texComponents, GL_FLOAT, GL_FALSE, sizeof(float) * posComponents);
+					glVertexArrayAttribBinding(vao, 1, 0);
+
+					// Set attribute 2: normal coordinates (next normalComponents floats).
 					glEnableVertexArrayAttrib(vao, 2);
-					glVertexArrayAttribFormat(vao, 2, texComponents, GL_FLOAT, GL_FALSE,
-											  sizeof(float) * posComponents);
+					glVertexArrayAttribFormat(vao, 2, normalComponents, GL_FLOAT, GL_FALSE, sizeof(float) * (posComponents + texComponents));
 					glVertexArrayAttribBinding(vao, 2, 0);
 				}
 				else

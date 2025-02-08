@@ -1,35 +1,21 @@
-#include <cstdint>
 #include "glm/glm.hpp"
 
-struct PointLight
+struct Light 
 {
-	uint32_t vao;
-	uint32_t vbo;
-	uint32_t ebo;
-	glm::mat4 transform;
+	int   type;
 	float intensity;
-	glm::vec3 color;
+	glm::vec3 position;
+	glm::vec3 direction;
+	glm::vec3 ambient; 
+	glm::vec3 diffuse; 
+	glm::vec3 specular;
+
+	// Attenuation 
+	float constant;
+	float linear;
+	float quadratic;
+
+	float cutOff;       // inner cone angle
+	float outerCutOff;  // outer cone angle
 };
 
-struct DirectionalLight
-{
-	uint32_t vao;
-	uint32_t vbo;
-	uint32_t ebo;
-	glm::mat4 transform;
-	glm::vec3 direction;
-	float intensity;
-	glm::vec3 color;
-};
-
-struct SpotLight
-{
-	uint32_t vao;
-	uint32_t vbo;
-	uint32_t ebo;
-	glm::mat4 transform;
-	glm::vec3 direction;
-	float cutOff; //Phi 
-	float intensity;
-	glm::vec3 color;
-};

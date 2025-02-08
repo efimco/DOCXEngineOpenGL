@@ -1,8 +1,6 @@
 #version 460 core
 out vec4 FragColor;
-layout (location = 0) out vec4 gPosition;
-layout (location = 1) out vec3 gNormal;
-layout (location = 2) out vec4 gAlbedoSpec;
+
 in vec2 TexCoords;
 in vec3 Normal;
 in vec3 FragPos;
@@ -11,12 +9,9 @@ in vec3 FragPos;
 uniform vec3 viewPos;
 uniform float gamma;
 
-struct Material 
-{
-	sampler2D tDiffuse1;
-	sampler2D tSpecular1;
-	float shininess;
-};
+uniform sampler2D tDiffuse;
+uniform sampler2D tSpecular;
+uniform float shininess;
 
 struct Light
 {
@@ -27,8 +22,12 @@ struct Light
 	vec3 specular;
 };
 
+layout(std430, binding = 0) buffer LightBuffer 
+{
+	Light lights[]; 
+};
+
 uniform Light light;
-uniform Material material;
 
 void main()
 {   
@@ -39,26 +38,24 @@ void main()
 	// and the diffuse per-fragment color, ignore specular
 	// gAlbedoSpec.rgb = vec3(0.95);
 	// ambient
-	vec3 ambient = light.ambient * texture(material.tDiffuse1, TexCoords).rgb;
+	vec3 ambient = light.ambient * texture(tDiffuse, TexCoords).rgb;
 
 	// diffuse 
-	//vec3 norm = normalize(Normal);
 	vec3 lightDir = normalize(light.position - FragPos);
 	float diff = max(dot(Normal, lightDir), 0.0);
-	vec3 diffuse = light.diffuse * diff * texture(material.tDiffuse1, TexCoords).rgb; 
-	if (texture(material.tSpecular1,TexCoords).r == 0)
+	vec3 diffuse = light.diffuse * diff * texture(tDiffuse, TexCoords).rgb; 
+	if (texture(tSpecular,TexCoords).r == 0)
 	{
 	vec3 diffuse = light.diffuse * diff * vec3(0.5); 
 	} 
-	// diffuse = pow(diffuse.rgb,vec3(1/gamma));
 	
 	// specular
 	vec3 viewDir = normalize( viewPos - FragPos);
 	vec3 halfwayDir  = normalize(lightDir + viewDir);   
 
 	float spec = pow(max(dot(Normal, halfwayDir), 0.0),8);
-	vec3 specular = light.specular * spec * texture(material.tSpecular1, TexCoords).rgb;
-	if (texture(material.tSpecular1,TexCoords).r == 0)
+	vec3 specular = light.specular * spec * texture(tSpecular, TexCoords).rgb;
+	if (texture(tSpecular,TexCoords).r == 0)
 	{
 		specular =  light.specular * spec * vec3(0);
 	} 
@@ -73,7 +70,7 @@ void main()
 	FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
 	FragColor = vec4(vec3(linearDepth),1);
 	// FragColor = vec4(1);
-	FragColor = texture(material.tDiffuse1,TexCoords);
+	FragColor = texture(tDiffuse,TexCoords);
 	// FragColor = vec4(TexCoords.xy,0,1);
 	
 } 

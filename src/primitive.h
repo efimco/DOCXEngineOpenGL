@@ -21,7 +21,7 @@ struct Primitive
 		: vao(vao), vbo(vbo), ebo(ebo), shader(shader), indexCount(indexCount), transform(transform),
 		outlineShader(std::filesystem::absolute("..\\..\\src\\shaders\\outlineVert.glsl").string(),
 						std::filesystem::absolute("..\\..\\src\\shaders\\outlineFrag.glsl").string()),
-							selected(false){};
+		selected(false){};
 
 	Primitive(const Primitive&) = delete;
 	Primitive& operator=(const Primitive&) = delete;
@@ -69,7 +69,7 @@ struct Primitive
 			glActiveTexture(GL_TEXTURE2);
 			shader.setInt(material.specular.type, 2);
 			glBindTexture(GL_TEXTURE_2D, material.specular.id);
-			shader.setInt("material.shininess", 32);
+			shader.setFloat("shininess", 32);
 		}
 		shader.setMat4("projection",projection);
 		shader.setMat4("view",view);
