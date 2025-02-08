@@ -258,72 +258,70 @@ void draw(GLFWwindow* window)
 		deltaTime = time - lastFrame;
 		lastFrame = time;
 		processInput(window,isWireframe,deltaTime);
-
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-		ImGui::Begin("Tools");
-		ImGui::ColorEdit4("BG Color", clearColor);
-		ImGui::ColorEdit3("LightColor", glm::value_ptr(lightColor));
-		ImGui::DragFloat("Light intensity", &lightIntensity);
-		glm::vec3 lightPos = glm::vec3(lightmodel[3]);
-		ImGui::DragFloat3("LightPos", glm::value_ptr(lightPos));
-		if(ObjectManager::selectedPrimitive != nullptr)
 		{
-			ImGui::Begin("Object Inspector");
-			ImGui::DragFloat3("Position", glm::value_ptr(ObjectManager::selectedPrimitive->transform[3]));
-			ImGui::Image(ObjectManager::selectedPrimitive->material.diffuse.id, ImVec2(64, 64));
-			ImGui::SameLine();
-			ImGui::Image(ObjectManager::selectedPrimitive->material.specular.id, ImVec2(64, 64));
-			if (ImGui::Button("Diffuse"))
+			ImGui_ImplOpenGL3_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
+			ImGui::Begin("Tools");
+			ImGui::ColorEdit4("BG Color", clearColor);
+			glm::vec3 lightPos = glm::vec3(lightmodel[3]);
+			if(ObjectManager::selectedPrimitive != nullptr)
 			{
-				std::string filePath = OpenFileDialog();
-				if (!filePath.empty())
+				ImGui::Begin("Object Inspector");
+				ImGui::DragFloat3("Position", glm::value_ptr(ObjectManager::selectedPrimitive->transform[3]));
+				ImGui::Image(ObjectManager::selectedPrimitive->material.diffuse.id, ImVec2(64, 64));
+				ImGui::SameLine();
+				ImGui::Image(ObjectManager::selectedPrimitive->material.specular.id, ImVec2(64, 64));
+				if (ImGui::Button("Diffuse"))
 				{
-					// Update the object's texture path
-					ObjectManager::selectedPrimitive->material.diffuse.type = "tDiffuse";
-					ObjectManager::selectedPrimitive->material.diffuse.SetPath(filePath);
+					std::string filePath = OpenFileDialog();
+					if (!filePath.empty())
+					{
+						// Update the object's texture path
+						ObjectManager::selectedPrimitive->material.diffuse.type = "tDiffuse";
+						ObjectManager::selectedPrimitive->material.diffuse.SetPath(filePath);
 
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Specular"))
+				{
+					std::string filePath = OpenFileDialog();
+					if (!filePath.empty())
+					{
+						// Update the object's texture path
+						ObjectManager::selectedPrimitive->material.specular.type = "tSpecular";
+						ObjectManager::selectedPrimitive->material.specular.SetPath(filePath);
+
+					}
+				}
+				ImGui::End();
+			}
+			ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
+			ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
+			ImGui::Checkbox("Wireframe Mode", &isWireframe);
+			if (ImGui::Button("Import Model"))
+			{	
+				std::string filePath = OpenFileDialog();
+				if(!filePath.empty())
+				{
+					GLTFModel model(filePath, cubeShader);
+					model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
+					ObjectManager::addPrimitives(model.primitives);
 				}
 			}
-			ImGui::SameLine();
-			if (ImGui::Button("Specular"))
-			{
-				std::string filePath = OpenFileDialog();
-				if (!filePath.empty())
-				{
-					// Update the object's texture path
-					ObjectManager::selectedPrimitive->material.specular.type = "tSpecular";
-					ObjectManager::selectedPrimitive->material.specular.SetPath(filePath);
+			polygonMode = isWireframe ? GL_LINE : GL_FILL;
+			glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
 
-				}
+			if (ImGui::Button("Reload Shaders")) 
+			{
+				UpdateLights(ObjectManager::lights);
+				ObjectManager::reloadShaders();
+				std::cout << "Shaders reloaded successfully!" << std::endl;
 			}
+
 			ImGui::End();
 		}
-		lightmodel[3] = glm::vec4(lightPos, 1.0f);
-		ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
-		ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
-		ImGui::Checkbox("Wireframe Mode", &isWireframe);
-		if (ImGui::Button("Import Model"))
-		{	
-			std::string filePath = OpenFileDialog();
-			if(!filePath.empty())
-			{
-				GLTFModel model(filePath, cubeShader);
-				model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
-				ObjectManager::addPrimitives(model.primitives);
-			}
-		}
-		polygonMode = isWireframe ? GL_LINE : GL_FILL;
-		glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
-
-		if (ImGui::Button("Reload Shaders")) 
-		{
-			ObjectManager::reloadShaders();
-			std::cout << "Shaders reloaded successfully!" << std::endl;
-		}
-
-		ImGui::End();
 
 		glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
