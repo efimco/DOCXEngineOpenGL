@@ -37,6 +37,7 @@ layout (std430, binding = 0) buffer LightBuffer {
 
 void main() {
 	vec3 result = vec3(0.0);
+	lights[0].intensity = 2;
 	for (int i = 0; i < lights.length(); i++) 
 	{
 		Light currentLight = lights[i];
@@ -46,7 +47,7 @@ void main() {
 			float diff = max(dot(Normal, lightDir), 0.0);
 
 			vec3 diffuse = vec3(currentLight.diffuse[0],currentLight.diffuse[1],currentLight.diffuse[2]) * diff * texture(tDiffuse, TexCoords).rgb;
-			if (texture(tDiffuse, TexCoords).r ==0)
+			if (texture(tDiffuse, TexCoords).r == 0)
 			{
 				 diffuse = vec3(currentLight.diffuse[0],currentLight.diffuse[1],currentLight.diffuse[2]) * diff * vec3(1);
 			}
@@ -55,7 +56,7 @@ void main() {
 			vec3 halfwayDir = normalize(lightDir + viewDir);
 			float spec = pow(max(dot(Normal, halfwayDir), 0.0), shininess);
 			vec3 specular = vec3(currentLight.specular[0],currentLight.specular[1],currentLight.specular[2]) * spec * texture(tSpecular, TexCoords).rgb;
-			if (texture(tSpecular, TexCoords).r ==0)
+			if (texture(tSpecular, TexCoords).r == 0)
 			{
 				specular = vec3(currentLight.specular[0],currentLight.specular[1],currentLight.specular[2]) * spec * diff * vec3(0.25);
 			}

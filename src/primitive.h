@@ -21,7 +21,7 @@ struct Primitive
 		: vao(vao), vbo(vbo), ebo(ebo), shader(shader), indexCount(indexCount), transform(transform),
 		outlineShader(std::filesystem::absolute("..\\..\\src\\shaders\\outlineVert.glsl").string(),
 						std::filesystem::absolute("..\\..\\src\\shaders\\outlineFrag.glsl").string()),
-		selected(false){};
+		selected(false), material(){};
 
 	Primitive(const Primitive&) = delete;
 	Primitive& operator=(const Primitive&) = delete;
@@ -51,8 +51,6 @@ struct Primitive
 	
 	void draw(Camera& camera, int32_t width, int32_t height)
 	{
-		glActiveTexture(GL_TEXTURE0);
-
 		const auto view = camera.getViewMatrix();
 		const auto projection = glm::perspective(glm::radians(camera.zoom), float(width == 0 ? 1 : width)/float(height == 0 ? 1 : height),0.1f, 100.0f);	
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
@@ -60,16 +58,15 @@ struct Primitive
 		shader.use();
 		if (material.diffuse.path != "")
 		{
-			glActiveTexture(GL_TEXTURE1);
 			shader.setInt(material.diffuse.type, 1);
-			glBindTexture(GL_TEXTURE_2D, material.diffuse.id);
+			glBindTextureUnit(1, material.diffuse.id);
 		}
 		if (material.specular.path != "")
 		{
-			glActiveTexture(GL_TEXTURE2);
 			shader.setInt(material.specular.type, 2);
-			glBindTexture(GL_TEXTURE_2D, material.specular.id);
 			shader.setFloat("shininess", 32);
+			glBindTextureUnit(2, material.specular.id);
+
 		}
 		shader.setMat4("projection",projection);
 		shader.setMat4("view",view);
@@ -80,13 +77,11 @@ struct Primitive
 		glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
 		int indexSize = eboSize / sizeof(int);
 		glDrawElements(GL_TRIANGLES,indexSize,GL_UNSIGNED_INT,(void*)0);
-
+		glActiveTexture(GL_TEXTURE0);
 		if (selected == true)
 		{
 			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 			glStencilMask(0x00); 
-			glEnable(GL_POLYGON_OFFSET_FILL);
-			glPolygonOffset(-1.0f, -1.0f);
 			float camDistancece = (float)glm::length(camera.position - glm::vec3(transform[3]));
 			float outlineScale = 1.025f;
 			scaledTransform = glm::scale(transform, glm::vec3(outlineScale));
@@ -97,11 +92,10 @@ struct Primitive
 			glDrawElements(GL_TRIANGLES,indexSize,GL_UNSIGNED_INT,(void*)0);
 			glStencilMask(0xFF);
 			glStencilFunc(GL_ALWAYS, 1, 0xFF); 
-			glDisable(GL_POLYGON_OFFSET_FILL);
+			glActiveTexture(GL_TEXTURE0);
 		}
 		
 		glBindVertexArray(0);
-		glActiveTexture(GL_TEXTURE0);
 	}
 	private:
 			glm::mat4 scaledTransform;

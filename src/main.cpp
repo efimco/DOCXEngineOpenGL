@@ -1,394 +1,506 @@
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <windows.h>
+	#define GLM_ENABLE_EXPERIMENTAL
+	#include <glad/glad.h>
+	#include <GLFW/glfw3.h>
+	#include <windows.h>
 
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <commdlg.h> 
+	#include <glm/gtc/matrix_transform.hpp>
+	#include <glm/gtc/type_ptr.hpp>
+	#include <commdlg.h> 
 
-#include "objectManager.h"
-#include "objectPicking.h"
+	#include "objectManager.h"
+	#include "objectPicking.h"
 
-#include <ImGui/imgui.h>
-#include <ImGui/imgui_impl_glfw.h>
-#include <ImGui/imgui_impl_opengl3.h>
-#include <ImGui/imgui_internal.h>
+	#include <ImGui/imgui.h>
+	#include <ImGui/imgui_impl_glfw.h>
+	#include <ImGui/imgui_impl_opengl3.h>
+	#include <ImGui/imgui_internal.h>
 
-#include <filesystem>
+	#include <filesystem>
 
 
-int32_t WINDOW_WIDTH = 1024;
-int32_t WINDOW_HEIGHT = 1024;
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+	int32_t WINDOW_WIDTH = 1024;
+	int32_t WINDOW_HEIGHT = 1024;
+	Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
-bool wireframeKeyPressed = false;
-bool rightKeyPressed = false;
-float increasedSpeed = camera.speed *3;
-float defaultSpeed = camera.speed;
+	bool wireframeKeyPressed = false;
+	bool rightKeyPressed = false;
+	float increasedSpeed = camera.speed *3;
+	float defaultSpeed = camera.speed;
 
-std::vector<glm::vec3> defaultCameraMatrix = {camera.position, camera.front, camera.up};
-float defaultCameraRotation[] = {camera.pitch, camera.yaw};
-bool cameraReseted = true;
+	std::vector<glm::vec3> defaultCameraMatrix = {camera.position, camera.front, camera.up};
+	float defaultCameraRotation[] = {camera.pitch, camera.yaw};
+	bool cameraReseted = true;
 
-double mousePosx, mousePosy;
-glm::mat4 view = glm::mat4(1.0f);
-glm::mat4 projection = glm::mat4(1.0f);
+	double mousePosx, mousePosy;
+	glm::mat4 view = glm::mat4(1.0f);
+	glm::mat4 projection = glm::mat4(1.0f);
 
-void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime)
-{
-	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window,true);
-
-	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && !wireframeKeyPressed)
-		{
-			wireframeKeyPressed = true;
-			isWireframe = !isWireframe;
-	}
-
-	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE)
-		wireframeKeyPressed = false;
-
-	static bool wasMousePressed = false;
-	if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
+	void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime)
 	{
-		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse) wasMousePressed = true;
-		else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMousePressed)
+		if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+			glfwSetWindowShouldClose(window,true);
+
+		if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && !wireframeKeyPressed)
+			{
+				wireframeKeyPressed = true;
+				isWireframe = !isWireframe;
+		}
+
+		if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE)
+			wireframeKeyPressed = false;
+
+		static bool wasMousePressed = false;
+		if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
 		{
-			wasMousePressed = false;
-			projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);    
-			view = camera.getViewMatrix();
-			Primitive* primitive = PickObject(mousePosx, mousePosy, WINDOW_WIDTH, WINDOW_HEIGHT,projection,view,camera.position, ObjectManager::primitives);
-			if (primitive != nullptr)
+			if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse) wasMousePressed = true;
+			else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMousePressed)
 			{
-				if (ObjectManager::selectedPrimitive != primitive)
+				wasMousePressed = false;
+				projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);    
+				view = camera.getViewMatrix();
+				Primitive* primitive = PickObject(mousePosx, mousePosy, WINDOW_WIDTH, WINDOW_HEIGHT,projection,view,camera.position, ObjectManager::primitives);
+				if (primitive != nullptr)
 				{
-					if (ObjectManager::selectedPrimitive != nullptr) ObjectManager::selectedPrimitive->selected = false;
-					primitive->selected = true;
-					ObjectManager::selectedPrimitive = primitive;
+					if (ObjectManager::selectedPrimitive != primitive)
+					{
+						if (ObjectManager::selectedPrimitive != nullptr) ObjectManager::selectedPrimitive->selected = false;
+						primitive->selected = true;
+						ObjectManager::selectedPrimitive = primitive;
+					}
+					std::cout << "VAO: " << primitive->vao << std::endl;
 				}
-				std::cout << "VAO: " << primitive->vao << std::endl;
-			}
-			else
-			{
-				if (ObjectManager::selectedPrimitive != nullptr)
+				else
 				{
-					ObjectManager::selectedPrimitive->selected = false;
-					ObjectManager::selectedPrimitive = nullptr;
+					if (ObjectManager::selectedPrimitive != nullptr)
+					{
+						ObjectManager::selectedPrimitive->selected = false;
+						ObjectManager::selectedPrimitive = nullptr;
+					}
 				}
 			}
 		}
-	}
 
 
-	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
-	{
-		if (!rightKeyPressed)
+		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
 		{
-			rightKeyPressed = true;
-			glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+			if (!rightKeyPressed)
+			{
+				rightKeyPressed = true;
+				glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+			}
+			if(glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard(FORWARD,deltaTime) , cameraReseted = true;
+			if(glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard(BACKWARD,deltaTime) , cameraReseted = true;
+			if(glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard(LEFT,deltaTime) , cameraReseted = true;
+			if(glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(RIGHT,deltaTime) , cameraReseted = true;
+			if(glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) camera.processKeyboard(DOWN,deltaTime) , cameraReseted = true;
+			if(glfwGetKey(window,GLFW_KEY_E) == GLFW_PRESS) camera.processKeyboard(UP,deltaTime) , cameraReseted = true;
 		}
-		if(glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard(FORWARD,deltaTime) , cameraReseted = true;
-		if(glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard(BACKWARD,deltaTime) , cameraReseted = true;
-		if(glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard(LEFT,deltaTime) , cameraReseted = true;
-		if(glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(RIGHT,deltaTime) , cameraReseted = true;
-		if(glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) camera.processKeyboard(DOWN,deltaTime) , cameraReseted = true;
-		if(glfwGetKey(window,GLFW_KEY_E) == GLFW_PRESS) camera.processKeyboard(UP,deltaTime) , cameraReseted = true;
+		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
+		{
+			if (rightKeyPressed) 
+				glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+			rightKeyPressed = false;
+		} 
+
+		if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+			camera.speed = increasedSpeed;
+		else 
+			camera.speed = defaultSpeed;
+
+		if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
+
+
+		if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) ObjectManager::reloadShaders();
+
 	}
-	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
+
+	float lastX = (float)(WINDOW_WIDTH / 2), lastY = (float) (WINDOW_HEIGHT / 2);
+	bool firstMouse = true;
+	float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
+
+	void mouseCallback(GLFWwindow* window, double xPos, double yPos)
 	{
-		if (rightKeyPressed) 
-			glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
-		rightKeyPressed = false;
-	} 
-
-	if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-		camera.speed = increasedSpeed;
-	else 
-		camera.speed = defaultSpeed;
-
-	if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
-
-}
-
-float lastX = (float)(WINDOW_WIDTH / 2), lastY = (float) (WINDOW_HEIGHT / 2);
-bool firstMouse = true;
-float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
-
-void mouseCallback(GLFWwindow* window, double xPos, double yPos)
-{
-	if (firstMouse)
-	{	lastX = (float)xPos;
+		if (firstMouse)
+		{	lastX = (float)xPos;
+			lastY = (float)yPos;
+			firstMouse = false;
+		}
+		mousePosx = xPos;
+		mousePosy = yPos;
+		glfwGetWindowSize(window,&WINDOW_WIDTH, &WINDOW_HEIGHT);
+		
+		float xOffset = (float)xPos - (float)lastX;
+		float yOffset = lastY - (float)yPos ;
+		lastX = (float)xPos;
 		lastY = (float)yPos;
-		firstMouse = false;
+		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) camera.processMouseMovement(xOffset,yOffset);
 	}
-	mousePosx = xPos;
-	mousePosy = yPos;
-	glfwGetWindowSize(window,&WINDOW_WIDTH, &WINDOW_HEIGHT);
-	
-	float xOffset = (float)xPos - (float)lastX;
-	float yOffset = lastY - (float)yPos ;
-	lastX = (float)xPos;
-	lastY = (float)yPos;
-	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) camera.processMouseMovement(xOffset,yOffset);
-}
 
-void scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
-{
-	camera.processMouseScroll((float)yOffset);
-}
-
-void framebufferSizeCallback(GLFWwindow* window, int32_t newWINDOW_WIDTH, int32_t newWINDOW_HEIGHT)
-{
-	WINDOW_WIDTH = newWINDOW_WIDTH;
-	WINDOW_HEIGHT = newWINDOW_HEIGHT;
-	glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-}
-
-std::string OpenFileDialog()
-{
-	OPENFILENAMEA ofn;
-	char fileName[260] = { 0 };    // buffer for file name
-
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = nullptr;
-	ofn.lpstrFile = fileName;
-	ofn.nMaxFile = sizeof(fileName);
-
-	// Filter: display image files by default (you can adjust as needed)
-	ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.jpeg;*.bmp\0All Files\0*.*\0";
-	ofn.nFilterIndex = 1;
-	ofn.lpstrTitle = "Select a Texture";
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-	// Open the dialog box
-	if (GetOpenFileNameA(&ofn) == TRUE)
+	void scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
 	{
-		return std::string(ofn.lpstrFile);
+		camera.processMouseScroll((float)yOffset);
 	}
 
-	return std::string();
-}
+	
 
-uint32_t lightSSBO;
+	std::string OpenFileDialog()
+	{
+		OPENFILENAMEA ofn;
+		char fileName[260] = { 0 };    // buffer for file name
 
-void CreateLightSSBO() 
-{
-	glGenBuffers(1, &lightSSBO);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
-};
+		ZeroMemory(&ofn, sizeof(ofn));
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = nullptr;
+		ofn.lpstrFile = fileName;
+		ofn.nMaxFile = sizeof(fileName);
 
-void UpdateLights(std::vector<Light>& lights)
-{
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(Light), lights.data(), GL_DYNAMIC_DRAW);
-}
+		// Filter: display image files by default (you can adjust as needed)
+		ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.jpeg;*.bmp\0All Files\0*.*\0";
+		ofn.nFilterIndex = 1;
+		ofn.lpstrTitle = "Select a Texture";
+		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
-void draw(GLFWwindow* window)
-{
+		// Open the dialog box
+		if (GetOpenFileNameA(&ofn) == TRUE)
+		{
+			return std::string(ofn.lpstrFile);
+		}
+
+		return std::string();
+	}
+
+	uint32_t lightSSBO;
+
+	void CreateLightSSBO() 
+	{
+		glGenBuffers(1, &lightSSBO);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
+	};
+
+	void UpdateLights(std::vector<Light>& lights)
+	{
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(Light), lights.data(), GL_DYNAMIC_DRAW);
+	}
+
+
+	float quadVertices[] = { 
+		// positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
+		1.0f,  1.0f,  1.0f, 1.0f
+	};
+
+	uint32_t quadVAO, quadVBO;
+	void initScreenQuad()
+	{
+		glCreateVertexArrays(1, &quadVAO);
+		glCreateBuffers(1, &quadVBO);
+		glNamedBufferData(quadVBO, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glVertexArrayVertexBuffer(quadVAO, 0, quadVBO, 0, sizeof(float) * 4);
+
+		glEnableVertexArrayAttrib(quadVAO, 0);
+		glVertexArrayAttribFormat(quadVAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribBinding(quadVAO, 0, 0);
+
+		glEnableVertexArrayAttrib(quadVAO, 1);
+		glVertexArrayAttribFormat(quadVAO, 1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2);
+		glVertexArrayAttribBinding(quadVAO, 1, 0);
+
+	}
+	uint32_t fbo,textureColorbuffer,rbo;
+	void initFrameBufferAndRenderTarget()
+	{
+		glGenFramebuffers(1, &fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+		glGenTextures(1, &textureColorbuffer);
+		glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+		glBindTexture(GL_TEXTURE_2D, GL_TEXTURE0);
+
+		glGenRenderbuffers(1, &rbo);
+		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT); // use a single renderbuffer object for both a depth AND stencil buffer.
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	}
+
+	void framebufferSizeCallback(GLFWwindow* window, int32_t newWINDOW_WIDTH, int32_t newWINDOW_HEIGHT)
+	{
+		WINDOW_WIDTH = newWINDOW_WIDTH;
+		WINDOW_HEIGHT = newWINDOW_HEIGHT;
+		glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+		glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+
+		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+
 	std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\fragMultipleLights.glsl").string();
 	std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.glsl").string();
 
-	std::string fLightShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\fragLight.glsl").string();
-	std::string vLightShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertLight.glsl").string();
+	std::string fScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame_frag.glsl").string();
+	std::string vScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame_vert.glsl").string();
 
-	Shader cubeShader (vShaderPath, fShaderPath);
-	Shader tentShader (vShaderPath, fShaderPath);
-	Shader lightShader (vLightShaderPath, fLightShaderPath);
-
-	
-	glm::mat4 model = glm::mat4(1.0f);
-
-	float lightIntensity = 1.0f;
 	glm::vec3 lightColor = glm::vec3(1.0f);
 	glm::mat4 lightmodel = glm::mat4(1.0f);
 
-	//import
-	GLTFModel gltfTent(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), cubeShader);
-	gltfTent.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,3)));
-
-	GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), cubeShader);
-	gltfTent1.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,4)));
-
-	ObjectManager::addPrimitives(gltfTent.primitives);
-	ObjectManager::addPrimitives(gltfTent1.primitives);
-
-	//imgui
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	ImGui::StyleColorsDark();
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL3_Init("#version 460");
-
+	float lightIntensity = 1.0f;
+	glm::mat4 model = glm::mat4(1.0f);
 	GLenum polygonMode = GL_FILL;
-	static bool isWireframe = false;
+	bool isWireframe = false;
 
 	float lastFrame = 0;
 	float deltaTime = 0;
 
-
 	float gamma = 1;
 	bool openFileDialog = false;
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-	glEnable(GL_STENCIL_TEST);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
-	CreateLightSSBO();
+	void draw(GLFWwindow* window)
+	{
+		Shader tentShader (vShaderPath, fShaderPath);
+		Shader screenShader(vScreenShader,fScreenShader);
 
-	Light pointLight;
-	pointLight.type = 0;
-	pointLight.intensity = 1;
-	pointLight.position = glm::vec3(1.0f, 0.5f, 2.0f);
-	pointLight.ambient   = glm::vec3(0.05f);
-	pointLight.diffuse   = glm::vec3(0.8f);
-	pointLight.specular  = glm::vec3(1.0f);
-	pointLight.constant  = 1.0f;
-	pointLight.linear    = 0.09f;
-	pointLight.quadratic = 0.032f;
-	pointLight.cutOff    = glm::cos(glm::radians(12.5f));
-	pointLight.outerCutOff = glm::cos(glm::radians(17.5f));
-	ObjectManager::addLight(pointLight);
-	UpdateLights(ObjectManager::lights);
-	while(!glfwWindowShouldClose(window))
-	{   
-		float time = (float)glfwGetTime();
-		deltaTime = time - lastFrame;
-		lastFrame = time;
-		processInput(window,isWireframe,deltaTime);
-		{
-			ImGui_ImplOpenGL3_NewFrame();
-			ImGui_ImplGlfw_NewFrame();
-			ImGui::NewFrame();
-			ImGui::Begin("Tools");
-			ImGui::ColorEdit4("BG Color", clearColor);
-			glm::vec3 lightPos = glm::vec3(lightmodel[3]);
-			if(ObjectManager::selectedPrimitive != nullptr)
+		initScreenQuad();
+		initFrameBufferAndRenderTarget();
+
+		//import
+		GLTFModel gltfTent(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), tentShader);
+		gltfTent.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,3)));
+
+		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), tentShader);
+		gltfTent1.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,4)));
+
+		ObjectManager::addPrimitives(gltfTent.primitives);
+		ObjectManager::addPrimitives(gltfTent1.primitives);
+
+		//imgui
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO();
+		ImGui::StyleColorsDark();
+		ImGui_ImplGlfw_InitForOpenGL(window, true);
+		ImGui_ImplOpenGL3_Init("#version 460");
+
+		CreateLightSSBO();
+
+		{ // lights
+			Light pointLight;
+			pointLight.type = 0;
+			pointLight.intensity = 1;
+			pointLight.position = glm::vec3(1.0f, 0.5f, 2.0f);
+			pointLight.ambient   = glm::vec3(0.05f);
+			pointLight.diffuse   = glm::vec3(0.8f);
+			pointLight.specular  = glm::vec3(1.0f);
+			pointLight.constant  = 1.0f;
+			pointLight.linear    = 0.09f;
+			pointLight.quadratic = 0.032f;
+			pointLight.cutOff    = glm::cos(glm::radians(12.5f));
+			pointLight.outerCutOff = glm::cos(glm::radians(17.5f));
+
+			Light pointLight2;
+			pointLight2.type = 0;
+			pointLight2.intensity = 0.1f;
+			pointLight2.position = glm::vec3(1.0f, 0.5f, 5.0f);
+			pointLight2.ambient   = glm::vec3(0.05f);
+			pointLight2.diffuse   = glm::vec3(0.8f);
+			pointLight2.specular  = glm::vec3(1.0f);
+			pointLight2.constant  = 1.0f;
+			pointLight2.linear    = 0.09f;
+			pointLight2.quadratic = 0.032f;
+			pointLight2.cutOff    = glm::cos(glm::radians(12.5f));
+			pointLight.outerCutOff = glm::cos(glm::radians(17.5f));
+
+			ObjectManager::addLight(pointLight);
+			ObjectManager::addLight(pointLight2);
+			UpdateLights(ObjectManager::lights);
+		}
+
+		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+		screenShader.use();
+		screenShader.setInt("screenTexture", 0);
+
+		while(!glfwWindowShouldClose(window))
+		{   
+			glBindTexture(GL_TEXTURE_2D, 0);
+			float time = (float)glfwGetTime();
+			
+			deltaTime = time - lastFrame;
+			lastFrame = time;
+			processInput(window,isWireframe,deltaTime);
+			
+			//camera interpolated reset
+			if(!cameraReseted && glm::length(camera.position - defaultCameraMatrix[0]) > .01 )
+			{	
+				float speed = 10 * deltaTime;
+				camera.position = glm::mix(camera.position, defaultCameraMatrix[0], speed);
+				camera.front = glm::mix(camera.front, defaultCameraMatrix[1], speed);
+				camera.up = glm::mix(camera.up, defaultCameraMatrix[2], speed);
+				camera.pitch = glm::mix(camera.pitch, defaultCameraRotation[0], speed);
+				camera.yaw = glm::mix(camera.yaw, defaultCameraRotation[1], speed);
+			}
+			else cameraReseted = true; 
+
+			//imgui
 			{
-				ImGui::Begin("Object Inspector");
-				ImGui::DragFloat3("Position", glm::value_ptr(ObjectManager::selectedPrimitive->transform[3]));
-				ImGui::Image(ObjectManager::selectedPrimitive->material.diffuse.id, ImVec2(64, 64));
-				ImGui::SameLine();
-				ImGui::Image(ObjectManager::selectedPrimitive->material.specular.id, ImVec2(64, 64));
-				if (ImGui::Button("Diffuse"))
+				ImGui_ImplOpenGL3_NewFrame();
+				ImGui_ImplGlfw_NewFrame();
+				ImGui::NewFrame();
+				ImGui::Begin("Tools");
+				ImGui::ColorEdit4("BG Color", clearColor);
+				glm::vec3 lightPos = glm::vec3(lightmodel[3]);
+				if(ObjectManager::selectedPrimitive != nullptr)
 				{
-					std::string filePath = OpenFileDialog();
-					if (!filePath.empty())
+					ImGui::Begin("Object Inspector");
+					ImGui::DragFloat3("Position", glm::value_ptr(ObjectManager::selectedPrimitive->transform[3]));
+					ImGui::Image(ObjectManager::selectedPrimitive->material.diffuse.id, ImVec2(64, 64));
+					ImGui::SameLine();
+					ImGui::Image(ObjectManager::selectedPrimitive->material.specular.id, ImVec2(64, 64));
+					if (ImGui::Button("Diffuse"))
 					{
-						// Update the object's texture path
-						ObjectManager::selectedPrimitive->material.diffuse.type = "tDiffuse";
-						ObjectManager::selectedPrimitive->material.diffuse.SetPath(filePath);
+						std::string filePath = OpenFileDialog();
+						if (!filePath.empty())
+						{
+							// Update the object's texture path
+							ObjectManager::selectedPrimitive->material.diffuse.type = "tDiffuse";
+							ObjectManager::selectedPrimitive->material.diffuse.SetPath(filePath);
+							glActiveTexture(GL_TEXTURE0);
 
+						}
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Specular"))
+					{
+						std::string filePath = OpenFileDialog();
+						if (!filePath.empty())
+						{
+							// Update the object's texture path
+							ObjectManager::selectedPrimitive->material.specular.type = "tSpecular";
+							ObjectManager::selectedPrimitive->material.specular.SetPath(filePath);
+							glActiveTexture(GL_TEXTURE0);
+
+						}
+					}
+					ImGui::End();
+				}
+				ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
+				ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
+				ImGui::Checkbox("Wireframe Mode", &isWireframe);
+				if (ImGui::Button("Import Model"))
+				{	
+					std::string filePath = OpenFileDialog();
+					if(!filePath.empty())
+					{
+						GLTFModel model(filePath, tentShader);
+						model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
+						ObjectManager::addPrimitives(model.primitives);
 					}
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("Specular"))
+				polygonMode = isWireframe ? GL_LINE : GL_FILL;
+				glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
+				if (ImGui::Button("Reload Shaders")) 
 				{
-					std::string filePath = OpenFileDialog();
-					if (!filePath.empty())
-					{
-						// Update the object's texture path
-						ObjectManager::selectedPrimitive->material.specular.type = "tSpecular";
-						ObjectManager::selectedPrimitive->material.specular.SetPath(filePath);
-
-					}
+					ObjectManager::reloadShaders();
+					screenShader.reload();
+					UpdateLights(ObjectManager::lights);
+					std::cout << "Shaders reloaded successfully!" << std::endl;
 				}
 				ImGui::End();
 			}
-			ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
-			ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
-			ImGui::Checkbox("Wireframe Mode", &isWireframe);
-			if (ImGui::Button("Import Model"))
-			{	
-				std::string filePath = OpenFileDialog();
-				if(!filePath.empty())
-				{
-					GLTFModel model(filePath, cubeShader);
-					model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
-					ObjectManager::addPrimitives(model.primitives);
-				}
-			}
-			polygonMode = isWireframe ? GL_LINE : GL_FILL;
-			glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
 
-			if (ImGui::Button("Reload Shaders")) 
+			glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LESS);
+			glEnable(GL_STENCIL_TEST);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
+			glStencilMask(0x00);
+
+			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+			glfwGetWindowSize(window, &WINDOW_WIDTH, &WINDOW_HEIGHT);
+			if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
 			{
-				UpdateLights(ObjectManager::lights);
-				ObjectManager::reloadShaders();
-				std::cout << "Shaders reloaded successfully!" << std::endl;
+				projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);	
+				view = camera.getViewMatrix();
 			}
 
-			ImGui::End();
+			ObjectManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
+			
+
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glDisable(GL_DEPTH_TEST);
+			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			
+			screenShader.use();  
+			glBindVertexArray(quadVAO);
+			glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+			glDrawArrays(GL_TRIANGLES, 0, 6);  
+			ImGui::Render();
+			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+			glfwSwapBuffers(window);
+			glfwPollEvents();    
 		}
 
-		glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+	}
 
-		if(!cameraReseted && glm::length(camera.position - defaultCameraMatrix[0]) > .01 )
-		{	
-			float speed = 10 * deltaTime;
-			camera.position = glm::mix(camera.position, defaultCameraMatrix[0], speed);
-			camera.front = glm::mix(camera.front, defaultCameraMatrix[1], speed);
-			camera.up = glm::mix(camera.up, defaultCameraMatrix[2], speed);
-			camera.pitch = glm::mix(camera.pitch, defaultCameraRotation[0], speed);
-			camera.yaw = glm::mix(camera.yaw, defaultCameraRotation[1], speed);
-		}
-		else cameraReseted = true;
 
-		glfwGetWindowSize(window,&WINDOW_WIDTH, &WINDOW_HEIGHT);
-		if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
+	int main()	
+	{
+		GLFWwindow* window;
+		glfwInit();
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+		// glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); 
+		
+		window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Main Window", NULL, NULL);
+		if (window == NULL)
 		{
-			projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);	
-			view = camera.getViewMatrix();
+			std::cout << "Failed to create GLFW window" << std::endl;
+			glfwTerminate();
+			return -1;
 		}
 
-		glStencilMask(0x00);
-		ObjectManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+		glfwSetCursorPosCallback(window, mouseCallback);  
+		glfwSetScrollCallback(window,scrollCallback);  
+		glfwMakeContextCurrent(window);
 
-		glfwSwapBuffers(window);
-		glfwPollEvents();    
-	}
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+		{
+			std::cout << "Failed to initialize GLAD" << std::endl;
+			return -1;
+		}
 
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
-}
+		draw(window);
 
-
-int main()	
-{
-	GLFWwindow* window;
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	// glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); 
-	
-	window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Main Window", NULL, NULL);
-	if (window == NULL)
-	{
-		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
-		return -1;
+		return 0;
 	}
-
-	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-	glfwSetCursorPosCallback(window, mouseCallback);  
-	glfwSetScrollCallback(window,scrollCallback);  
-	glfwMakeContextCurrent(window);
-
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		std::cout << "Failed to initialize GLAD" << std::endl;
-		return -1;
-	}
-	draw(window);
-
-	glfwTerminate();
-	return 0;
-}

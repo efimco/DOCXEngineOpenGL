@@ -2,46 +2,41 @@
 #include <vector>
 #include "gltfImIporter.h"
 #include "light.h"
-class ObjectManager
+namespace ObjectManager
 {
-	public:
-		static std::vector<Primitive> primitives;
-		static Primitive* selectedPrimitive;
-		static std::vector<Light> lights;
-		static void draw(Camera& camera, int32_t width, int32_t height) 
-		{
-			for (auto& primitive:primitives)
-			{	
-				primitive.draw(camera, width, height);
-				
-			}
-		}
+	static Primitive* selectedPrimitive;
+	static std::vector<Light> lights;
+	static std::vector<Primitive> primitives;
 
-		static void addPrimitives(std::vector<Primitive>& Primitives)
-		{
-			for (auto& primitive : Primitives)
-			{
-				primitives.push_back(std::move(primitive)); 
-			}
+	static void draw(Camera& camera, int32_t width, int32_t height) 
+	{
+		for (auto& primitive:primitives)
+		{	
+			primitive.draw(camera, width, height);
+			
 		}
-		
-		static void addLight(Light& light)
-		{
-				lights.push_back(light);
-		}
+	}
 
-		static void reloadShaders()
+	static void addPrimitives(std::vector<Primitive>& Primitives)
+	{
+		for (auto& primitive : Primitives)
 		{
-			for (auto& primitive: primitives)
-			{
-				primitive.shader.reload();
-			}
+			primitives.push_back(std::move(primitive)); 
 		}
+	}
+	
+	static void addLight(Light& light)
+	{
+			lights.push_back(std::move(light));
+	}
 
+	static void reloadShaders()
+	{
+		for (auto& primitive: primitives)
+		{
+			primitive.shader.reload();
+			
+		}
+	}
+	
 };
-
-std::vector<Primitive> ObjectManager::primitives; 
-Primitive* ObjectManager::selectedPrimitive = nullptr;
-std::vector<Light> ObjectManager::lights;
-
-
