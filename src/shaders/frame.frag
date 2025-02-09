@@ -20,12 +20,12 @@ vec2 offsets[9] = vec2[](
 	);
 
 
-		float kernel[9] = float[](
-		1.0,	1.0,	1.0,
+	float kernel[9] = float[](
+	1.0,	1.0,	1.0,
 
-		1.0,	-8.0,	1.0,
-		
-		1.0,	1.0,	1.0
+	1.0,	-8.0,	1.0,
+	
+	1.0,	1.0,	1.0
 	);
 
 	float kernel2[9] = float[](
@@ -48,7 +48,7 @@ void main()
 	FragColor = vec4(texture(screenTexture, TexCoords).rgb,1);
 	float average = (FragColor.r + FragColor.g + FragColor.b) / 3.0;
 	average = 0.2126 * FragColor.r + 0.7152 * FragColor.g + 0.0722 * FragColor.b;
-	FragColor = vec4(average, average, average, 1.0);
+	// FragColor = vec4(average, average, average, 1.0);
 
 	vec3 sampleTex[9];
     for(int i = 0; i < 9; i++)
@@ -59,5 +59,5 @@ void main()
     for(int i = 0; i < 9; i++)
         col += sampleTex[i] * (kernel[i] / ( (kernel.length() / 2) * (kernel.length() / 2)) ) ;
     
-    FragColor = vec4(col, 1.0);
+    // FragColor = vec4(col, 1.0);
 }

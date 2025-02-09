@@ -109,9 +109,6 @@
 
 		if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
 
-
-		if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) ObjectManager::reloadShaders();
-
 	}
 
 	float lastX = (float)(WINDOW_WIDTH / 2), lastY = (float) (WINDOW_HEIGHT / 2);
@@ -252,11 +249,12 @@
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\fragMultipleLights.glsl").string();
+	std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\multipleLightsSurface.frag").string();
 	std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.glsl").string();
 
-	std::string fScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame_frag.glsl").string();
-	std::string vScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame_vert.glsl").string();
+	std::string fScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.frag").string();
+	std::string fRadialBackground = std::filesystem::absolute("..\\..\\src\\shaders\\frameRadialBackground.frag").string();
+	std::string vScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.vert").string();
 
 	glm::vec3 lightColor = glm::vec3(1.0f);
 	glm::mat4 lightmodel = glm::mat4(1.0f);
@@ -276,6 +274,9 @@
 	{
 		Shader tentShader (vShaderPath, fShaderPath);
 		Shader screenShader(vScreenShader,fScreenShader);
+		Shader radialGradientShader(vScreenShader,fRadialBackground);
+		ObjectManager::addShader(screenShader);
+		ObjectManager::addShader(radialGradientShader);
 
 		initScreenQuad();
 		initFrameBufferAndRenderTarget();
@@ -344,7 +345,7 @@
 			
 			deltaTime = time - lastFrame;
 			lastFrame = time;
-			processInput(window,isWireframe,deltaTime);
+			processInput(window, isWireframe, deltaTime);
 			
 			//camera interpolated reset
 			if(!cameraReseted && glm::length(camera.position - defaultCameraMatrix[0]) > .01 )
@@ -414,26 +415,49 @@
 					}
 				}
 				polygonMode = isWireframe ? GL_LINE : GL_FILL;
-				glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
 				if (ImGui::Button("Reload Shaders")) 
 				{
+					UpdateLights(ObjectManager::lights);
 					ObjectManager::reloadShaders();
 					screenShader.reload();
-					UpdateLights(ObjectManager::lights);
+					radialGradientShader.reload();
 					std::cout << "Shaders reloaded successfully!" << std::endl;
 				}
+				ImGui::End();
+				
+				//fps counter
+				ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
+				ImGui::SetNextWindowBgAlpha(0.3f);
+				ImGui::Begin("FPS", nullptr,
+					ImGuiWindowFlags_NoTitleBar |
+					ImGuiWindowFlags_NoResize |
+					ImGuiWindowFlags_AlwaysAutoResize |
+					ImGuiWindowFlags_NoScrollbar |
+					ImGuiWindowFlags_NoSavedSettings);
+				ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+				ImGui::Text("ms: %.4f", deltaTime);
 				ImGui::End();
 			}
 
 			glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glDisable(GL_DEPTH_TEST);
+			radialGradientShader.use();
+			glBindVertexArray(quadVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+
+			glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
+
 			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_MULTISAMPLE);
 			glDepthFunc(GL_LESS);
 			glEnable(GL_STENCIL_TEST);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
 			glStencilMask(0x00);
 
-			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
 
 			glfwGetWindowSize(window, &WINDOW_WIDTH, &WINDOW_HEIGHT);
 			if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
@@ -445,12 +469,10 @@
 			ObjectManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
 			
 
-
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDisable(GL_DEPTH_TEST);
 			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			
@@ -477,6 +499,7 @@
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 		// glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+		glfwWindowHint(GLFW_SAMPLES, 16);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); 
 		

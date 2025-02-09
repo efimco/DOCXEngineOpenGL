@@ -6,6 +6,7 @@ namespace ObjectManager
 {
 	static Primitive* selectedPrimitive;
 	static std::vector<Light> lights;
+	static std::vector<Shader> shaders;
 	static std::vector<Primitive> primitives;
 
 	static void draw(Camera& camera, int32_t width, int32_t height) 
@@ -27,11 +28,22 @@ namespace ObjectManager
 	
 	static void addLight(Light& light)
 	{
-			lights.push_back(std::move(light));
+		lights.push_back(std::move(light));
+	}
+
+	static void addShader(Shader &shader)
+	{
+		shaders.push_back(shader);
 	}
 
 	static void reloadShaders()
 	{
+		for (auto& shader: shaders)
+		{
+			shader.reload();
+			shader.setInt("screenTexture", 0);
+			
+		}
 		for (auto& primitive: primitives)
 		{
 			primitive.shader.reload();
