@@ -80,6 +80,7 @@ struct Primitive
 		glActiveTexture(GL_TEXTURE0);
 		if (selected == true)
 		{
+			glEnable(GL_STENCIL_TEST);
 			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 			glStencilMask(0x00); 
 			float camDistancece = (float)glm::length(camera.position - glm::vec3(transform[3]));
@@ -93,6 +94,7 @@ struct Primitive
 			glStencilMask(0xFF);
 			glStencilFunc(GL_ALWAYS, 1, 0xFF); 
 			glActiveTexture(GL_TEXTURE0);
+			glDisable(GL_STENCIL_TEST);
 		}
 		
 		glBindVertexArray(0);
