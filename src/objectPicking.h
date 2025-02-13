@@ -2,6 +2,7 @@
 #include "glm/glm.hpp"
 #include <vector>
 #include "primitive.h"
+#include <glad/glad.h>
 glm::vec3 ScreenPosToWorldRay(
 	double mouseX, double mouseY, int screenWidth, int screenHeight,
 	glm::mat4 projection, glm::mat4 view)
@@ -49,4 +50,44 @@ Primitive* PickObject(
 	}
 
 	return closestObject;
+}
+
+
+uint32_t pickingFBO = 0;
+uint32_t pickingTexture = 0;
+
+void initPickingFBO(int& windowWidth, int& windowHeight)
+{
+	glGenFramebuffers(1, &pickingFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
+
+	glGenTextures(1, &pickingTexture);
+	glBindTexture(GL_TEXTURE_2D, pickingTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pickingTexture, 0);
+
+	GLuint depthRenderBuffer;
+	glGenRenderbuffers(1, &depthRenderBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthRenderBuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, windowWidth, windowHeight);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderBuffer);
+
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cerr << "Error: Picking FBO is not complete!" << std::endl;
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void setPickColor(unsigned int id)
+{
+	unsigned char r = (id >> 16) & 0xFF;
+	unsigned char g = (id >> 8) & 0xFF;
+	unsigned char b = id & 0xFF;
+	glm::vec3 color = glm::vec3(r,g,b);
+	std::cout << color.x << " " << color.y << " " << color.z << std::endl;
 }

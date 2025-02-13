@@ -60,14 +60,13 @@ struct Primitive
 		{
 			shader.setInt(material.diffuse.type, 1);
 			glBindTextureUnit(1, material.diffuse.id);
-		}
+		}else glBindTextureUnit(1, 0);
 		if (material.specular.path != "")
 		{
 			shader.setInt(material.specular.type, 2);
 			shader.setFloat("shininess", 32);
 			glBindTextureUnit(2, material.specular.id);
-
-		}
+		}else glBindTextureUnit(2, 0);
 		shader.setMat4("projection",projection);
 		shader.setMat4("view",view);
 		shader.setMat4("model",transform);
