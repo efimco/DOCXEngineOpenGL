@@ -15,12 +15,44 @@
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"TentBody.001"
+			"name":"Tent"
+		}
+	],
+	"materials":[
+		{
+			"doubleSided":true,
+			"name":"TentMat",
+			"normalTexture":{
+				"index":0
+			},
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":1
+				},
+				"metallicRoughnessTexture":{
+					"index":2
+				}
+			}
+		},
+		{
+			"doubleSided":true,
+			"name":"TentFrame",
+			"normalTexture":{
+				"index":3
+			},
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":4
+				},
+				"metallicRoughnessTexture":{
+					"index":5
+				}
+			}
 		}
 	],
 	"meshes":[
 		{
-			"name":"model_0.009",
+			"name":"Tent",
 			"primitives":[
 				{
 					"attributes":{
@@ -28,7 +60,8 @@
 						"NORMAL":1,
 						"TEXCOORD_0":2
 					},
-					"indices":3
+					"indices":3,
+					"material":0
 				},
 				{
 					"attributes":{
@@ -36,9 +69,68 @@
 						"NORMAL":5,
 						"TEXCOORD_0":6
 					},
-					"indices":7
+					"indices":7,
+					"material":1
 				}
 			]
+		}
+	],
+	"textures":[
+		{
+			"sampler":0,
+			"source":0
+		},
+		{
+			"sampler":0,
+			"source":1
+		},
+		{
+			"sampler":0,
+			"source":2
+		},
+		{
+			"sampler":0,
+			"source":3
+		},
+		{
+			"sampler":0,
+			"source":4
+		},
+		{
+			"sampler":0,
+			"source":5
+		}
+	],
+	"images":[
+		{
+			"mimeType":"image/png",
+			"name":"Sci-fi_Modern_tent_01_TENT_Normal_OpenGL",
+			"uri":"Sci-fi_Modern_tent_01_TENT_Normal_OpenGL.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"Sci-fi_Modern_tent_01_TENT_Base_color",
+			"uri":"Sci-fi_Modern_tent_01_TENT_Base_color.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"Sci-fi_Modern_tent_01_TENT_Metallic-Sci-fi_Modern_tent_01_TENT_Roughness",
+			"uri":"Sci-fi_Modern_tent_01_TENT_Metallic-Sci-fi_Modern_tent_01_TENT_Roughness.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"Sci-fi_Modern_tent_02_OTHER_Normal_OpenGL",
+			"uri":"Sci-fi_Modern_tent_02_OTHER_Normal_OpenGL.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"Sci-fi_Modern_tent_02_OTHER_Base_color",
+			"uri":"Sci-fi_Modern_tent_02_OTHER_Base_color.png"
+		},
+		{
+			"mimeType":"image/png",
+			"name":"Sci-fi_Modern_tent_02_OTHER_Metallic-Sci-fi_Modern_tent_02_OTHER_Roughness",
+			"uri":"Sci-fi_Modern_tent_02_OTHER_Metallic-Sci-fi_Modern_tent_02_OTHER_Roughness.png"
 		}
 	],
 	"accessors":[
@@ -159,6 +251,12 @@
 			"byteLength":72972,
 			"byteOffset":373256,
 			"target":34963
+		}
+	],
+	"samplers":[
+		{
+			"magFilter":9729,
+			"minFilter":9987
 		}
 	],
 	"buffers":[

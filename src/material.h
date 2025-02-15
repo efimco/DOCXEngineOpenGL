@@ -2,21 +2,29 @@
 #include <string>
 #include "stb_image.h"
 
-
 struct Tex
 {
 	uint32_t id;
 	std::string type;
 	std::string path;
+
+	Tex() : id(-1), type(""), path("") {};
+	Tex(const char* path, std::string type):path(path), type(type)
+	{
+		if (path != "")
+		{
+			id = TextureFromFile(path);
+		}
+		else id = 0;
+		
+	};
+	~Tex(){};
+
 	void SetPath(const std::string& newPath) 
 	{
 		path = newPath;
 		id = TextureFromFile(newPath.c_str());
 	}
-
-	Tex(const char* path, std::string type):path(path), type(type){};
-	~Tex(){};
-
 	uint32_t TextureFromFile(const char *path)
 		{
 			std::string filename = std::string(path);
@@ -58,6 +66,7 @@ struct Tex
 
 struct Mat
 {
+	std::string name;
 	Tex diffuse;
 
 	Tex specular;
@@ -68,6 +77,16 @@ struct Mat
 	Tex Roughness;
 	uint32_t roughnessStrength;
 
+	Mat(std::string Name, Tex diffuse, Tex Specular) :
+		name(Name),
+		diffuse(diffuse),
+		specular(Specular),
+		metallic("", "tMetallic"),
+		Roughness("", "tRoughness"),
+		specularStrength(1),
+		metallicStrength(1),
+		roughnessStrength(1)
+	{}
 	Mat() : 
 		diffuse("", "tDiffuse"),
 		specular("", "tSpecular"),

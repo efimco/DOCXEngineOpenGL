@@ -17,11 +17,11 @@ struct Primitive
 	bool selected;
 	Mat material;
 
-	Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader shader, size_t indexCount, glm::mat4 transform)
+	Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader shader, size_t indexCount, glm::mat4 transform, Mat material)
 		: vao(vao), vbo(vbo), ebo(ebo), shader(shader), indexCount(indexCount), transform(transform),
 		outlineShader(std::filesystem::absolute("..\\..\\src\\shaders\\outlineVert.glsl").string(),
 						std::filesystem::absolute("..\\..\\src\\shaders\\outlineFrag.glsl").string()),
-		selected(false), material(){};
+		selected(false), material(material){};
 
 	Primitive(const Primitive&) = delete;
 	Primitive& operator=(const Primitive&) = delete;

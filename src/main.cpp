@@ -1,21 +1,23 @@
+
 	#define GLM_ENABLE_EXPERIMENTAL
 	#include <glad/glad.h>
+	#include <windows.h>	
 	#include <GLFW/glfw3.h>
-	#include <windows.h>
+
 
 	#include <glm/gtc/matrix_transform.hpp>
 	#include <glm/gtc/type_ptr.hpp>
 	#include <commdlg.h> 
 
-	#include "objectManager.h"
+	#include "sceneManager.h"
 	#include "objectPicking.h"
+	#include "gltfImIporter.h"
 
 	#include <ImGui/imgui.h>
 	#include <ImGui/imgui_impl_glfw.h>
 	#include <ImGui/imgui_impl_opengl3.h>
 	#include <ImGui/imgui_internal.h>
-
-	#include <filesystem>
+	#include <filesystem> 
 
 
 	int32_t WINDOW_WIDTH = 1024;
@@ -58,23 +60,23 @@
 				wasMousePressed = false;
 				projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);    
 				view = camera.getViewMatrix();
-				Primitive* primitive = PickObject(mousePosx, mousePosy, WINDOW_WIDTH, WINDOW_HEIGHT,projection,view,camera.position, ObjectManager::primitives);
+				Primitive* primitive = PickObject(mousePosx, mousePosy, WINDOW_WIDTH, WINDOW_HEIGHT,projection,view,camera.position, SceneManager::primitives);
 				if (primitive != nullptr)
 				{
-					if (ObjectManager::selectedPrimitive != primitive)
+					if (SceneManager::selectedPrimitive != primitive)
 					{
-						if (ObjectManager::selectedPrimitive != nullptr) ObjectManager::selectedPrimitive->selected = false;
+						if (SceneManager::selectedPrimitive != nullptr) SceneManager::selectedPrimitive->selected = false;
 						primitive->selected = true;
-						ObjectManager::selectedPrimitive = primitive;
+						SceneManager::selectedPrimitive = primitive;
 					}
 					std::cout << "VAO: " << primitive->vao << std::endl;
 				}
 				else
 				{
-					if (ObjectManager::selectedPrimitive != nullptr)
+					if (SceneManager::selectedPrimitive != nullptr)
 					{
-						ObjectManager::selectedPrimitive->selected = false;
-						ObjectManager::selectedPrimitive = nullptr;
+						SceneManager::selectedPrimitive->selected = false;
+						SceneManager::selectedPrimitive = nullptr;
 					}
 				}
 			}
@@ -138,7 +140,6 @@
 		camera.processMouseScroll((float)yOffset);
 	}
 
-	
 
 	std::string OpenFileDialog()
 	{
@@ -272,24 +273,22 @@
 
 	void draw(GLFWwindow* window)
 	{
-		Shader tentShader (vShaderPath, fShaderPath);
+		Shader baseShader (vShaderPath, fShaderPath);
 		Shader screenShader(vScreenShader,fScreenShader);
 		Shader radialGradientShader(vScreenShader,fRadialBackground);
-		ObjectManager::addShader(screenShader);
-		ObjectManager::addShader(radialGradientShader);
 
 		initScreenQuad();
 		initFrameBufferAndRenderTarget();
 
 		//import
-		GLTFModel gltfTent(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), tentShader);
+		GLTFModel gltfTent(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), baseShader);
 		gltfTent.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,3)));
 
-		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), tentShader);
+		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), baseShader);
 		gltfTent1.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,4)));
 
-		ObjectManager::addPrimitives(gltfTent.primitives);
-		ObjectManager::addPrimitives(gltfTent1.primitives);
+		SceneManager::addPrimitives(gltfTent.primitives);
+		SceneManager::addPrimitives(gltfTent1.primitives);
 
 		//imgui
 		ImGui::CreateContext();
@@ -327,9 +326,9 @@
 			pointLight2.cutOff    = glm::cos(glm::radians(12.5f));
 			pointLight.outerCutOff = glm::cos(glm::radians(17.5f));
 
-			ObjectManager::addLight(pointLight);
-			ObjectManager::addLight(pointLight2);
-			UpdateLights(ObjectManager::lights);
+			SceneManager::addLight(pointLight);
+			SceneManager::addLight(pointLight2);
+			UpdateLights(SceneManager::lights);
 		}
 
 		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -367,21 +366,21 @@
 				ImGui::Begin("Tools");
 				ImGui::ColorEdit4("BG Color", clearColor);
 				glm::vec3 lightPos = glm::vec3(lightmodel[3]);
-				if(ObjectManager::selectedPrimitive != nullptr)
+				if(SceneManager::selectedPrimitive != nullptr)
 				{
 					ImGui::Begin("Object Inspector");
-					ImGui::DragFloat3("Position", glm::value_ptr(ObjectManager::selectedPrimitive->transform[3]));
-					ImGui::Image(ObjectManager::selectedPrimitive->material.diffuse.id, ImVec2(64, 64));
+					ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::selectedPrimitive->transform[3]));
+					ImGui::Image(SceneManager::selectedPrimitive->material.diffuse.id, ImVec2(64, 64));
 					ImGui::SameLine();
-					ImGui::Image(ObjectManager::selectedPrimitive->material.specular.id, ImVec2(64, 64));
+					ImGui::Image(SceneManager::selectedPrimitive->material.specular.id, ImVec2(64, 64));
 					if (ImGui::Button("Diffuse"))
 					{
 						std::string filePath = OpenFileDialog();
 						if (!filePath.empty())
 						{
 							// Update the object's texture path
-							ObjectManager::selectedPrimitive->material.diffuse.type = "tDiffuse";
-							ObjectManager::selectedPrimitive->material.diffuse.SetPath(filePath);
+							SceneManager::selectedPrimitive->material.diffuse.type = "tDiffuse";
+							SceneManager::selectedPrimitive->material.diffuse.SetPath(filePath);
 							glActiveTexture(GL_TEXTURE0);
 
 						}
@@ -393,8 +392,8 @@
 						if (!filePath.empty())
 						{
 							// Update the object's texture path
-							ObjectManager::selectedPrimitive->material.specular.type = "tSpecular";
-							ObjectManager::selectedPrimitive->material.specular.SetPath(filePath);
+							SceneManager::selectedPrimitive->material.specular.type = "tSpecular";
+							SceneManager::selectedPrimitive->material.specular.SetPath(filePath);
 							glActiveTexture(GL_TEXTURE0);
 
 						}
@@ -409,16 +408,16 @@
 					std::string filePath = OpenFileDialog();
 					if(!filePath.empty())
 					{
-						GLTFModel model(filePath, tentShader);
+						GLTFModel model(filePath, baseShader);
 						model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
-						ObjectManager::addPrimitives(model.primitives);
+						SceneManager::addPrimitives(model.primitives);
 					}
 				}
 				polygonMode = isWireframe ? GL_LINE : GL_FILL;
 				if (ImGui::Button("Reload Shaders")) 
 				{
-					UpdateLights(ObjectManager::lights);
-					ObjectManager::reloadShaders();
+					UpdateLights(SceneManager::lights);
+					SceneManager::reloadShaders();
 					screenShader.reload();
 					radialGradientShader.reload();
 					std::cout << "Shaders reloaded successfully!" << std::endl;
@@ -458,7 +457,6 @@
 			glStencilMask(0x00);
 
 
-
 			glfwGetWindowSize(window, &WINDOW_WIDTH, &WINDOW_HEIGHT);
 			if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
 			{
@@ -466,9 +464,12 @@
 				view = camera.getViewMatrix();
 			}
 
-			ObjectManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
+			SceneManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
 			
-
+			for(const auto& primitive: SceneManager::primitives)
+			{
+				std::cout << primitive.material.diffuse.path << std::endl;
+			}
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDisable(GL_DEPTH_TEST);
 			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 

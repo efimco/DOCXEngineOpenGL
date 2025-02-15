@@ -1,31 +1,37 @@
 #pragma once
 #define TINYGLTF_IMPLEMENTATION
-#define TINYGLTF_NO_STB_IMAGE
 #define STB_IMAGE_IMPLEMENTATION
+
+// #define TINYGLTF_NO_STB_IMAGE_WRITE
+
+#ifndef TINYGLTF_NO_STB_IMAGE_WRITE
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#endif
+
 #include "glad/glad.h"
 #include "tiny_gltf.h"
-#include "primitive.h"   // Your Primitive struct/class (should include members like vao, vbo, ebo, etc.)
-#include "shader.h"      // Your Shader class
+#include "primitive.h"
+#include "shader.h" 
 #include <vector>
 #include <string>
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
 class GLTFModel
 {
 public:
 	Shader shader;
 	std::vector<Primitive> primitives;
 	std::string path;
+	std::map<uint32_t, Tex> textures;
+	std::map<uint32_t, Mat> materials;
+
 
 	GLTFModel(std::string path, const Shader& shader) : path(path), shader(shader)
 	{
 		setup();
 	}
 	
-
 	tinygltf::Model readGlb(const std::string &path)
 	{		
 		tinygltf::Model model;
@@ -44,6 +50,23 @@ public:
 
 	void processGLTFModel(tinygltf::Model &model)
 	{
+
+		for (int i =0; i < model.images.size(); i++)
+		{
+			Tex texture(std::filesystem::absolute("..\\..\\res\\GltfModels\\" + model.images[i].uri).string().c_str(), "texture");
+			textures[i] = std::move(texture);
+		} 
+		
+		for (int i =0; i < model.materials.size(); i++)
+		{
+			textures[model.materials[i].pbrMetallicRoughness.baseColorTexture.index].type = "tDiffuse";
+			textures[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index].type = "tSpecular";
+			Mat mat(model.materials[i].name,
+				textures[model.materials[i].pbrMetallicRoughness.baseColorTexture.index],
+				textures[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index]);
+			materials[i] = std::move(mat);
+		}
+
 		for (auto &mesh : model.meshes)
 		{
 			for (auto &primitive : mesh.primitives)
@@ -57,8 +80,7 @@ public:
 				const auto &posAccessor = model.accessors[primitive.attributes.at("POSITION")];
 				const auto &posBufferView = model.bufferViews[posAccessor.bufferView];
 				const auto &posBuffer = model.buffers[posBufferView.buffer];
-				const float* pPosData = reinterpret_cast<const float*>(
-					posBuffer.data.data() + posBufferView.byteOffset + posAccessor.byteOffset);
+				const float* pPosData = reinterpret_cast<const float*>(posBuffer.data.data() + posBufferView.byteOffset + posAccessor.byteOffset);
 
 				size_t vertexCount = posAccessor.count;
 				int posComponents = (posAccessor.type == TINYGLTF_TYPE_VEC3) ? 3 : 0;
@@ -88,7 +110,7 @@ public:
 					if (texAccessor.count != vertexCount)
 					{
 						std::cerr << "Mismatch in vertex count between POSITION and TEXCOORD_0 in mesh "
-								  << mesh.name << std::endl;
+								<< mesh.name << std::endl;
 						continue;
 					}
 					texComponents = (texAccessor.type == TINYGLTF_TYPE_VEC2) ? 2 : 0;
@@ -220,21 +242,20 @@ public:
 										indexData.data(), GL_STATIC_DRAW);
 					glVertexArrayElementBuffer(vao, ebo);
 				}
-
 				glBindVertexArray(0);
-				primitives.emplace_back(vao, vbo, ebo, shader, indexCount, glm::mat4(1.0f));
+				std::cout << materials[primitive.material].diffuse.path << std::endl;
+				Primitive prim(vao, vbo, ebo, shader, indexCount, glm::mat4(1.0f), materials.at(primitive.material));
+				primitives.push_back(std::move(prim));
 			}
 		}
 	}
 
-	// Calls readGlb() and processGLTFModel() to load and set up the model.
 	void setup()
 	{
 		auto model = readGlb(path);
 		processGLTFModel(model);
 	}
 
-	// Set a uniform transform for all primitives in the model.
 	void setTransform(glm::mat4 transform)
 	{
 		for (auto &primitive : primitives)
