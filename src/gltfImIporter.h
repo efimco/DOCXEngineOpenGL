@@ -54,7 +54,7 @@ public:
 		for (int i =0; i < model.images.size(); i++)
 		{
 			Tex texture(std::filesystem::absolute("..\\..\\res\\GltfModels\\" + model.images[i].uri).string().c_str(), "texture");
-			textures[i] = std::move(texture);
+			textures[i] = texture;
 		} 
 		
 		for (int i =0; i < model.materials.size(); i++)
@@ -64,7 +64,7 @@ public:
 			Mat mat(model.materials[i].name,
 				textures[model.materials[i].pbrMetallicRoughness.baseColorTexture.index],
 				textures[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index]);
-			materials[i] = std::move(mat);
+			materials[i] = mat;
 		}
 
 		for (auto &mesh : model.meshes)
@@ -243,8 +243,7 @@ public:
 					glVertexArrayElementBuffer(vao, ebo);
 				}
 				glBindVertexArray(0);
-				std::cout << materials[primitive.material].diffuse.path << std::endl;
-				Primitive prim(vao, vbo, ebo, shader, indexCount, glm::mat4(1.0f), materials.at(primitive.material));
+				Primitive prim(vao, vbo, ebo, shader, indexCount, glm::mat4(1.0f), materials[primitive.material]);
 				primitives.push_back(std::move(prim));
 			}
 		}

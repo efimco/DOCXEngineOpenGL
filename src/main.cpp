@@ -466,10 +466,6 @@
 
 			SceneManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
 			
-			for(const auto& primitive: SceneManager::primitives)
-			{
-				std::cout << primitive.material.diffuse.path << std::endl;
-			}
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDisable(GL_DEPTH_TEST);
 			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
