@@ -140,7 +140,6 @@
 		camera.processMouseScroll((float)yOffset);
 	}
 
-
 	std::string OpenFileDialog()
 	{
 		OPENFILENAMEA ofn;
@@ -281,11 +280,10 @@
 		initFrameBufferAndRenderTarget();
 
 		//import
-		GLTFModel gltfTent(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), baseShader);
+		GLTFModel gltfTent(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.glb").string(), baseShader);
 		gltfTent.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,3)));
 
 		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\BarDiorama.glb").string(), baseShader);
-		gltfTent1.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,4)));
 
 		SceneManager::addPrimitives(gltfTent.primitives);
 		SceneManager::addPrimitives(gltfTent1.primitives);

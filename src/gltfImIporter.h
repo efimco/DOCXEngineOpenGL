@@ -33,6 +33,8 @@ public:
 		setup();
 	}
 	
+	~GLTFModel(){};
+
 	tinygltf::Model readGlb(const std::string &path)
 	{		
 		tinygltf::Model model;
@@ -85,17 +87,17 @@ public:
 			materials[i] = mat;
 		}
 
-		for (auto &mesh : model.meshes)
+		for (int i =0; i< model.meshes.size(); i++) 
 		{
-			for (auto &primitive : mesh.primitives)
+			for (int j = 0; j < model.meshes[i].primitives.size(); j++)
 			{	
 				// --- Process POSITION attribute ---
-				if (primitive.attributes.find("POSITION") == primitive.attributes.end())
+				if (model.meshes[i].primitives[j].attributes.find("POSITION") == model.meshes[i].primitives[j].attributes.end())
 				{
-					std::cerr << "No POSITION attribute found in mesh " << mesh.name << std::endl;
+					std::cerr << "No POSITION attribute found in mesh " << model.meshes[i].name << std::endl;
 					continue;
 				}
-				const auto &posAccessor = model.accessors[primitive.attributes.at("POSITION")];
+				const auto &posAccessor = model.accessors[model.meshes[i].primitives[j].attributes.at("POSITION")];
 				const auto &posBufferView = model.bufferViews[posAccessor.bufferView];
 				const auto &posBuffer = model.buffers[posBufferView.buffer];
 				const float* pPosData = reinterpret_cast<const float*>(posBuffer.data.data() + posBufferView.byteOffset + posAccessor.byteOffset);
@@ -116,10 +118,10 @@ public:
 				bool hasTexCoords = false;
 				std::vector<float> texCoordData;
 				int texComponents = 0;
-				if (primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end())
+				if (model.meshes[i].primitives[j].attributes.find("TEXCOORD_0") != model.meshes[i].primitives[j].attributes.end())
 				{
 					hasTexCoords = true;
-					const auto &texAccessor = model.accessors[primitive.attributes.at("TEXCOORD_0")];
+					const auto &texAccessor = model.accessors[model.meshes[i].primitives[j].attributes.at("TEXCOORD_0")];
 					const auto &texBufferView = model.bufferViews[texAccessor.bufferView];
 					const auto &texBuffer = model.buffers[texBufferView.buffer];
 					const float* pTexData = reinterpret_cast<const float*>(
@@ -128,7 +130,7 @@ public:
 					if (texAccessor.count != vertexCount)
 					{
 						std::cerr << "Mismatch in vertex count between POSITION and TEXCOORD_0 in mesh "
-								<< mesh.name << std::endl;
+								<< model.meshes[i].name << std::endl;
 						continue;
 					}
 					texComponents = (texAccessor.type == TINYGLTF_TYPE_VEC2) ? 2 : 0;
@@ -143,12 +145,12 @@ public:
 				}
 				std::vector<float> normalData;
 				// --- Process Normal attribute ---
-				if (primitive.attributes.find("NORMAL") == primitive.attributes.end())
+				if (model.meshes[i].primitives[j].attributes.find("NORMAL") == model.meshes[i].primitives[j].attributes.end())
 				{
-					std::cerr << "No NORMAL attribute found in mesh " << mesh.name << std::endl;
+					std::cerr << "No NORMAL attribute found in mesh " << model.meshes[i].name << std::endl;
 					continue;
 				}
-				const auto &normalAccessor = model.accessors[primitive.attributes.at("NORMAL")];
+				const auto &normalAccessor = model.accessors[model.meshes[i].primitives[j].attributes.at("NORMAL")];
 				const auto &normalBufferView = model.bufferViews[normalAccessor.bufferView];
 				const auto &normalBuffer = model.buffers[normalBufferView.buffer];
 				const float* pNormalData = reinterpret_cast<const float*>(
@@ -167,9 +169,9 @@ public:
 				// --- Process indices if available ---
 				size_t indexCount = 0;
 				std::vector<uint32_t> indexData;
-				if (primitive.indices >= 0)
+				if (model.meshes[i].primitives[j].indices >= 0)
 				{
-					const auto &indexAccessor = model.accessors[primitive.indices];
+					const auto &indexAccessor = model.accessors[model.meshes[i].primitives[j].indices];
 					const auto &indexBufferView = model.bufferViews[indexAccessor.bufferView];
 					const auto &indexBuffer = model.buffers[indexBufferView.buffer];
 
@@ -261,7 +263,13 @@ public:
 					glVertexArrayElementBuffer(vao, ebo);
 				}
 				glBindVertexArray(0);
-				Primitive prim(vao, vbo, ebo, shader, indexCount, glm::mat4(1.0f), materials[primitive.material]);
+				glm::mat4 translation(1.0f);
+				if (model.nodes[i].translation.size() != 0)
+					translation[3] = glm::vec4(model.nodes[i].translation[0], model.nodes[i].translation[1], model.nodes[i].translation[2], 1.0f);
+				Primitive prim(vao, vbo, ebo,
+					shader, indexCount,
+					translation,
+					materials[model.meshes[i].primitives[j].material]);
 				primitives.push_back(std::move(prim));
 			}
 		}
@@ -277,7 +285,7 @@ public:
 	{
 		for (auto &primitive : primitives)
 		{
-			primitive.transform = transform;
+			primitive.transform += transform;
 		}
 	}
 };
