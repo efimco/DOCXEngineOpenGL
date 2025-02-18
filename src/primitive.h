@@ -58,16 +58,16 @@ class Primitive
 			glStencilFunc(GL_ALWAYS, 1, 0xFF);
 			glStencilMask(0xFF);
 			shader.use();
-			if (material.diffuse.path != "")
+			if (material.diffuse -> path != "")
 			{
-				shader.setInt(material.diffuse.type, 1);
-				glBindTextureUnit(1, material.diffuse.id);
+				shader.setInt(material.diffuse -> type, 1);
+				glBindTextureUnit(1, material.diffuse -> id);
 			}else glBindTextureUnit(1, 0);
-			if (material.specular.path != "")
+			if (material.specular -> path != "")
 			{
-				shader.setInt(material.specular.type, 2);
+				shader.setInt(material.specular -> type, 2);
 				shader.setFloat("shininess", 32);
-				glBindTextureUnit(2, material.specular.id);
+				glBindTextureUnit(2, material.specular -> id);
 			}else glBindTextureUnit(2, 0);
 			shader.setMat4("projection",projection);
 			shader.setMat4("view",view);

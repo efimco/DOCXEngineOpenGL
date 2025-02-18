@@ -2,12 +2,15 @@
 #include <vector>
 #include "primitive.h"
 #include "light.h"
+#include <unordered_map>
 namespace SceneManager
 {
 	static Primitive* selectedPrimitive;
 	static std::vector<Light> lights;
 	static std::vector<Primitive> primitives;
 	static std::vector<Mat> materials;
+	static std::unordered_map<std::string, std::shared_ptr<Tex>> textureCache;
+	static std::unordered_map<uint16_t, std::shared_ptr<Tex>> textureIndexing;
 
 	static void draw(Camera& camera, int32_t width, int32_t height) 
 	{

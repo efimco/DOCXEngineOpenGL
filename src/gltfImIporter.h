@@ -17,6 +17,7 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <filesystem>
 class GLTFModel
 {
 public:
@@ -38,32 +39,49 @@ public:
 		tinygltf::TinyGLTF loader;
 		std::string err;
 		std::string warn;
-		bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
+		printf("Loading...\n");
+		bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
+		// bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
 		if (!warn.empty()) 
 			printf("Warn: %s\n", warn.c_str());
 		if (!err.empty()) 
 			printf("Err: %s\n", err.c_str());
 		if (!ret)
 			printf("Failed to parse glTF\n");
+		printf("Loaded %s\n", path.c_str());
 		return model;
 	}
+
 
 	void processGLTFModel(tinygltf::Model &model)
 	{
 
-		for (int i =0; i < model.images.size(); i++)
+		for (int i = 0; i < model.images.size(); i++)
 		{
-			Tex texture(std::filesystem::absolute("..\\..\\res\\GltfModels\\" + model.images[i].uri).string().c_str(), "texture");
-			textures[i] = texture;
+			// std::string path = std::filesystem::absolute("..\\..\\res\\GltfModels\\" + model.images[i].name + ".png").string();
+			std::string path = model.images[i].name;
+			if (SceneManager::textureCache.find(path) == SceneManager::textureCache.end()) 
+			{
+				SceneManager::textureCache[path] = std::make_shared<Tex>(model.images[i], "texture");
+			}
+			SceneManager::textureIndexing[i] = SceneManager::textureCache[path];
 		} 
 		
-		for (int i =0; i < model.materials.size(); i++)
+		for (int i = 0; i < model.materials.size(); i++)
 		{
-			textures[model.materials[i].pbrMetallicRoughness.baseColorTexture.index].type = "tDiffuse";
-			textures[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index].type = "tSpecular";
-			Mat mat(model.materials[i].name,
-				textures[model.materials[i].pbrMetallicRoughness.baseColorTexture.index],
-				textures[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index]);
+			Mat mat;
+			if (model.materials[i].pbrMetallicRoughness.baseColorTexture.index != -1)
+			{
+				SceneManager::textureIndexing[model.materials[i].pbrMetallicRoughness.baseColorTexture.index] -> type = "tDiffuse";
+				mat.diffuse = SceneManager::textureIndexing[model.materials[i].pbrMetallicRoughness.baseColorTexture.index];
+			}
+				
+			if (model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index != -1)
+			{
+				SceneManager::textureIndexing[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index] -> type = "tSpecular";	
+				mat.specular = SceneManager::textureIndexing[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index];
+
+			}
 			materials[i] = mat;
 		}
 

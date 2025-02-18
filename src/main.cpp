@@ -284,7 +284,7 @@
 		GLTFModel gltfTent(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), baseShader);
 		gltfTent.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,3)));
 
-		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.gltf").string(), baseShader);
+		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\BarDiorama.glb").string(), baseShader);
 		gltfTent1.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,4)));
 
 		SceneManager::addPrimitives(gltfTent.primitives);
@@ -370,17 +370,17 @@
 				{
 					ImGui::Begin("Object Inspector");
 					ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::selectedPrimitive->transform[3]));
-					ImGui::Image(SceneManager::selectedPrimitive->material.diffuse.id, ImVec2(64, 64));
+					ImGui::Image(SceneManager::selectedPrimitive->material.diffuse -> id, ImVec2(64, 64));
 					ImGui::SameLine();
-					ImGui::Image(SceneManager::selectedPrimitive->material.specular.id, ImVec2(64, 64));
+					ImGui::Image(SceneManager::selectedPrimitive->material.specular -> id, ImVec2(64, 64));
 					if (ImGui::Button("Diffuse"))
 					{
 						std::string filePath = OpenFileDialog();
 						if (!filePath.empty())
 						{
 							// Update the object's texture path
-							SceneManager::selectedPrimitive->material.diffuse.type = "tDiffuse";
-							SceneManager::selectedPrimitive->material.diffuse.SetPath(filePath);
+							SceneManager::selectedPrimitive->material.diffuse -> type = "tDiffuse";
+							SceneManager::selectedPrimitive->material.diffuse -> SetPath(filePath);
 							glActiveTexture(GL_TEXTURE0);
 
 						}
@@ -392,8 +392,8 @@
 						if (!filePath.empty())
 						{
 							// Update the object's texture path
-							SceneManager::selectedPrimitive->material.specular.type = "tSpecular";
-							SceneManager::selectedPrimitive->material.specular.SetPath(filePath);
+							SceneManager::selectedPrimitive->material.specular -> type = "tSpecular";
+							SceneManager::selectedPrimitive->material.specular -> SetPath(filePath);
 							glActiveTexture(GL_TEXTURE0);
 
 						}
