@@ -37,6 +37,7 @@
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4 projection = glm::mat4(1.0f);
 
+	bool showObjectPicking = false;
 
 	
 	void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime)
@@ -198,6 +199,17 @@
 		1.0f,  1.0f,  1.0f, 1.0f
 	};
 
+	float objectIdQuadVertices[] = { 
+		// positions   // texCoords
+		0.6f,  1.0f,  0.0f, 1.0f,
+		0.6f, 0.6f,  0.0f, 0.0f,
+		1.0f, 0.6f,  1.0f, 0.0f,
+
+		0.6f,  1.0f,  0.0f, 1.0f,
+		1.0f, 0.6f,  1.0f, 0.0f,
+		1.0f,  1.0f,  1.0f, 1.0f
+	};
+
 	uint32_t quadVAO, quadVBO;
 	void initScreenQuad()
 	{
@@ -213,6 +225,24 @@
 		glEnableVertexArrayAttrib(quadVAO, 1);
 		glVertexArrayAttribFormat(quadVAO, 1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2);
 		glVertexArrayAttribBinding(quadVAO, 1, 0);
+
+	}
+
+	uint32_t objectIdVAO, objectIdVBO;
+	void initObjectIdQuad()
+	{
+		glCreateVertexArrays(1, &objectIdVAO);
+		glCreateBuffers(1, &objectIdVBO);
+		glNamedBufferData(objectIdVBO, sizeof(quadVertices), &objectIdQuadVertices, GL_STATIC_DRAW);
+		glVertexArrayVertexBuffer(objectIdVAO, 0, objectIdVBO, 0, sizeof(float) * 4);
+
+		glEnableVertexArrayAttrib(objectIdVAO, 0);
+		glVertexArrayAttribFormat(objectIdVAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribBinding(objectIdVAO, 0, 0);
+
+		glEnableVertexArrayAttrib(objectIdVAO, 1);
+		glVertexArrayAttribFormat(objectIdVAO, 1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2);
+		glVertexArrayAttribBinding(objectIdVAO, 1, 0);
 
 	}
 	uint32_t fbo,textureColorbuffer,rbo;
@@ -286,6 +316,7 @@
 		Shader pickingShader(vPickingShader,fPickingShader);
 
 		initScreenQuad();
+		initObjectIdQuad();
 		initFrameBufferAndRenderTarget();
 		initPickingFBO(WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -406,6 +437,7 @@
 				ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
 				ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
 				ImGui::Checkbox("Wireframe Mode", &isWireframe);
+				ImGui::Checkbox("ObjectID Debug", &showObjectPicking);
 				if (ImGui::Button("Import Model"))
 				{	
 					std::string filePath = OpenFileDialog();
@@ -453,6 +485,8 @@
 				ImGui::End();
 			}
 
+			glEnable(GL_MULTISAMPLE);
+
 			glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
 			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -472,6 +506,7 @@
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glDisable(GL_DEPTH_TEST);
+			
 			radialGradientShader.use();
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -479,7 +514,6 @@
 			glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
 
 			glEnable(GL_DEPTH_TEST);
-			glEnable(GL_MULTISAMPLE);
 			glDepthFunc(GL_LESS);
 			glEnable(GL_STENCIL_TEST);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
@@ -506,6 +540,14 @@
 			glBindVertexArray(quadVAO);
 			glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
 			glDrawArrays(GL_TRIANGLES, 0, 6);  
+
+
+			if(showObjectPicking)
+			{
+				glBindVertexArray(objectIdVAO);
+				glBindTexture(GL_TEXTURE_2D, pickingTexture);
+				glDrawArrays(GL_TRIANGLES, 0, 6);  
+			} 
 			ImGui::Render();
 			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 			glfwSwapBuffers(window);

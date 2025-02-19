@@ -134,7 +134,6 @@ class Primitive
 			
 			float m = v - c;
 			glm::vec3 res = rgb + glm::vec3(m);
-			printf("%f %f %f\n", res.x, res.y, res.z);
 			return res;
 		}
 		// Converts an RGB color (each channel in [0,1]) back to HSV
