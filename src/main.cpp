@@ -22,7 +22,7 @@
 
 	int32_t WINDOW_WIDTH = 1024;
 	int32_t WINDOW_HEIGHT = 1024;
-	Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+	Camera camera(glm::vec3(-10.0f, 3.0f, 13.0f), glm::vec3(0.0f,1.0f,0.0f), -45.0f, 0.0f);
 
 	bool wireframeKeyPressed = false;
 	bool rightKeyPressed = false;
@@ -37,6 +37,8 @@
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4 projection = glm::mat4(1.0f);
 
+
+	
 	void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime)
 	{
 		if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -54,13 +56,16 @@
 		static bool wasMousePressed = false;
 		if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
 		{
-			if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse) wasMousePressed = true;
+			if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse)
+				wasMousePressed = true;
 			else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMousePressed)
 			{
 				wasMousePressed = false;
 				projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);    
 				view = camera.getViewMatrix();
-				Primitive* primitive = PickObject(mousePosx, mousePosy, WINDOW_WIDTH, WINDOW_HEIGHT,projection,view,camera.position, SceneManager::primitives);
+				// Primitive* primitive = PickObject(mousePosx, mousePosy, WINDOW_WIDTH, WINDOW_HEIGHT,projection,view,camera.position, SceneManager::primitives);
+				glm::vec3 pickedColor = pickObjectAt(mousePosx, mousePosy, WINDOW_HEIGHT);
+				Primitive* primitive = getIdFromPickColor(pickedColor);
 				if (primitive != nullptr)
 				{
 					if (SceneManager::selectedPrimitive != primitive)
@@ -256,6 +261,9 @@
 	std::string fRadialBackground = std::filesystem::absolute("..\\..\\src\\shaders\\frameRadialBackground.frag").string();
 	std::string vScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.vert").string();
 
+	std::string vPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.vert").string();
+	std::string fPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.frag").string();
+
 	glm::vec3 lightColor = glm::vec3(1.0f);
 	glm::mat4 lightmodel = glm::mat4(1.0f);
 
@@ -275,17 +283,14 @@
 		Shader baseShader (vShaderPath, fShaderPath);
 		Shader screenShader(vScreenShader,fScreenShader);
 		Shader radialGradientShader(vScreenShader,fRadialBackground);
+		Shader pickingShader(vPickingShader,fPickingShader);
 
 		initScreenQuad();
 		initFrameBufferAndRenderTarget();
+		initPickingFBO(WINDOW_WIDTH, WINDOW_HEIGHT);
 
 		//import
-		GLTFModel gltfTent(std::filesystem::absolute("..\\..\\res\\GltfModels\\SceneForRednerDemo.glb").string(), baseShader);
-		gltfTent.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,0,3)));
-
 		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\BarDiorama.glb").string(), baseShader);
-
-		SceneManager::addPrimitives(gltfTent.primitives);
 		SceneManager::addPrimitives(gltfTent1.primitives);
 
 		//imgui
@@ -434,7 +439,33 @@
 				ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 				ImGui::Text("ms: %.4f", deltaTime);
 				ImGui::End();
+
+				ImGui::SetNextWindowPos(ImVec2(100, 10), ImGuiCond_Always);
+				ImGui::SetNextWindowBgAlpha(0.3f);
+				ImGui::Begin("Camera", nullptr,
+					ImGuiWindowFlags_NoTitleBar |
+					ImGuiWindowFlags_NoResize |
+					ImGuiWindowFlags_AlwaysAutoResize |
+					ImGuiWindowFlags_NoScrollbar |
+					ImGuiWindowFlags_NoSavedSettings);
+				ImGui::Text("Pos: %.1f, %.1f, %.1f", camera.position.x, camera.position.y, camera.position.z); ImGui::SameLine();
+				ImGui::Text("Rot: %.1f, %.1f", camera.yaw, camera.pitch);
+				ImGui::End();
 			}
+
+			glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
+			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+			glfwGetWindowSize(window, &WINDOW_WIDTH, &WINDOW_HEIGHT);
+			if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
+			{
+				projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);	
+				view = camera.getViewMatrix();
+			}
+
+			SceneManager::setShader(pickingShader);
+			SceneManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
@@ -461,7 +492,7 @@
 				projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);	
 				view = camera.getViewMatrix();
 			}
-
+			SceneManager::setShader(baseShader);
 			SceneManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
 			
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);

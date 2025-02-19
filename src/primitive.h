@@ -4,7 +4,6 @@
 #include "glm/glm.hpp"
 #include "camera.h"
 #include "material.h"
-
 class Primitive 
 {
 	public:
@@ -27,6 +26,7 @@ class Primitive
 		Primitive(const Primitive&) = delete;
 		Primitive& operator=(const Primitive&) = delete;
 
+
 		Primitive(Primitive&& other) noexcept
 			:vao(other.vao),
 			vbo(other.vbo),
@@ -39,9 +39,9 @@ class Primitive
 							std::filesystem::absolute("..\\..\\src\\shaders\\outlineFrag.glsl").string()),
 							selected(false) 
 			{
-			other.vao = 0;
-			other.vbo = 0;
-			other.ebo = 0;
+				other.vao = 0;
+				other.vbo = 0;
+				other.ebo = 0;
 			}
 		
 		~Primitive()
@@ -58,6 +58,7 @@ class Primitive
 			glStencilFunc(GL_ALWAYS, 1, 0xFF);
 			glStencilMask(0xFF);
 			shader.use();
+			shader.setVec3("objectIDColor", setPickColor(vao));
 			if (material.diffuse -> path != "")
 			{
 				shader.setInt(material.diffuse -> type, 1);
@@ -101,5 +102,42 @@ class Primitive
 			glBindVertexArray(0);
 		}
 	private:
-			glm::mat4 scaledTransform;
+		glm::vec3 setPickColor(unsigned int id)
+		{
+			float golden_ratio_conjugate = 0.618033988749895f;
+			float h = glm::fract(id * golden_ratio_conjugate);
+			float s = 0.7f; // moderately saturated
+			float v = 1.0f; // bright
+
+			glm::vec3 idColor = hsv2rgb(h,s,v);
+			return idColor;
+		}
+
+		glm::vec3 hsv2rgb(float h, float s, float v) {
+			float c = v * s;
+			float h_prime = h * 6.0f;
+			float x = c * (1.0f - fabs(fmod(h_prime, 2.0f) - 1.0f));
+			glm::vec3 rgb;
+			
+			if (h_prime < 1.0f)
+				rgb = glm::vec3(c, x, 0.0f);
+			else if (h_prime < 2.0f)
+				rgb = glm::vec3(x, c, 0.0f);
+			else if (h_prime < 3.0f)
+				rgb = glm::vec3(0.0f, c, x);
+			else if (h_prime < 4.0f)
+				rgb = glm::vec3(0.0f, x, c);
+			else if (h_prime < 5.0f)
+				rgb = glm::vec3(x, 0.0f, c);
+			else
+				rgb = glm::vec3(c, 0.0f, x);
+			
+			float m = v - c;
+			glm::vec3 res = rgb + glm::vec3(m);
+			printf("%f %f %f\n", res.x, res.y, res.z);
+			return res;
+		}
+		// Converts an RGB color (each channel in [0,1]) back to HSV
+
+		glm::mat4 scaledTransform;
 };

@@ -47,4 +47,11 @@ namespace SceneManager
 	{
 		materials.push_back(std::move(material));
 	}
+	static void setShader(Shader& shader)
+	{
+		for (auto& primitive: primitives)
+		{
+			primitive.shader = shader;
+		}
+	}
 };
