@@ -84,6 +84,12 @@ public:
 				mat.specular = SceneManager::textureIndexing[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index];
 
 			}
+			if (model.materials[i].normalTexture.index != -1)
+			{
+				SceneManager::textureIndexing[model.materials[i].normalTexture.index] -> type = "tNormal";	
+				mat.normal = SceneManager::textureIndexing[model.materials[i].normalTexture.index];
+
+			}
 			materials[i] = mat;
 		}
 

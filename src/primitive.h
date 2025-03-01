@@ -11,7 +11,6 @@ class Primitive
 		uint32_t vbo;
 		uint32_t ebo;
 		Shader shader;
-		Shader outlineShader;
 		size_t indexCount;
 		glm::mat4 transform;
 		bool selected;
@@ -19,8 +18,6 @@ class Primitive
 
 		Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader shader, size_t indexCount, glm::mat4 transform, Mat material)
 			: vao(vao), vbo(vbo), ebo(ebo), shader(shader), indexCount(indexCount), transform(transform),
-			outlineShader(std::filesystem::absolute("..\\..\\src\\shaders\\outlineVert.glsl").string(),
-							std::filesystem::absolute("..\\..\\src\\shaders\\outlineFrag.glsl").string()),
 			selected(false), material(material){};
 
 		Primitive(const Primitive&) = delete;
@@ -35,8 +32,6 @@ class Primitive
 			indexCount(other.indexCount),
 			transform(other.transform),
 			material(std::move(other.material)),
-			outlineShader(std::filesystem::absolute("..\\..\\src\\shaders\\outlineVert.glsl").string(),
-							std::filesystem::absolute("..\\..\\src\\shaders\\outlineFrag.glsl").string()),
 							selected(false) 
 			{
 				other.vao = 0;
@@ -53,10 +48,18 @@ class Primitive
 	
 		void draw(Camera& camera, int32_t width, int32_t height)
 		{
+			draw(camera, width, height, shader);
+		}
+
+		void draw(Camera& camera, int32_t width, int32_t height, uint32_t shader)
+		{
+			draw(camera, width, height, shader);
+		}
+
+		void draw(Camera& camera, int32_t width, int32_t height, Shader& shader)
+		{
 			const auto view = camera.getViewMatrix();
-			const auto projection = glm::perspective(glm::radians(camera.zoom), float(width == 0 ? 1 : width)/float(height == 0 ? 1 : height),0.1f, 100.0f);	
-			glStencilFunc(GL_ALWAYS, 1, 0xFF);
-			glStencilMask(0xFF);
+			const auto projection = glm::perspective(glm::radians(camera.zoom), float(width == 0 ? 1 : width)/float(height == 0 ? 1 : height), 0.1f, 100.0f);	
 			shader.use();
 			shader.setVec3("objectIDColor", setPickColor(vao));
 			if (material.diffuse -> path != "")
@@ -64,12 +67,20 @@ class Primitive
 				shader.setInt(material.diffuse -> type, 1);
 				glBindTextureUnit(1, material.diffuse -> id);
 			}else glBindTextureUnit(1, 0);
+			
 			if (material.specular -> path != "")
 			{
 				shader.setInt(material.specular -> type, 2);
 				shader.setFloat("shininess", 32);
 				glBindTextureUnit(2, material.specular -> id);
 			}else glBindTextureUnit(2, 0);
+			
+			if (material.normal -> path != "")
+			{
+				shader.setInt(material.normal -> type, 3);
+				glBindTextureUnit(3, material.normal -> id);
+			}else glBindTextureUnit(3, 0);
+
 			shader.setMat4("projection",projection);
 			shader.setMat4("view",view);
 			shader.setMat4("model",transform);
@@ -78,28 +89,19 @@ class Primitive
 			int eboSize = 0;
 			glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
 			int indexSize = eboSize / sizeof(int);
-			glDrawElements(GL_TRIANGLES,indexSize,GL_UNSIGNED_INT,(void*)0);
+
+			glStencilFunc(GL_ALWAYS, 1, 0xFF);
+			glStencilMask(0xFF);
+			
+			glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
 			glActiveTexture(GL_TEXTURE0);
 			if (selected == true)
 			{
-				glEnable(GL_STENCIL_TEST);
-				glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-				glStencilMask(0x00); 
-				float camDistancece = (float)glm::length(camera.position - glm::vec3(transform[3]));
-				float outlineScale = 1.025f;
-				scaledTransform = glm::scale(transform, glm::vec3(outlineScale));
-				outlineShader.use();
-				outlineShader.setMat4("projection",projection);
-				outlineShader.setMat4("view",view);
-				outlineShader.setMat4("model",scaledTransform);
-				glDrawElements(GL_TRIANGLES,indexSize,GL_UNSIGNED_INT,(void*)0);
-				glStencilMask(0xFF);
-				glStencilFunc(GL_ALWAYS, 1, 0xFF); 
-				glActiveTexture(GL_TEXTURE0);
-				glDisable(GL_STENCIL_TEST);
+				std::cerr << "drawing outline of: "  << vao << std::endl;
 			}
 			
 			glBindVertexArray(0);
+
 		}
 	private:
 		glm::vec3 setPickColor(unsigned int id)

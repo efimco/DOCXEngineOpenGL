@@ -12,6 +12,7 @@
 	#include "sceneManager.h"
 	#include "objectPicking.h"
 	#include "gltfImIporter.h"
+	#include "cubemap.h"
 
 	#include <ImGui/imgui.h>
 	#include <ImGui/imgui_impl_glfw.h>
@@ -201,13 +202,13 @@
 
 	float objectIdQuadVertices[] = { 
 		// positions   // texCoords
-		0.6f,  1.0f,  0.0f, 1.0f,
-		0.6f, 0.6f,  0.0f, 0.0f,
-		1.0f, 0.6f,  1.0f, 0.0f,
+		0.75f,  1.0f,  0.0f, 1.0f,	// right top
+		0.75f, 0.75f,  0.0f, 0.0f,	//left bottom
+		1.0f, 0.75f,  1.0f, 0.0f,	//right bottom
 
-		0.6f,  1.0f,  0.0f, 1.0f,
-		1.0f, 0.6f,  1.0f, 0.0f,
-		1.0f,  1.0f,  1.0f, 1.0f
+		0.75f,  1.0f,  0.0f, 1.0f,	// right top
+		1.0f, 0.75f,  1.0f, 0.0f,	//right bottom
+		1.0f,  1.0f,  1.0f, 1.0f	//left top
 	};
 
 	uint32_t quadVAO, quadVBO;
@@ -245,24 +246,34 @@
 		glVertexArrayAttribBinding(objectIdVAO, 1, 0);
 
 	}
-	uint32_t fbo,textureColorbuffer,rbo;
+	uint32_t fbo, textureColorBufferMultiSampled, rbo, intermediateFBO, screenTexture;
 	void initFrameBufferAndRenderTarget()
 	{
 		glGenFramebuffers(1, &fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-		glGenTextures(1, &textureColorbuffer);
-		glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
-		glBindTexture(GL_TEXTURE_2D, GL_TEXTURE0);
+		glGenTextures(1, &textureColorBufferMultiSampled);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, GL_TRUE);
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled, 0);
 
 		glGenRenderbuffers(1, &rbo);
 		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT); // use a single renderbuffer object for both a depth AND stencil buffer.
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
 		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+		// configure second post-processing framebuffer
+		glGenFramebuffers(1, &intermediateFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, intermediateFBO);
+		// create a color attachment texture
+		glGenTextures(1, &screenTexture);
+		glBindTexture(GL_TEXTURE_2D, screenTexture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0);
 
 	}
 
@@ -271,21 +282,10 @@
 		WINDOW_WIDTH = newWINDOW_WIDTH;
 		WINDOW_HEIGHT = newWINDOW_HEIGHT;
 		glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-
-		glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
-
-		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\multipleLightsSurface.frag").string();
-	std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.glsl").string();
+	std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.vert").string();
 
 	std::string fScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.frag").string();
 	std::string fRadialBackground = std::filesystem::absolute("..\\..\\src\\shaders\\frameRadialBackground.frag").string();
@@ -293,6 +293,8 @@
 
 	std::string vPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.vert").string();
 	std::string fPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.frag").string();
+	std::string vSkyboxShader = std::filesystem::absolute("..\\..\\src\\shaders\\cubemap\\cubemap.vert").string();
+	std::string fSkyboxShader = std::filesystem::absolute("..\\..\\src\\shaders\\\\cubemap\\cubemap.frag").string();
 
 	glm::vec3 lightColor = glm::vec3(1.0f);
 	glm::mat4 lightmodel = glm::mat4(1.0f);
@@ -314,11 +316,15 @@
 		Shader screenShader(vScreenShader,fScreenShader);
 		Shader radialGradientShader(vScreenShader,fRadialBackground);
 		Shader pickingShader(vPickingShader,fPickingShader);
+		Shader skyboxShader(vSkyboxShader,fSkyboxShader);
+		Shader cubemap();
 
+		uint32_t cubemapTexture = loadCubemap();
 		initScreenQuad();
 		initObjectIdQuad();
 		initFrameBufferAndRenderTarget();
 		initPickingFBO(WINDOW_WIDTH, WINDOW_HEIGHT);
+		initCubemap();
 
 		//import
 		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\BarDiorama.glb").string(), baseShader);
@@ -335,38 +341,54 @@
 
 		{ // lights
 			Light pointLight;
-			pointLight.type = 0;
+			pointLight.type = 2;
 			pointLight.intensity = 1;
-			pointLight.position = glm::vec3(1.0f, 0.5f, 2.0f);
+			pointLight.position = glm::vec3(1.58f, 1.95f, 1.94f);
+			pointLight.direction = glm::vec3(0.0f, -1.0f, 0.0f);
 			pointLight.ambient   = glm::vec3(0.05f);
 			pointLight.diffuse   = glm::vec3(0.8f);
 			pointLight.specular  = glm::vec3(1.0f);
 			pointLight.constant  = 1.0f;
 			pointLight.linear    = 0.09f;
 			pointLight.quadratic = 0.032f;
-			pointLight.cutOff    = glm::cos(glm::radians(12.5f));
-			pointLight.outerCutOff = glm::cos(glm::radians(17.5f));
+			pointLight.cutOff    = glm::cos(glm::radians(20.5f));
+			pointLight.outerCutOff = glm::cos(glm::radians(72.5f));
 
-			Light pointLight2;
-			pointLight2.type = 0;
-			pointLight2.intensity = 0.1f;
-			pointLight2.position = glm::vec3(1.0f, 0.5f, 5.0f);
-			pointLight2.ambient   = glm::vec3(0.05f);
-			pointLight2.diffuse   = glm::vec3(0.8f);
-			pointLight2.specular  = glm::vec3(1.0f);
-			pointLight2.constant  = 1.0f;
-			pointLight2.linear    = 0.09f;
-			pointLight2.quadratic = 0.032f;
-			pointLight2.cutOff    = glm::cos(glm::radians(12.5f));
-			pointLight.outerCutOff = glm::cos(glm::radians(17.5f));
+			Light spotLight;
+			spotLight.type = 2;
+			spotLight.intensity = 1;
+			spotLight.position = glm::vec3(1.58f, 1.95f, 3.94f);
+			spotLight.direction = glm::vec3(0.0f, -1.0f, 0.0f);
+			spotLight.ambient   = glm::vec3(0.05f);
+			spotLight.diffuse   = glm::vec3(0.8f);
+			spotLight.specular  = glm::vec3(1.0f);
+			spotLight.constant  = 1.0f;
+			spotLight.linear    = 0.09f;
+			spotLight.quadratic = 0.032f;
+			spotLight.cutOff    = glm::cos(glm::radians(20.5f));
+			spotLight.outerCutOff = glm::cos(glm::radians(72.5f));
+
+			Light directionalLight;
+			directionalLight.type = 1;
+			directionalLight.intensity = 0.1f;
+			directionalLight.position = glm::vec3(1.0f, 0.5f, 2.0f);
+			directionalLight.direction = glm::vec3(0.0f, -1.0f, 0.0f);
+			directionalLight.ambient   = glm::vec3(0.05f);
+			directionalLight.diffuse   = glm::vec3(0.8f);
+			directionalLight.specular  = glm::vec3(1.0f);
+			directionalLight.constant  = 1.0f;
+			directionalLight.linear    = 0.09f;
+			directionalLight.quadratic = 0.032f;
 
 			SceneManager::addLight(pointLight);
-			SceneManager::addLight(pointLight2);
+			SceneManager::addLight(directionalLight);
+			SceneManager::addLight(spotLight);
 			UpdateLights(SceneManager::lights);
 		}
 
 		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+			
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 		screenShader.use();
 		screenShader.setInt("screenTexture", 0);
@@ -454,6 +476,7 @@
 					UpdateLights(SceneManager::lights);
 					SceneManager::reloadShaders();
 					screenShader.reload();
+					skyboxShader.reload();
 					radialGradientShader.reload();
 					std::cout << "Shaders reloaded successfully!" << std::endl;
 				}
@@ -483,13 +506,72 @@
 				ImGui::Text("Pos: %.1f, %.1f, %.1f", camera.position.x, camera.position.y, camera.position.z); ImGui::SameLine();
 				ImGui::Text("Rot: %.1f, %.1f", camera.yaw, camera.pitch);
 				ImGui::End();
+
+				ImGui::Begin("Lights");
+				for (int i = 0; i < SceneManager::lights.size(); i++)
+				{
+					ImGui::PushID(i);
+					ImGui::Text("Light: %d %s ", i, (SceneManager::lights[i].type == 1) ? "directional" : "point");
+					ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::lights[i].position));
+					ImGui::SliderFloat("Intensity", &SceneManager::lights[i].intensity, 0.0f, 1000.0f);
+					if (SceneManager::lights[i].type == 1)
+					{
+						static glm::vec3 lightRotation = glm::vec3(0.0f); 
+						if (ImGui::DragFloat3("Light Rotation", glm::value_ptr(lightRotation), 0.1f)) 
+						{
+							float pitch = glm::radians(lightRotation.x);
+							float yaw   = glm::radians(lightRotation.y);
+							float roll  = glm::radians(lightRotation.z);
+							glm::vec3 baseDirection(0.0f, 1.0f, 0.0f);
+							glm::mat4 rotX = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
+							glm::mat4 rotY = glm::rotate(glm::mat4(1.0f), yaw,   glm::vec3(0.0f, 1.0f, 0.0f));
+							glm::mat4 rotZ = glm::rotate(glm::mat4(1.0f), roll,  glm::vec3(0.0f, 0.0f, 1.0f));
+							glm::mat4 rotationMatrix = rotZ * rotY * rotX;
+							SceneManager::lights[i].direction = glm::vec3(rotationMatrix * glm::vec4(baseDirection, 0.0f));
+						}
+					}
+					else if (SceneManager::lights[i].type == 2)
+					{
+						float cutoffAngle = glm::degrees(glm::acos(SceneManager::lights[i].cutOff));
+						float outerCutoffAngle = glm::degrees(glm::acos(SceneManager::lights[i].outerCutOff));
+						if (ImGui::SliderFloat("CutOff Angle", &cutoffAngle, 0.0f, 180.0f))
+						{
+							if (outerCutoffAngle<=cutoffAngle)
+							{ 
+								outerCutoffAngle = cutoffAngle+0.001f;
+								SceneManager::lights[i].outerCutOff = glm::cos(glm::radians(outerCutoffAngle));
+							}
+							SceneManager::lights[i].cutOff = glm::cos(glm::radians(cutoffAngle));
+						}
+
+						
+						if (ImGui::SliderFloat("Outer CutOff Angle", &outerCutoffAngle, cutoffAngle, 180))
+						{
+							if (outerCutoffAngle<=cutoffAngle) outerCutoffAngle = cutoffAngle+0.001f;
+							SceneManager::lights[i].outerCutOff = glm::cos(glm::radians(outerCutoffAngle));
+						}
+					}
+					ImGui::ColorEdit3("Color", glm::value_ptr(SceneManager::lights[i].diffuse));
+					UpdateLights(SceneManager::lights);
+					ImGui::PopID();
+				}
+				ImGui::End();
 			}
 
-			glEnable(GL_MULTISAMPLE);
 
+
+			glEnable(GL_MULTISAMPLE);
+			glEnable(GL_BLEND);
+			glEnable(GL_CULL_FACE);
 			glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
-			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
+			glClearColor(0.3f,0.3f,0.3f,1.0f); 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LESS);
+			glEnable(GL_STENCIL_TEST);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
+			glStencilMask(0x00);
 
 			glfwGetWindowSize(window, &WINDOW_WIDTH, &WINDOW_HEIGHT);
 			if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
@@ -499,23 +581,15 @@
 			}
 
 			SceneManager::setShader(pickingShader);
-			SceneManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
+			SceneManager::draw(camera, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			glDisable(GL_DEPTH_TEST);
-			
-			radialGradientShader.use();
-			glBindVertexArray(quadVAO);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-
 			glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
 
 			glEnable(GL_DEPTH_TEST);
 			glDepthFunc(GL_LESS);
-			glEnable(GL_STENCIL_TEST);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
 			glStencilMask(0x00);
 
@@ -528,17 +602,25 @@
 			}
 			SceneManager::setShader(baseShader);
 			SceneManager::draw(camera,WINDOW_WIDTH,WINDOW_HEIGHT);
+			glDepthFunc(GL_LEQUAL);
+			glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+			glm::mat4 skyview = glm::mat4(glm::mat3(camera.getViewMatrix()));  
+			drawCubemap(cubemapTexture, skyboxShader, projection, skyview);
+
 			
+			glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
+			glBlitFramebuffer(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDisable(GL_DEPTH_TEST);
 			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			
 			
 			screenShader.use();  
 			glBindVertexArray(quadVAO);
-			glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+			glBindTexture(GL_TEXTURE_2D, screenTexture);
 			glDrawArrays(GL_TRIANGLES, 0, 6);  
 
 
