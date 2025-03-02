@@ -46,22 +46,29 @@ class Primitive
 			glDeleteBuffers(1, &ebo);
 		}
 	
-		void draw(Camera& camera, int32_t width, int32_t height)
+		void draw(Camera camera,glm::mat4 lightSpaceMatrix, int32_t width, int32_t height)
 		{
-			draw(camera, width, height, shader);
+			draw(camera, lightSpaceMatrix, width, height, shader, 0,0);
+		}
+		void draw(Camera camera, glm::mat4 lightSpaceMatrix, int32_t width, int32_t height, uint32_t depthMap, float gamma)
+		{
+			draw(camera, lightSpaceMatrix, width, height, shader, depthMap, gamma);
 		}
 
-		void draw(Camera& camera, int32_t width, int32_t height, uint32_t shader)
+		void draw(Camera& camera, glm::mat4 lightSpaceMatrix, int32_t width, int32_t height, Shader& shader, uint32_t depthMap, float gamma)
 		{
-			draw(camera, width, height, shader);
-		}
-
-		void draw(Camera& camera, int32_t width, int32_t height, Shader& shader)
-		{
-			const auto view = camera.getViewMatrix();
-			const auto projection = glm::perspective(glm::radians(camera.zoom), float(width == 0 ? 1 : width)/float(height == 0 ? 1 : height), 0.1f, 100.0f);	
+			glm::mat4 projection = glm::mat4(1.0f);
+			if( width != 0 && height != 0) 
+			{
+				projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);	
+			}
 			shader.use();
+			shader.setVec3("viewPos", camera.position);
 			shader.setVec3("objectIDColor", setPickColor(vao));
+			shader.setInt("shadowMap", 5);
+			shader.setFloat("gamma", gamma);
+			glBindTextureUnit(5, depthMap);
+			shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 			if (material.diffuse -> path != "")
 			{
 				shader.setInt(material.diffuse -> type, 1);
@@ -82,7 +89,7 @@ class Primitive
 			}else glBindTextureUnit(3, 0);
 
 			shader.setMat4("projection",projection);
-			shader.setMat4("view",view);
+			shader.setMat4("view",camera.getViewMatrix());
 			shader.setMat4("model",transform);
 			
 			glBindVertexArray(vao);
@@ -90,8 +97,6 @@ class Primitive
 			glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
 			int indexSize = eboSize / sizeof(int);
 
-			glStencilFunc(GL_ALWAYS, 1, 0xFF);
-			glStencilMask(0xFF);
 			
 			glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
 			glActiveTexture(GL_TEXTURE0);
@@ -101,8 +106,8 @@ class Primitive
 			}
 			
 			glBindVertexArray(0);
-
 		}
+
 	private:
 		glm::vec3 setPickColor(unsigned int id)
 		{

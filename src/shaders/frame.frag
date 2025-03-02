@@ -4,6 +4,8 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform sampler2D screenTexture;
+uniform float near_plane;
+uniform float far_plane;
 
 const float offset = 1.0 / 300.0;
 
@@ -20,7 +22,7 @@ vec2 offsets[9] = vec2[](
 	);
 
 
-	float kernel[9] = float[](
+	float kernel0[9] = float[](
 	1.0,	1.0,	1.0,
 
 	1.0,	-8.0,	1.0,
@@ -28,7 +30,7 @@ vec2 offsets[9] = vec2[](
 	1.0,	1.0,	1.0
 	);
 
-	float kernel2[9] = float[](
+	float kernel[9] = float[](
 		1.0,	2.0,	1.0,
 
 		2.0,	4.0,	2.0,
@@ -43,21 +45,32 @@ vec2 offsets[9] = vec2[](
 	1, 4, 7, 4, 1
 	);
 	
+
+float LinearizeDepth(float depth)
+{
+	float z = depth * 2.0 - 1.0; // Back to NDC 
+	return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
+}
 void main()
 { 
 	FragColor = vec4(texture(screenTexture, TexCoords).rgb,1);
+
+	float depthValue = texture(screenTexture, TexCoords).r;
+	// FragColor = vec4(vec3(depthValue), 1.0);
+	// FragColor = vec4(vec3(LinearizeDepth(depthValue) / far_plane), 1.0);
+
 	float average = (FragColor.r + FragColor.g + FragColor.b) / 3.0;
 	average = 0.2126 * FragColor.r + 0.7152 * FragColor.g + 0.0722 * FragColor.b;
 	// FragColor = vec4(average, average, average, 1.0);
 
 	vec3 sampleTex[9];
-    for(int i = 0; i < 9; i++)
-    {
-        sampleTex[i] = vec3(texture(screenTexture, TexCoords.st + offsets[i]));
-    }
-    vec3 col = vec3(0.0);
-    for(int i = 0; i < 9; i++)
-        col += sampleTex[i] * (kernel[i] / ( (kernel.length() / 2) * (kernel.length() / 2)) ) ;
-    
-    // FragColor = vec4(col, 1.0);
+	for(int i = 0; i < 9; i++)
+	{
+		sampleTex[i] = vec3(texture(screenTexture, TexCoords.st + offsets[i]));
+	}
+	vec3 col = vec3(0.0);
+	for(int i = 0; i < 9; i++)
+		col += sampleTex[i] * (kernel[i] / ( (kernel.length() / 2) * (kernel.length() / 2)) ) ;
+	
+	// FragColor = vec4(col, 1.0);
 }

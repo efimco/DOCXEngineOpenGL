@@ -12,11 +12,19 @@ namespace SceneManager
 	static std::unordered_map<std::string, std::shared_ptr<Tex>> textureCache;
 	static std::unordered_map<uint16_t, std::shared_ptr<Tex>> textureIndexing;
 
-	static void draw(Camera& camera, int32_t width, int32_t height) 
+	static void draw(Camera& camera,glm::mat4& lightSpaceMatrix, int32_t width, int32_t height) 
 	{
 		for (auto& primitive:primitives)
 		{	
-			primitive.draw(camera, width, height);
+			primitive.draw(camera,lightSpaceMatrix, width, height);
+			
+		}
+	}
+	static void draw(Camera& camera, glm::mat4& lightSpaceMatrix, int32_t width, int32_t height, uint32_t depthMap, float gamma) 
+	{
+		for (auto& primitive:primitives)
+		{	
+			primitive.draw(camera, lightSpaceMatrix, width, height, depthMap, gamma);
 			
 		}
 	}
