@@ -46,6 +46,8 @@ class Shader
 			//create fragment shader
 			fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 			glShaderSource(fragmentShader,1,&fShaderCode,NULL);
+			glCompileShader(fragmentShader);
+
 
 			//create shader program
 			shaderProgram = glCreateProgram();
@@ -57,8 +59,9 @@ class Shader
 			glGetProgramiv(shaderProgram,GL_LINK_STATUS,&success);
 			if(!success)
 			{
+				
 				glGetProgramInfoLog(shaderProgram,sizeof(infoLog),NULL, infoLog);
-				std::cout << "ERROR::SHADER_PROGRAM::LINKING::FAILED\n" << infoLog << '\n' << std::endl;
+				std::cout << "ERROR::SHADER_PROGRAM::LINKING::FAILED\n"  << fragmentPath << '\n' << infoLog << '\n' << std::endl;
 			}
 			glDeleteShader(vertexShader);
 			glDeleteShader(fragmentShader); 

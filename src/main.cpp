@@ -339,7 +339,7 @@
 	float gamma = 1;
 	bool openFileDialog = false;
 
-	float near_plane = 4.0f, far_plane = 0.0001f;
+	float near_plane = 9978.0f, far_plane = 10021.0f;
 
 	void draw(GLFWwindow* window)
 	{
@@ -403,8 +403,8 @@
 		Light directionalLight;
 		directionalLight.type = 1;
 		directionalLight.intensity = 0.1f;
-		directionalLight.position = glm::vec3(-2.0f, 4.0f, -1.0f);
-		directionalLight.direction = glm::vec3( 0.0f, -1.0f,  0.0f);
+		directionalLight.position = glm::vec3(0, 300.0f, 0);
+		directionalLight.direction = glm::vec3( 0.0f, 0.0f,  0.0f);
 		directionalLight.ambient   = glm::vec3(0.05f);
 		directionalLight.diffuse   = glm::vec3(0.8f);
 		directionalLight.specular  = glm::vec3(1.0f);
@@ -490,8 +490,8 @@
 				}
 				ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
 				ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
-				ImGui::SliderFloat("Near plane", &near_plane,0.00001f,30.f, "%.6f");
-				ImGui::SliderFloat("Far plane", &far_plane,0.00001f,100.f);
+				ImGui::SliderFloat("Near plane", &near_plane,8500.0f,11000.f, "%.6f");
+				ImGui::SliderFloat("Far plane", &far_plane,8500.0f,11000.f);
 				ImGui::Checkbox("Wireframe Mode", &isWireframe);
 				ImGui::Checkbox("ObjectID Debug", &showObjectPicking);
 				ImGui::Checkbox("ShadowMap Debug", &showShadowMap);
@@ -549,21 +549,19 @@
 					ImGui::Text("Light: %d %s ", i, (SceneManager::lights[i].type == 1) ? "directional" : (SceneManager::lights[i].type == 2) ? "spot" : "point");
 					ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::lights[i].position));
 					ImGui::SliderFloat("Intensity", &SceneManager::lights[i].intensity, 0.0f, 10.0f);
-					if (SceneManager::lights[i].type == 1 || SceneManager::lights[i].type == 2)
+					
+					static glm::vec3 lightRotation = glm::vec3(0.0f); 
+					if (ImGui::DragFloat3("Light Rotation", glm::value_ptr(lightRotation), 0.1f)) 
 					{
-						static glm::vec3 lightRotation = glm::vec3(0.0f); 
-						if (ImGui::DragFloat3("Light Rotation", glm::value_ptr(lightRotation), 0.1f)) 
-						{
-							float pitch = glm::radians(lightRotation.x);
-							float yaw   = glm::radians(lightRotation.y);
-							float roll  = glm::radians(lightRotation.z);
-							glm::vec3 baseDirection(0.0f, -1.0f, 0.0f);
-							glm::mat4 rotX = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
-							glm::mat4 rotY = glm::rotate(glm::mat4(1.0f), yaw,   glm::vec3(0.0f, 1.0f, 0.0f));
-							glm::mat4 rotZ = glm::rotate(glm::mat4(1.0f), roll,  glm::vec3(0.0f, 0.0f, 1.0f));
-							glm::mat4 rotationMatrix = rotZ * rotY * rotX;
-							SceneManager::lights[i].direction = glm::vec3(rotationMatrix * glm::vec4(baseDirection, 0.0f));
-						}
+						float pitch = glm::radians(lightRotation.x);
+						float yaw   = glm::radians(lightRotation.y);
+						float roll  = glm::radians(lightRotation.z);
+						glm::vec3 baseDirection(0.0f, -1.0f, 0.0f);
+						glm::mat4 rotX = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
+						glm::mat4 rotY = glm::rotate(glm::mat4(1.0f), yaw,   glm::vec3(0.0f, 1.0f, 0.0f));
+						glm::mat4 rotZ = glm::rotate(glm::mat4(1.0f), roll,  glm::vec3(0.0f, 0.0f, 1.0f));
+						glm::mat4 rotationMatrix = rotZ * rotY * rotX;
+						SceneManager::lights[i].direction = glm::vec3(rotationMatrix * glm::vec4(baseDirection, 0.0f));
 					}
 					if (SceneManager::lights[i].type == 2)
 					{
@@ -612,13 +610,13 @@
 			
 
 			glm::vec3 sceneCenter = glm::vec3(0.0f); 
-			float distance = 3.0f;
+			float distance = 10000.0f;
 
-			glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane); 
+			glm::mat4 lightProjection = glm::ortho(-7.0f, 7.0f, -7.0f, 7.0f, near_plane, far_plane); 
 			
 			glm::vec3 lightDirection = glm::normalize(SceneManager::lights[1].direction);
 
-			glm::vec3 lightPos = sceneCenter - lightDirection * distance;
+			glm::vec3 lightPos = camera.position + lightDirection * distance;
 
 			glm::mat4 lightView = glm::lookAt(lightPos, lightDirection, glm::vec3(0.0, 1.0, 0.0));
 			glm::mat4 lightSpaceMatrix = lightProjection * lightView;
