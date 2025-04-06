@@ -16,8 +16,13 @@ set (
 
 
 add_executable(OpenGLLearn 
-	src/main.cpp 
 	src/glad.c
+	src/main.cpp 
+	src/camera.cpp
+	src/texture.cpp
+	src/material.cpp
+	src/shader.cpp
+	src/primitive.cpp
 	${IMGUI_SRC}
 )
 

@@ -1,8 +1,9 @@
 #pragma once
 #include <vector>
-#include "primitive.h"
-#include "light.h"
 #include <unordered_map>
+#include "primitive.hpp"
+#include "light.hpp"
+
 namespace SceneManager
 {
 	static Primitive* selectedPrimitive;

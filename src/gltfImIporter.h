@@ -10,8 +10,8 @@
 
 #include "glad/glad.h"
 #include "tiny_gltf.h"
-#include "primitive.h"
-#include "shader.h" 
+#include "primitive.hpp"
+#include "shader.hpp" 
 #include <vector>
 #include <string>
 #include <iostream>

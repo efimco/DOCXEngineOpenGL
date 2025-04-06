@@ -1,8 +1,9 @@
 #pragma once
 #include "glm/glm.hpp"
 #include <vector>
-#include "primitive.h"
+#include "primitive.hpp"
 #include <glad/glad.h>
+#include <iostream>
 
 
 uint32_t pickingFBO = 0;

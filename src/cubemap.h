@@ -6,7 +6,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
-#include "shader.h"
+#include "shader.hpp"
 #include "glm/glm.hpp"
 
 
