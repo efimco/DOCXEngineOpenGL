@@ -1,13 +1,12 @@
 #pragma once
 #include <glad/glad.h>
-#ifndef STBI_INCLUDE_STB_IMAGE_H
 #include "stb_image.h"
-#endif
 #include <vector>
 #include <string>
 #include <iostream>
 #include "shader.hpp"
 #include "glm/glm.hpp"
+#include <filesystem>
 
 
 std::vector<std::string> cubemapFaces

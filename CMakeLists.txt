@@ -23,6 +23,10 @@ add_executable(OpenGLLearn
 	src/material.cpp
 	src/shader.cpp
 	src/primitive.cpp
+	src/gltfImporter.cpp
+	src/stb_image_impl.cpp
+	src/tiny_gltf_impl.cpp
+	src/depthBuffer.cpp
 	${IMGUI_SRC}
 )
 

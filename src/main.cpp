@@ -1,129 +1,130 @@
-
-	#define GLM_ENABLE_EXPERIMENTAL
-	#include <glad/glad.h>
-	#include <windows.h>	
-	#include <GLFW/glfw3.h>
-
-
-	#include <glm/gtc/matrix_transform.hpp>
-	#include <glm/gtc/type_ptr.hpp>
-	#include <commdlg.h> 
-
-	#include "sceneManager.h"
-	#include "objectPicking.h"
-	#include "gltfImIporter.h"
-	#include "cubemap.h"
-	#include "depthbuffer.h"
-
-	#include <ImGui/imgui.h>
-	#include <ImGui/imgui_impl_glfw.h>
-	#include <ImGui/imgui_impl_opengl3.h>
-	#include <ImGui/imgui_internal.h>
-	#include <filesystem> 
+#define GLM_ENABLE_EXPERIMENTAL
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 
-	int32_t WINDOW_WIDTH = 1024;
-	int32_t WINDOW_HEIGHT = 1024;
-	Camera camera(glm::vec3(-10.0f, 3.0f, 13.0f), glm::vec3(0.0f,1.0f,0.0f), -45.0f, 0.0f);
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <commdlg.h> 
 
-	bool wireframeKeyPressed = false;
-	bool rightKeyPressed = false;
-	float increasedSpeed = camera.speed *3;
-	float defaultSpeed = camera.speed;
+#include "sceneManager.h"
+#include "objectPicking.h"
+#include "gltfImporter.hpp"
+#include "cubemap.h"
+#include "depthBuffer.hpp"
 
-	std::vector<glm::vec3> defaultCameraMatrix = {camera.position, camera.front, camera.up};
-	float defaultCameraRotation[] = {camera.pitch, camera.yaw};
-	bool cameraReseted = true;
+#include <ImGui/imgui.h>
+#include <ImGui/imgui_impl_glfw.h>
+#include <ImGui/imgui_impl_opengl3.h>
+#include <ImGui/imgui_internal.h>
+#include <filesystem> 
 
-	double mousePosx, mousePosy;
-	glm::mat4 view = glm::mat4(1.0f);
-	glm::mat4 projection = glm::mat4(1.0f);
 
-	bool showObjectPicking = false;
-	bool showShadowMap = false;
+int32_t WINDOW_WIDTH = 1024;
+int32_t WINDOW_HEIGHT = 1024;
+Camera camera(glm::vec3(-10.0f, 3.0f, 13.0f), glm::vec3(0.0f,1.0f,0.0f), -45.0f, 0.0f);
 
-	
-	void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime)
-	{
-		if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-			glfwSetWindowShouldClose(window,true);
+bool wireframeKeyPressed = false;
+bool rightKeyPressed = false;
+float increasedSpeed = camera.speed *3;
+float defaultSpeed = camera.speed;
 
-		if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && !wireframeKeyPressed)
-			{
-				wireframeKeyPressed = true;
-				isWireframe = !isWireframe;
-		}
+std::vector<glm::vec3> defaultCameraMatrix = {camera.position, camera.front, camera.up};
+float defaultCameraRotation[] = {camera.pitch, camera.yaw};
+bool cameraReseted = true;
 
-		if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE)
-			wireframeKeyPressed = false;
+double mousePosx, mousePosy;
+glm::mat4 view = glm::mat4(1.0f);
+glm::mat4 projection = glm::mat4(1.0f);
 
-		static bool wasMousePressed = false;
-		if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
+bool showObjectPicking = false;
+bool showShadowMap = false;
+
+
+void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime)
+{
+	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window,true);
+
+	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && !wireframeKeyPressed)
 		{
-			if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse)
-				wasMousePressed = true;
-			else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMousePressed)
-			{
-				wasMousePressed = false;
-				projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);    
-				view = camera.getViewMatrix();
-				glm::vec3 pickedColor = pickObjectAt(mousePosx, mousePosy, WINDOW_HEIGHT);
-				Primitive* primitive = getIdFromPickColor(pickedColor);
-				if (primitive != nullptr)
-				{
-					if (SceneManager::selectedPrimitive != primitive)
-					{
-						if (SceneManager::selectedPrimitive != nullptr) SceneManager::selectedPrimitive->selected = false;
-						primitive->selected = true;
-						SceneManager::selectedPrimitive = primitive;
-					}
-					std::cout << "VAO: " << primitive->vao << std::endl;
-				}
-				else
-				{
-					if (SceneManager::selectedPrimitive != nullptr)
-					{
-						SceneManager::selectedPrimitive->selected = false;
-						SceneManager::selectedPrimitive = nullptr;
-					}
-				}
-			}
-		}
-
-
-		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
-		{
-			if (!rightKeyPressed)
-			{
-				rightKeyPressed = true;
-				glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
-			}
-			if(glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard(FORWARD,deltaTime) , cameraReseted = true;
-			if(glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard(BACKWARD,deltaTime) , cameraReseted = true;
-			if(glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard(LEFT,deltaTime) , cameraReseted = true;
-			if(glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(RIGHT,deltaTime) , cameraReseted = true;
-			if(glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) camera.processKeyboard(DOWN,deltaTime) , cameraReseted = true;
-			if(glfwGetKey(window,GLFW_KEY_E) == GLFW_PRESS) camera.processKeyboard(UP,deltaTime) , cameraReseted = true;
-		}
-		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
-		{
-			if (rightKeyPressed) 
-				glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
-			rightKeyPressed = false;
-		} 
-
-		if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-			camera.speed = increasedSpeed;
-		else 
-			camera.speed = defaultSpeed;
-
-		if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
-
+			wireframeKeyPressed = true;
+			isWireframe = !isWireframe;
 	}
 
-	float lastX = (float)(WINDOW_WIDTH / 2), lastY = (float) (WINDOW_HEIGHT / 2);
-	bool firstMouse = true;
-	float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
+	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE)
+		wireframeKeyPressed = false;
+
+	static bool wasMousePressed = false;
+	if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
+	{
+		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse)
+			wasMousePressed = true;
+		else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMousePressed)
+		{
+			wasMousePressed = false;
+			projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);    
+			view = camera.getViewMatrix();
+			glm::vec3 pickedColor = pickObjectAt(mousePosx, mousePosy, WINDOW_HEIGHT);
+			Primitive* primitive = getIdFromPickColor(pickedColor);
+			if (primitive != nullptr)
+			{
+				if (SceneManager::selectedPrimitive != primitive)
+				{
+					if (SceneManager::selectedPrimitive != nullptr) SceneManager::selectedPrimitive->selected = false;
+					primitive->selected = true;
+					SceneManager::selectedPrimitive = primitive;
+				}
+				std::cout << "VAO: " << primitive->vao << std::endl;
+			}
+			else
+			{
+				if (SceneManager::selectedPrimitive != nullptr)
+				{
+					SceneManager::selectedPrimitive->selected = false;
+					SceneManager::selectedPrimitive = nullptr;
+				}
+			}
+		}
+	}
+
+
+	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+	{
+		if (!rightKeyPressed)
+		{
+			rightKeyPressed = true;
+			glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+		}
+		if(glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard(FORWARD,deltaTime) , cameraReseted = true;
+		if(glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard(BACKWARD,deltaTime) , cameraReseted = true;
+		if(glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard(LEFT,deltaTime) , cameraReseted = true;
+		if(glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(RIGHT,deltaTime) , cameraReseted = true;
+		if(glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) camera.processKeyboard(DOWN,deltaTime) , cameraReseted = true;
+		if(glfwGetKey(window,GLFW_KEY_E) == GLFW_PRESS) camera.processKeyboard(UP,deltaTime) , cameraReseted = true;
+	}
+	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
+	{
+		if (rightKeyPressed) 
+			glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+		rightKeyPressed = false;
+	} 
+
+	if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+		camera.speed = increasedSpeed;
+	else 
+		camera.speed = defaultSpeed;
+
+	if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
+
+}
+
+float lastX = (float)(WINDOW_WIDTH / 2), lastY = (float) (WINDOW_HEIGHT / 2);
+bool firstMouse = true;
+float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 
 	void mouseCallback(GLFWwindow* window, double xPos, double yPos)
 	{
@@ -356,7 +357,8 @@
 		initFrameBufferAndRenderTarget();
 		initPickingFBO(WINDOW_WIDTH, WINDOW_HEIGHT);
 		initCubemap();
-		initDepthMap(SHADOW_WIDTH, SHADOW_HEIGHT);
+		DepthBuffer depthBuffer(2048, 2048);
+
 
 		//import
 		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\BarDiorama.glb").string(), baseShader);
@@ -603,8 +605,8 @@
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-			glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-			glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+			glViewport(0, 0, depthBuffer.width, depthBuffer.height);
+			depthBuffer.bindDepthMap();
 			glClear(GL_DEPTH_BUFFER_BIT);
 
 			
@@ -647,7 +649,7 @@
 			glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
 
 			SceneManager::setShader(baseShader);
-			SceneManager::draw(camera, lightSpaceMatrix, WINDOW_WIDTH, WINDOW_HEIGHT, depthMap, gamma);
+			SceneManager::draw(camera, lightSpaceMatrix, WINDOW_WIDTH, WINDOW_HEIGHT, depthBuffer.depthMap, gamma);
 			glDepthFunc(GL_LEQUAL);
 			glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 			glm::mat4 skyView = glm::mat4(glm::mat3(camera.getViewMatrix()));  
@@ -682,7 +684,7 @@
 			if(showShadowMap)
 			{
 				glBindVertexArray(objectIdVAO);
-				glBindTexture(GL_TEXTURE_2D, depthMap);
+				glBindTexture(GL_TEXTURE_2D, depthBuffer.depthMap);
 				glDrawArrays(GL_TRIANGLES, 0, 6);  
 			} 
 			ImGui::Render();
