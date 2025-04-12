@@ -11,11 +11,12 @@
 #include <commdlg.h> 
 
 #include "sceneManager.h"
-#include "objectPicking.h"
+#include "pickingBuffer.hpp"
 #include "gltfImporter.hpp"
-#include "cubemap.h"
+#include "cubemap.hpp"
 #include "depthBuffer.hpp"
 
+#include <iostream>
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_glfw.h>
 #include <ImGui/imgui_impl_opengl3.h>
@@ -44,7 +45,7 @@ bool showObjectPicking = false;
 bool showShadowMap = false;
 
 
-void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime)
+void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime, uint32_t& pickingFBO)
 {
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window,true);
@@ -68,7 +69,7 @@ void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime)
 			wasMousePressed = false;
 			projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);    
 			view = camera.getViewMatrix();
-			glm::vec3 pickedColor = pickObjectAt(mousePosx, mousePosy, WINDOW_HEIGHT);
+			glm::vec3 pickedColor = pickObjectAt(mousePosx, mousePosy, WINDOW_HEIGHT, pickingFBO);
 			Primitive* primitive = getIdFromPickColor(pickedColor);
 			if (primitive != nullptr)
 			{
@@ -251,69 +252,40 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 	uint32_t fbo, textureColorBufferMultiSampled, rbo, intermediateFBO, screenTexture;
 	void initFrameBufferAndRenderTarget()
 	{
-		glGenFramebuffers(1, &fbo);
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glCreateFramebuffers(1, &fbo);
+		
+		glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &textureColorBufferMultiSampled);
+		glTextureStorage2DMultisample(textureColorBufferMultiSampled, 4, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT, GL_TRUE);
+		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, textureColorBufferMultiSampled, 0);
 
-		glGenTextures(1, &textureColorBufferMultiSampled);
-		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled);
-		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, GL_TRUE);
-		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled, 0);
-
-		glGenRenderbuffers(1, &rbo);
-		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-		glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
-		glBindRenderbuffer(GL_RENDERBUFFER, 0);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+		glCreateRenderbuffers(1, &rbo);
+		glNamedRenderbufferStorageMultisample(rbo, 4, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
+		glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
 		// configure second post-processing framebuffer
-		glGenFramebuffers(1, &intermediateFBO);
-		glBindFramebuffer(GL_FRAMEBUFFER, intermediateFBO);
+		glCreateFramebuffers(1, &intermediateFBO);
 		// create a color attachment texture
-		glGenTextures(1, &screenTexture);
-		glBindTexture(GL_TEXTURE_2D, screenTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0);
+		glCreateTextures(GL_TEXTURE_2D, 1, &screenTexture);
+		glTextureStorage2D(screenTexture, 1, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT);
+		glTextureParameteri(screenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glNamedFramebufferTexture(intermediateFBO, GL_COLOR_ATTACHMENT0, screenTexture, 0);
 		
 
 	}
 
+	bool isFramebufferSizeSetted = true;
 	void framebufferSizeCallback(GLFWwindow* window, int32_t newWINDOW_WIDTH, int32_t newWINDOW_HEIGHT)
 	{
 		WINDOW_WIDTH = newWINDOW_WIDTH;
 		WINDOW_HEIGHT = newWINDOW_HEIGHT;
-		
-		glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-
-		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-		glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
-
-		glBindTexture(GL_TEXTURE_2D, screenTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0);
-
-		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled);
-		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, GL_TRUE);
-		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled, 0);
-
-		glBindTexture(GL_TEXTURE_2D, pickingTexture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pickingTexture, 0);
-		
+		isFramebufferSizeSetted = false;
 	}
 
 	std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\multipleLightsSurface.frag").string();
 	std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.vert").string();
 
 	std::string fScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.frag").string();
-	std::string fRadialBackground = std::filesystem::absolute("..\\..\\src\\shaders\\frameRadialBackground.frag").string();
 
 	std::string vScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.vert").string();
 
@@ -346,17 +318,15 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 	{
 		Shader baseShader (vShaderPath, fShaderPath);
 		Shader screenShader(vScreenShader,fScreenShader);
-		Shader radialGradientShader(vScreenShader,fRadialBackground);
 		Shader pickingShader(vPickingShader,fPickingShader);
 		Shader skyboxShader(vSkyboxShader,fSkyboxShader);
 		Shader depthShader(simpleDepthShader,fEmptyShader);
 
-		uint32_t cubemapTexture = loadCubemap();
+		Cubemap cubemap{};
 		initScreenQuad();
 		initObjectIdQuad();
 		initFrameBufferAndRenderTarget();
-		initPickingFBO(WINDOW_WIDTH, WINDOW_HEIGHT);
-		initCubemap();
+		PickingBuffer pickingbuffer(WINDOW_WIDTH, WINDOW_WIDTH);
 		DepthBuffer depthBuffer(2048, 2048);
 
 
@@ -434,7 +404,34 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 			
 			deltaTime = time - lastFrame;
 			lastFrame = time;
-			processInput(window, isWireframe, deltaTime);
+			processInput(window, isWireframe, deltaTime,pickingbuffer.pickingFBO);
+
+			if (!isFramebufferSizeSetted)
+			{
+				glDeleteTextures(1, &textureColorBufferMultiSampled);
+				glDeleteTextures(1, &screenTexture); 
+				glDeleteRenderbuffers(1, &rbo);
+
+				glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &textureColorBufferMultiSampled);
+				glTextureStorage2DMultisample(textureColorBufferMultiSampled, 4, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT, GL_TRUE);
+				glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, textureColorBufferMultiSampled, 0);
+
+				glCreateTextures(GL_TEXTURE_2D, 1, &screenTexture);
+				glTextureStorage2D(screenTexture, 1, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT);
+				glTextureParameteri(screenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glNamedFramebufferTexture(intermediateFBO, GL_COLOR_ATTACHMENT0, screenTexture, 0);
+
+				glCreateRenderbuffers(1, &rbo);
+				glNamedRenderbufferStorageMultisample(rbo, 4, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
+				glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+				pickingbuffer.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
+
+				glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+
+				isFramebufferSizeSetted = true;
+			}
 			
 			//camera interpolated reset
 			if(!cameraReseted && glm::length(camera.position - defaultCameraMatrix[0]) > .01 )
@@ -514,7 +511,6 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 					SceneManager::reloadShaders();
 					screenShader.reload();
 					skyboxShader.reload();
-					radialGradientShader.reload();
 					std::cout << "Shaders reloaded successfully!" << std::endl;
 				}
 				ImGui::End();
@@ -593,6 +589,11 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 				ImGui::End();
 			}
 
+			if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
+			{
+				projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);	
+				view = camera.getViewMatrix();
+			}
 
 			glEnable(GL_MULTISAMPLE);
 			glEnable(GL_BLEND);
@@ -608,8 +609,6 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 			glViewport(0, 0, depthBuffer.width, depthBuffer.height);
 			depthBuffer.bindDepthMap();
 			glClear(GL_DEPTH_BUFFER_BIT);
-
-			
 
 			glm::vec3 sceneCenter = glm::vec3(0.0f); 
 			float distance = 10000.0f;
@@ -627,18 +626,14 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			
+
+
 			glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-			glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
-			glClearColor(0.3f,0.3f,0.3f,1.0f); 
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+			pickingbuffer.bind();
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 			glfwGetWindowSize(window, &WINDOW_WIDTH, &WINDOW_HEIGHT);
-			if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
-			{
-				projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);	
-				view = camera.getViewMatrix();
-			}
+
 
 			SceneManager::setShader(pickingShader);
 			SceneManager::draw(camera, lightSpaceMatrix, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -653,10 +648,10 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 			glDepthFunc(GL_LEQUAL);
 			glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 			glm::mat4 skyView = glm::mat4(glm::mat3(camera.getViewMatrix()));  
-			drawCubemap(cubemapTexture, skyboxShader, projection, skyView);
-			glBindTextureUnit(5, 0);
+			cubemap.draw(skyboxShader, projection, skyView);
+			glDepthFunc(GL_LESS);
 
-			
+
 			glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
 			glBlitFramebuffer(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -674,11 +669,11 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 			glBindTexture(GL_TEXTURE_2D, screenTexture);
 			glDrawArrays(GL_TRIANGLES, 0, 6);  
 
-
+			
 			if(showObjectPicking)
 			{
 				glBindVertexArray(objectIdVAO);
-				glBindTexture(GL_TEXTURE_2D, pickingTexture);
+				glBindTexture(GL_TEXTURE_2D, pickingbuffer.pickingTexture);
 				glDrawArrays(GL_TRIANGLES, 0, 6);  
 			} 
 			if(showShadowMap)

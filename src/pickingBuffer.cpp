@@ -1,35 +1,69 @@
-#pragma once
 #include "glm/glm.hpp"
 #include <vector>
 #include "primitive.hpp"
 #include <glad/glad.h>
 #include <iostream>
+#include "sceneManager.h"
+#include "glm/gtc/type_ptr.hpp"
+#include "pickingBuffer.hpp"
 
 
-uint32_t pickingFBO = 0;
-uint32_t pickingTexture = 0;
 
-void initPickingFBO(int& windowWidth, int& windowHeight)
+PickingBuffer::PickingBuffer(int& windowWidth, int& windowHeight)
+	{
+		glCreateFramebuffers(1, &pickingFBO);
+		glCreateTextures(GL_TEXTURE_2D, 1, &pickingTexture);
+		
+		glTextureStorage2D(pickingTexture, 1, GL_RGB8, windowWidth, windowHeight);
+		glTextureParameteri(pickingTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(pickingTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		
+		glNamedFramebufferTexture(pickingFBO, GL_COLOR_ATTACHMENT0, pickingTexture, 0);
+		
+		if (glCheckNamedFramebufferStatus(pickingFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		{
+			std::cerr << "Error: Picking FBO is not complete!" << std::endl;
+		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+PickingBuffer::~PickingBuffer()
 {
-	glGenFramebuffers(1, &pickingFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
+	glDeleteTextures(1, &pickingTexture);
+	glDeleteFramebuffers(1, &pickingFBO);
+}
 
-	glGenTextures(1, &pickingTexture);
-	glBindTexture(GL_TEXTURE_2D, pickingTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pickingTexture, 0);
+void PickingBuffer::bind()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearDepth(1.0f);
+	glClearStencil(0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+}
+
+void PickingBuffer::resize(int& windowWidth, int& windowHeight)
+{
+	glDeleteTextures(1, &pickingTexture);
+
+	glCreateTextures(GL_TEXTURE_2D, 1, &pickingTexture);
 	
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	glTextureStorage2D(pickingTexture, 1, GL_RGB8, windowWidth, windowHeight);
+	glTextureParameteri(pickingTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTextureParameteri(pickingTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	
+	glNamedFramebufferTexture(pickingFBO, GL_COLOR_ATTACHMENT0, pickingTexture, 0);
+	
+	if (glCheckNamedFramebufferStatus(pickingFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
 		std::cerr << "Error: Picking FBO is not complete!" << std::endl;
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-glm::vec3 pickObjectAt(double mouseX, double mouseY, int32_t windowHeight)
+glm::vec3 pickObjectAt(double mouseX, double mouseY, int32_t windowHeight, uint32_t pickingFBO)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
 

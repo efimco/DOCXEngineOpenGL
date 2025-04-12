@@ -27,6 +27,8 @@ add_executable(OpenGLLearn
 	src/stb_image_impl.cpp
 	src/tiny_gltf_impl.cpp
 	src/depthBuffer.cpp
+	src/pickingBuffer.cpp
+	src/cubemap.cpp
 	${IMGUI_SRC}
 )
 

@@ -63,6 +63,27 @@ vec2 offsets[9] = vec2[](
 		vec2( offset, -offset)  // bottom-right    
 	);
 
+float rand(vec2 co) {
+	return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+vec2 randomOffset(int i, vec2 texelSize) {
+	// Generate more varied offsets using the fragment position
+	vec2 noise = vec2(
+		rand(vec2(i * 0.764331, fs_in.FragPos.x)),
+		rand(vec2(fs_in.FragPos.z, i * 0.358318))
+	);
+
+	// Convert to polar coordinates for better distribution
+	float angle = noise.x * 2.0 * 3.14159;
+	float radius = noise.y;
+
+	// Apply smoothstep for better radius distribution
+	radius = smoothstep(0.0, 1.0, radius);
+
+	return vec2(cos(angle), sin(angle)) * radius * texelSize * 4.0; // Increased radius for softer shadows
+}
+
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 lightPos)
 {
 	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -79,17 +100,16 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 lightPos)
 	float shadow = 0.0;
 
 	vec2 texelSize = 1.0 / textureSize(shadowMap,0);
-	int sampleSize = 2;
-	for (int x = 1-sampleSize; x <=sampleSize; ++x)
+	int samples = 32;
+
+	for(int i = 0; i < samples; ++i) 
 	{
-		for (int y = 1-sampleSize; y <= sampleSize; ++y)
-		{
-				float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-				shadow += (currentDepth - bias) >  pcfDepth ? 1.0 : 0.0;
-		}
+		vec2 offset = randomOffset(i, texelSize);
+		float pcfDepth = texture(shadowMap, projCoords.xy + offset).r;
+		shadow += (currentDepth - bias) > pcfDepth ? 1.0 : 0.0;
 	}
 	
-	shadow /= pow((sampleSize*2 +1), 2);
+	shadow /= float(samples)*2;
 
 	// shadow = (currentDepth - bias) >  closestDepth ? 1.0 : 0.0;
 	if(projCoords.z > 1.0)
