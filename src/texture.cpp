@@ -7,18 +7,18 @@ Tex::Tex() : id(-1), type(""), path("") {};
 
 Tex::Tex(const char* path, std::string type):path(path), type(type)
 {
-	if (path != "")
+	if (path && path[0] != '\0')
 	{
 		id = TextureFromFile(path);
-		std::cout << "Loaded texture: " << path << std::endl;
+		std::cout << "Loaded texture from file: " << path << std::endl;
 	}
 	else id = 0;
 };
 
 Tex::Tex(tinygltf::Image& image, std::string type):path(path), type(type)
 {
-	id = TextureFromGltf(image);
-	std::cout << "Loaded texture: " << image.name << std::endl;
+	id = TextureFromGlb(image);
+	std::cout << "Loaded texture from gltf: " << image.name << std::endl;
 	this->path = image.name;
 };
 
@@ -68,7 +68,7 @@ uint32_t Tex::TextureFromFile(const char *path)
 		return textureID;
 	}
 
-uint32_t Tex::TextureFromGltf(tinygltf::Image& image)
+uint32_t Tex::TextureFromGlb(tinygltf::Image& image)
 {
 	GLenum format;
 	if (image.component == 1)

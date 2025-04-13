@@ -16,5 +16,5 @@ class Tex
 
 	void SetPath(const std::string& newPath);
 	uint32_t TextureFromFile(const char *path);
-	uint32_t TextureFromGltf(tinygltf::Image& image);
+	uint32_t TextureFromGlb(tinygltf::Image& image);
 };
