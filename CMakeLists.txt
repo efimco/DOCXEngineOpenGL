@@ -16,7 +16,7 @@ set (
 
 
 add_executable(OpenGLLearn 
-	src/glad.c
+	thirdparty/include/glad/glad.c
 	src/main.cpp 
 	src/camera.cpp
 	src/texture.cpp
@@ -29,6 +29,8 @@ add_executable(OpenGLLearn
 	src/depthBuffer.cpp
 	src/pickingBuffer.cpp
 	src/cubemap.cpp
+	src/uiManager.cpp
+	src/sceneManager.cpp
 	${IMGUI_SRC}
 )
 

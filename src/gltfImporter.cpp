@@ -3,7 +3,7 @@
 #include "glad/glad.h"
 #include "shader.hpp"
 #include "tiny_gltf.h"
-#include "sceneManager.h"
+#include "sceneManager.hpp"
 #include "gltfImporter.hpp"
 
 GLTFModel::GLTFModel(std::string path, const Shader& shader) : path(path), shader(shader)
@@ -40,11 +40,11 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 	{
 		// std::string path = std::filesystem::absolute("..\\..\\res\\GltfModels\\" + model.images[i].name + ".png").string();
 		std::string path = model.images[i].name;
-		if (SceneManager::textureCache.find(path) == SceneManager::textureCache.end()) 
+		if (SceneManager::getTextureCache().find(path) == (SceneManager::getTextureCache().end()))
 		{
-			SceneManager::textureCache[path] = std::make_shared<Tex>(model.images[i], "texture");
+			SceneManager::addTextureToCache(path, std::make_shared<Tex>(model.images[i], "texture"));
 		}
-		SceneManager::textureIndexing[i] = SceneManager::textureCache[path];
+		SceneManager::addTextureIndex(i, SceneManager::getTextureCache()[path]);
 	} 
 	
 	for (int i = 0; i < model.materials.size(); i++)
@@ -52,21 +52,19 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 		Mat mat;
 		if (model.materials[i].pbrMetallicRoughness.baseColorTexture.index != -1)
 		{
-			SceneManager::textureIndexing[model.materials[i].pbrMetallicRoughness.baseColorTexture.index] -> type = "tDiffuse";
-			mat.diffuse = SceneManager::textureIndexing[model.materials[i].pbrMetallicRoughness.baseColorTexture.index];
+			SceneManager::getTextureIndexing()[model.materials[i].pbrMetallicRoughness.baseColorTexture.index] -> type = "tDiffuse";
+			mat.diffuse = SceneManager::getTextureIndexing()[model.materials[i].pbrMetallicRoughness.baseColorTexture.index];
 		}
 			
 		if (model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index != -1)
 		{
-			SceneManager::textureIndexing[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index] -> type = "tSpecular";	
-			mat.specular = SceneManager::textureIndexing[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index];
-
+			SceneManager::getTextureIndexing()[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index] -> type = "tSpecular";
+			mat.specular = SceneManager::getTextureIndexing()[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index];
 		}
 		if (model.materials[i].normalTexture.index != -1)
 		{
-			SceneManager::textureIndexing[model.materials[i].normalTexture.index] -> type = "tNormal";	
-			mat.normal = SceneManager::textureIndexing[model.materials[i].normalTexture.index];
-
+			SceneManager::getTextureIndexing()[model.materials[i].normalTexture.index] -> type = "tNormal";
+			mat.normal = SceneManager::getTextureIndexing()[model.materials[i].normalTexture.index];
 		}
 		materials[i] = mat;
 	}

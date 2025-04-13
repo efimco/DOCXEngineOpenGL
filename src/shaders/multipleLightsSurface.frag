@@ -1,7 +1,7 @@
 #version 460 core
 out vec4 FragColor;
 
-in VS_OUT {
+layout (location = 3) in VS_OUT {
 	vec3 FragPos;
 	vec3 Normal;
 	vec2 TexCoords;
@@ -11,8 +11,8 @@ in VS_OUT {
 uniform vec3 viewPos;
 uniform float gamma;
 
-uniform sampler2D tDiffuse;
-uniform sampler2D tSpecular;
+layout (location = 1) uniform sampler2D tDiffuse;
+layout (location = 2) uniform sampler2D tSpecular;
 uniform float shininess;
 uniform samplerCube skybox;
 uniform sampler2D shadowMap;

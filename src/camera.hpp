@@ -1,10 +1,10 @@
 #pragma once
 #include "glm/glm.hpp"
 enum CameraMovement {
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT,
+	FORWARD,
+	BACKWARD,
+	LEFT,
+	RIGHT,
 	UP,
 	DOWN
 };

@@ -9,19 +9,19 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <commdlg.h> 
-
-#include "sceneManager.h"
-#include "pickingBuffer.hpp"
-#include "gltfImporter.hpp"
-#include "cubemap.hpp"
-#include "depthBuffer.hpp"
-
 #include <iostream>
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_impl_glfw.h>
 #include <ImGui/imgui_impl_opengl3.h>
 #include <ImGui/imgui_internal.h>
 #include <filesystem> 
+
+#include "sceneManager.hpp"
+#include "pickingBuffer.hpp"
+#include "gltfImporter.hpp"
+#include "cubemap.hpp"
+#include "depthBuffer.hpp"
+#include "uiManager.hpp"
 
 
 int32_t WINDOW_WIDTH = 1024;
@@ -43,6 +43,58 @@ glm::mat4 projection = glm::mat4(1.0f);
 
 bool showObjectPicking = false;
 bool showShadowMap = false;
+
+Primitive* getIdFromPickColor(const glm::vec3 &color) 
+	{
+		const float golden_ratio_conjugate = 0.618033988749895f;
+		glm::vec3 hsv = rgb2hsv(color);
+		float h = hsv.x;
+		Primitive* closestObject  = nullptr;
+		const unsigned int MAX_PICKABLE_OBJECTS = 1000;  // adjust as needed
+		for (Primitive& primitive: SceneManager::getPrimitives()) 
+			{
+				float computedH = glm::fract(primitive.vao * golden_ratio_conjugate);
+				std::cout << computedH << " " << h << std::endl;
+				// Allow a small tolerance since floating-point imprecision can occur
+				if (glm::abs(computedH - h) < 0.01f) 
+				{
+					closestObject = &primitive;
+					break;
+				}
+			}
+		return closestObject;
+	}
+
+void processMovement(GLFWwindow* window, float deltaTime)
+	{
+		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+		{
+			if (!rightKeyPressed)
+			{
+				rightKeyPressed = true;
+				glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+			}
+			if(glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard(FORWARD,deltaTime) , cameraReseted = true;
+			if(glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard(BACKWARD,deltaTime) , cameraReseted = true;
+			if(glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard(LEFT,deltaTime) , cameraReseted = true;
+			if(glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(RIGHT,deltaTime) , cameraReseted = true;
+			if(glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) camera.processKeyboard(DOWN,deltaTime) , cameraReseted = true;
+			if(glfwGetKey(window,GLFW_KEY_E) == GLFW_PRESS) camera.processKeyboard(UP,deltaTime) , cameraReseted = true;
+		}
+		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
+		{
+			if (rightKeyPressed) 
+				glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+			rightKeyPressed = false;
+		} 
+	
+		if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+			camera.speed = increasedSpeed;
+		else 
+			camera.speed = defaultSpeed;
+	
+		if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
+	}
 
 
 void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime, uint32_t& pickingFBO)
@@ -73,54 +125,24 @@ void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime, uint32_
 			Primitive* primitive = getIdFromPickColor(pickedColor);
 			if (primitive != nullptr)
 			{
-				if (SceneManager::selectedPrimitive != primitive)
+				if (SceneManager::getSelectedPrimitive() != primitive)
 				{
-					if (SceneManager::selectedPrimitive != nullptr) SceneManager::selectedPrimitive->selected = false;
+					if (SceneManager::getSelectedPrimitive() != nullptr) SceneManager::getSelectedPrimitive()->selected = false;
 					primitive->selected = true;
-					SceneManager::selectedPrimitive = primitive;
+					SceneManager::setSelectedPrimitive(primitive);
 				}
 				std::cout << "VAO: " << primitive->vao << std::endl;
 			}
 			else
 			{
-				if (SceneManager::selectedPrimitive != nullptr)
+				if (SceneManager::getSelectedPrimitive() != nullptr)
 				{
-					SceneManager::selectedPrimitive->selected = false;
-					SceneManager::selectedPrimitive = nullptr;
+					SceneManager::getSelectedPrimitive()->selected = false;
+					SceneManager::setSelectedPrimitive(nullptr);
 				}
 			}
 		}
 	}
-
-
-	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
-	{
-		if (!rightKeyPressed)
-		{
-			rightKeyPressed = true;
-			glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
-		}
-		if(glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard(FORWARD,deltaTime) , cameraReseted = true;
-		if(glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard(BACKWARD,deltaTime) , cameraReseted = true;
-		if(glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard(LEFT,deltaTime) , cameraReseted = true;
-		if(glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(RIGHT,deltaTime) , cameraReseted = true;
-		if(glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) camera.processKeyboard(DOWN,deltaTime) , cameraReseted = true;
-		if(glfwGetKey(window,GLFW_KEY_E) == GLFW_PRESS) camera.processKeyboard(UP,deltaTime) , cameraReseted = true;
-	}
-	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
-	{
-		if (rightKeyPressed) 
-			glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
-		rightKeyPressed = false;
-	} 
-
-	if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-		camera.speed = increasedSpeed;
-	else 
-		camera.speed = defaultSpeed;
-
-	if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
-
 }
 
 float lastX = (float)(WINDOW_WIDTH / 2), lastY = (float) (WINDOW_HEIGHT / 2);
@@ -180,8 +202,7 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 
 	void CreateLightSSBO() 
 	{
-		glGenBuffers(1, &lightSSBO);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
+		glCreateBuffers(1, &lightSSBO);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
 	};
 
@@ -203,7 +224,7 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 		1.0f,  1.0f,  1.0f, 1.0f
 	};
 
-	float objectIdQuadVertices[] = { 
+	float debugQuadVertices[] = { 
 		// positions   // texCoords
 		0.75f,  1.0f,  0.0f, 1.0f,	// right top
 		0.75f, 0.75f,  0.0f, 0.0f,	//left bottom
@@ -214,63 +235,57 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 		1.0f,  1.0f,  1.0f, 1.0f	//left top
 	};
 
-	uint32_t quadVAO, quadVBO;
+	uint32_t screenQuadVAO, screenQuadVBO;
 	void initScreenQuad()
 	{
-		glCreateVertexArrays(1, &quadVAO);
-		glCreateBuffers(1, &quadVBO);
-		glNamedBufferData(quadVBO, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-		glVertexArrayVertexBuffer(quadVAO, 0, quadVBO, 0, sizeof(float) * 4);
+		glCreateVertexArrays(1, &screenQuadVAO);
+		glCreateBuffers(1, &screenQuadVBO);
+		glNamedBufferData(screenQuadVBO, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glVertexArrayVertexBuffer(screenQuadVAO, 0, screenQuadVBO, 0, sizeof(float) * 4);
 
-		glEnableVertexArrayAttrib(quadVAO, 0);
-		glVertexArrayAttribFormat(quadVAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
-		glVertexArrayAttribBinding(quadVAO, 0, 0);
+		glEnableVertexArrayAttrib(screenQuadVAO, 0);
+		glVertexArrayAttribFormat(screenQuadVAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribBinding(screenQuadVAO, 0, 0);
 
-		glEnableVertexArrayAttrib(quadVAO, 1);
-		glVertexArrayAttribFormat(quadVAO, 1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2);
-		glVertexArrayAttribBinding(quadVAO, 1, 0);
+		glEnableVertexArrayAttrib(screenQuadVAO, 1);
+		glVertexArrayAttribFormat(screenQuadVAO, 1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2);
+		glVertexArrayAttribBinding(screenQuadVAO, 1, 0);
 
 	}
 
-	uint32_t objectIdVAO, objectIdVBO;
-	void initObjectIdQuad()
+	uint32_t debugQuadVAO, debugQuadVBO;
+	void initDebugQuad()
 	{
-		glCreateVertexArrays(1, &objectIdVAO);
-		glCreateBuffers(1, &objectIdVBO);
-		glNamedBufferData(objectIdVBO, sizeof(quadVertices), &objectIdQuadVertices, GL_STATIC_DRAW);
-		glVertexArrayVertexBuffer(objectIdVAO, 0, objectIdVBO, 0, sizeof(float) * 4);
+		glCreateVertexArrays(1, &debugQuadVAO);
+		glCreateBuffers(1, &debugQuadVBO);
+		glNamedBufferData(debugQuadVBO, sizeof(quadVertices), &debugQuadVertices, GL_STATIC_DRAW);
+		glVertexArrayVertexBuffer(debugQuadVAO, 0, debugQuadVBO, 0, sizeof(float) * 4);
 
-		glEnableVertexArrayAttrib(objectIdVAO, 0);
-		glVertexArrayAttribFormat(objectIdVAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
-		glVertexArrayAttribBinding(objectIdVAO, 0, 0);
+		glEnableVertexArrayAttrib(debugQuadVAO, 0);
+		glVertexArrayAttribFormat(debugQuadVAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayAttribBinding(debugQuadVAO, 0, 0);
 
-		glEnableVertexArrayAttrib(objectIdVAO, 1);
-		glVertexArrayAttribFormat(objectIdVAO, 1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2);
-		glVertexArrayAttribBinding(objectIdVAO, 1, 0);
+		glEnableVertexArrayAttrib(debugQuadVAO, 1);
+		glVertexArrayAttribFormat(debugQuadVAO, 1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2);
+		glVertexArrayAttribBinding(debugQuadVAO, 1, 0);
 
 	}
 	uint32_t fbo, textureColorBufferMultiSampled, rbo, intermediateFBO, screenTexture;
 	void initFrameBufferAndRenderTarget()
 	{
 		glCreateFramebuffers(1, &fbo);
-		
-		glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &textureColorBufferMultiSampled);
-		glTextureStorage2DMultisample(textureColorBufferMultiSampled, 4, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT, GL_TRUE);
-		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, textureColorBufferMultiSampled, 0);
 
 		glCreateRenderbuffers(1, &rbo);
-		glNamedRenderbufferStorageMultisample(rbo, 4, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
+		glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
 		glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
-		// configure second post-processing framebuffer
-		glCreateFramebuffers(1, &intermediateFBO);
+
 		// create a color attachment texture
 		glCreateTextures(GL_TEXTURE_2D, 1, &screenTexture);
 		glTextureStorage2D(screenTexture, 1, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT);
 		glTextureParameteri(screenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glNamedFramebufferTexture(intermediateFBO, GL_COLOR_ATTACHMENT0, screenTexture, 0);
-		
+		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, screenTexture, 0);
 
 	}
 
@@ -310,7 +325,6 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 	float deltaTime = 0;
 
 	float gamma = 1;
-	bool openFileDialog = false;
 
 	float near_plane = 9978.0f, far_plane = 10021.0f;
 
@@ -324,22 +338,19 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 
 		Cubemap cubemap{};
 		initScreenQuad();
-		initObjectIdQuad();
+		initDebugQuad();
 		initFrameBufferAndRenderTarget();
 		PickingBuffer pickingbuffer(WINDOW_WIDTH, WINDOW_WIDTH);
 		DepthBuffer depthBuffer(2048, 2048);
+		UIManager uiManager(window, deltaTime, camera);
 
 
 		//import
 		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\BarDiorama.glb").string(), baseShader);
-		SceneManager::addPrimitives(gltfTent1.primitives);
+		SceneManager::addPrimitives(std::move(gltfTent1.primitives));
 
 		//imgui
-		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO();
-		ImGui::StyleColorsDark();
-		ImGui_ImplGlfw_InitForOpenGL(window, true);
-		ImGui_ImplOpenGL3_Init("#version 460");
+
 
 		CreateLightSSBO();
 
@@ -387,15 +398,8 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 		SceneManager::addLight(pointLight);
 		SceneManager::addLight(directionalLight);
 		SceneManager::addLight(spotLight);
-		UpdateLights(SceneManager::lights);
-		
+		UpdateLights(SceneManager::getLights());
 
-		if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-			std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-			
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);  
-		screenShader.use();
-		screenShader.setInt("screenTexture", 0);
 
 		while(!glfwWindowShouldClose(window))
 		{   
@@ -405,26 +409,28 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 			deltaTime = time - lastFrame;
 			lastFrame = time;
 			processInput(window, isWireframe, deltaTime,pickingbuffer.pickingFBO);
+			processMovement(window, deltaTime);
 
+			//framebuffer size change callback processing
 			if (!isFramebufferSizeSetted)
 			{
-				glDeleteTextures(1, &textureColorBufferMultiSampled);
 				glDeleteTextures(1, &screenTexture); 
 				glDeleteRenderbuffers(1, &rbo);
+				glDeleteFramebuffers(1, &fbo);
 
-				glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &textureColorBufferMultiSampled);
-				glTextureStorage2DMultisample(textureColorBufferMultiSampled, 4, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT, GL_TRUE);
-				glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, textureColorBufferMultiSampled, 0);
+				glCreateFramebuffers(1, &fbo);
 
+				glCreateRenderbuffers(1, &rbo);
+				glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
+				glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+		
+		
+				// create a color attachment texture
 				glCreateTextures(GL_TEXTURE_2D, 1, &screenTexture);
 				glTextureStorage2D(screenTexture, 1, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT);
 				glTextureParameteri(screenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glNamedFramebufferTexture(intermediateFBO, GL_COLOR_ATTACHMENT0, screenTexture, 0);
-
-				glCreateRenderbuffers(1, &rbo);
-				glNamedRenderbufferStorageMultisample(rbo, 4, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
-				glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+				glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, screenTexture, 0);
 
 				pickingbuffer.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -445,150 +451,6 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 			}
 			else cameraReseted = true; 
 
-			//imgui
-			{
-				ImGui_ImplOpenGL3_NewFrame();
-				ImGui_ImplGlfw_NewFrame();
-				ImGui::NewFrame();
-				ImGui::Begin("Tools");
-				ImGui::ColorEdit4("BG Color", clearColor);
-				glm::vec3 lightPos = glm::vec3(lightmodel[3]);
-				if(SceneManager::selectedPrimitive != nullptr)
-				{
-					ImGui::Begin("Object Inspector");
-					ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::selectedPrimitive->transform[3]));
-					ImGui::Image(SceneManager::selectedPrimitive->material.diffuse -> id, ImVec2(64, 64));
-					ImGui::SameLine();
-					ImGui::Image(SceneManager::selectedPrimitive->material.specular -> id, ImVec2(64, 64));
-					if (ImGui::Button("Diffuse"))
-					{
-						std::string filePath = OpenFileDialog();
-						if (!filePath.empty())
-						{
-							// Update the object's texture path
-							SceneManager::selectedPrimitive->material.diffuse -> type = "tDiffuse";
-							SceneManager::selectedPrimitive->material.diffuse -> SetPath(filePath);
-							glActiveTexture(GL_TEXTURE0);
-
-						}
-					}
-					ImGui::SameLine();
-					if (ImGui::Button("Specular"))
-					{
-						std::string filePath = OpenFileDialog();
-						if (!filePath.empty())
-						{
-							// Update the object's texture path
-							SceneManager::selectedPrimitive->material.specular -> type = "tSpecular";
-							SceneManager::selectedPrimitive->material.specular -> SetPath(filePath);
-							glActiveTexture(GL_TEXTURE0);
-
-						}
-					}
-					ImGui::End();
-				}
-				ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
-				ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
-				ImGui::SliderFloat("Near plane", &near_plane,8500.0f,11000.f, "%.6f");
-				ImGui::SliderFloat("Far plane", &far_plane,8500.0f,11000.f);
-				ImGui::Checkbox("Wireframe Mode", &isWireframe);
-				ImGui::Checkbox("ObjectID Debug", &showObjectPicking);
-				ImGui::Checkbox("ShadowMap Debug", &showShadowMap);
-				if (ImGui::Button("Import Model"))
-				{	
-					std::string filePath = OpenFileDialog();
-					if(!filePath.empty())
-					{
-						GLTFModel model(filePath, baseShader);
-						model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
-						SceneManager::addPrimitives(model.primitives);
-					}
-				}
-				polygonMode = isWireframe ? GL_LINE : GL_FILL;
-				if (ImGui::Button("Reload Shaders")) 
-				{
-					UpdateLights(SceneManager::lights);
-					SceneManager::reloadShaders();
-					screenShader.reload();
-					skyboxShader.reload();
-					std::cout << "Shaders reloaded successfully!" << std::endl;
-				}
-				ImGui::End();
-				
-				//fps counter
-				ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
-				ImGui::SetNextWindowBgAlpha(0.3f);
-				ImGui::Begin("FPS", nullptr,
-					ImGuiWindowFlags_NoTitleBar |
-					ImGuiWindowFlags_NoResize |
-					ImGuiWindowFlags_AlwaysAutoResize |
-					ImGuiWindowFlags_NoScrollbar |
-					ImGuiWindowFlags_NoSavedSettings);
-				ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-				ImGui::Text("ms: %.4f", deltaTime);
-				ImGui::End();
-
-				ImGui::SetNextWindowPos(ImVec2(100, 10), ImGuiCond_Always);
-				ImGui::SetNextWindowBgAlpha(0.3f);
-				ImGui::Begin("Camera", nullptr,
-					ImGuiWindowFlags_NoTitleBar |
-					ImGuiWindowFlags_NoResize |
-					ImGuiWindowFlags_AlwaysAutoResize |
-					ImGuiWindowFlags_NoScrollbar |
-					ImGuiWindowFlags_NoSavedSettings);
-				ImGui::Text("Pos: %.1f, %.1f, %.1f", camera.position.x, camera.position.y, camera.position.z); ImGui::SameLine();
-				ImGui::Text("Rot: %.1f, %.1f", camera.yaw, camera.pitch);
-				ImGui::End();
-
-				ImGui::Begin("Lights");
-				for (int i = 0; i < SceneManager::lights.size(); i++)
-				{
-					ImGui::PushID(i);
-					ImGui::Text("Light: %d %s ", i, (SceneManager::lights[i].type == 1) ? "directional" : (SceneManager::lights[i].type == 2) ? "spot" : "point");
-					ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::lights[i].position));
-					ImGui::SliderFloat("Intensity", &SceneManager::lights[i].intensity, 0.0f, 10.0f);
-					
-					static glm::vec3 lightRotation = glm::vec3(0.0f); 
-					if (ImGui::DragFloat3("Light Rotation", glm::value_ptr(lightRotation), 0.1f)) 
-					{
-						float pitch = glm::radians(lightRotation.x);
-						float yaw   = glm::radians(lightRotation.y);
-						float roll  = glm::radians(lightRotation.z);
-						glm::vec3 baseDirection(0.0f, -1.0f, 0.0f);
-						glm::mat4 rotX = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
-						glm::mat4 rotY = glm::rotate(glm::mat4(1.0f), yaw,   glm::vec3(0.0f, 1.0f, 0.0f));
-						glm::mat4 rotZ = glm::rotate(glm::mat4(1.0f), roll,  glm::vec3(0.0f, 0.0f, 1.0f));
-						glm::mat4 rotationMatrix = rotZ * rotY * rotX;
-						SceneManager::lights[i].direction = glm::vec3(rotationMatrix * glm::vec4(baseDirection, 0.0f));
-					}
-					if (SceneManager::lights[i].type == 2)
-					{
-						float cutoffAngle = glm::degrees(glm::acos(SceneManager::lights[i].cutOff));
-						float outerCutoffAngle = glm::degrees(glm::acos(SceneManager::lights[i].outerCutOff));
-						if (ImGui::SliderFloat("CutOff Angle", &cutoffAngle, 0.0f, 180.0f))
-						{
-							if (outerCutoffAngle<=cutoffAngle)
-							{ 
-								outerCutoffAngle = cutoffAngle+0.001f;
-								SceneManager::lights[i].outerCutOff = glm::cos(glm::radians(outerCutoffAngle));
-							}
-							SceneManager::lights[i].cutOff = glm::cos(glm::radians(cutoffAngle));
-						}
-
-						
-						if (ImGui::SliderFloat("Outer CutOff Angle", &outerCutoffAngle, cutoffAngle, 180))
-						{
-							if (outerCutoffAngle<=cutoffAngle) outerCutoffAngle = cutoffAngle+0.001f;
-							SceneManager::lights[i].outerCutOff = glm::cos(glm::radians(outerCutoffAngle));
-						}
-					}
-					ImGui::ColorEdit3("Color", glm::value_ptr(SceneManager::lights[i].diffuse));
-					UpdateLights(SceneManager::lights);
-					ImGui::PopID();
-				}
-				ImGui::End();
-			}
-
 			if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
 			{
 				projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);	
@@ -605,7 +467,7 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 			glStencilMask(0x00);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
+			//DIRECTIONAL LIGHT SHADOW MAP PASS
 			glViewport(0, 0, depthBuffer.width, depthBuffer.height);
 			depthBuffer.bindDepthMap();
 			glClear(GL_DEPTH_BUFFER_BIT);
@@ -615,7 +477,7 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 
 			glm::mat4 lightProjection = glm::ortho(-7.0f, 7.0f, -7.0f, 7.0f, near_plane, far_plane); 
 			
-			glm::vec3 lightDirection = glm::normalize(SceneManager::lights[1].direction);
+			glm::vec3 lightDirection = glm::normalize(SceneManager::getLights()[1].direction);
 
 			glm::vec3 lightPos = camera.position + lightDirection * distance;
 
@@ -625,72 +487,100 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 			SceneManager::draw(camera, lightSpaceMatrix, WINDOW_WIDTH, WINDOW_HEIGHT);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			
 
-
+			//OBJECT ID PASS
 			glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 			pickingbuffer.bind();
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-			glfwGetWindowSize(window, &WINDOW_WIDTH, &WINDOW_HEIGHT);
-
-
 			SceneManager::setShader(pickingShader);
 			SceneManager::draw(camera, lightSpaceMatrix, WINDOW_WIDTH, WINDOW_HEIGHT);
 
+			//MAIN RENDER PASS
 			glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
-
 			SceneManager::setShader(baseShader);
 			SceneManager::draw(camera, lightSpaceMatrix, WINDOW_WIDTH, WINDOW_HEIGHT, depthBuffer.depthMap, gamma);
+			
+			//CUBEMAP RENDER PASS
 			glDepthFunc(GL_LEQUAL);
 			glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 			glm::mat4 skyView = glm::mat4(glm::mat3(camera.getViewMatrix()));  
 			cubemap.draw(skyboxShader, projection, skyView);
 			glDepthFunc(GL_LESS);
 
-
-			glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
-			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, intermediateFBO);
-			glBlitFramebuffer(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		
+			//SCREEN QUAD RENDER PASS
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDisable(GL_DEPTH_TEST);
 			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-			
-			
+
 			screenShader.use();  
 			screenShader.setFloat("near_plane", near_plane);
 			screenShader.setFloat("far_plane", far_plane);
-			glBindVertexArray(quadVAO);
-			glBindTexture(GL_TEXTURE_2D, screenTexture);
+			glBindVertexArray(screenQuadVAO);
+			glBindTextureUnit(0, screenTexture);
 			glDrawArrays(GL_TRIANGLES, 0, 6);  
 
-			
+			//DEBUG QUAD RENDER PASS
 			if(showObjectPicking)
 			{
-				glBindVertexArray(objectIdVAO);
+				glBindVertexArray(debugQuadVAO);
 				glBindTexture(GL_TEXTURE_2D, pickingbuffer.pickingTexture);
 				glDrawArrays(GL_TRIANGLES, 0, 6);  
 			} 
 			if(showShadowMap)
 			{
-				glBindVertexArray(objectIdVAO);
+				glBindVertexArray(debugQuadVAO);
 				glBindTexture(GL_TEXTURE_2D, depthBuffer.depthMap);
 				glDrawArrays(GL_TRIANGLES, 0, 6);  
 			} 
-			ImGui::Render();
-			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+			//IMGUI RENDER PASS
+			{
+				// ImGui::Begin("Tools");
+				// ImGui::ColorEdit4("BG Color", clearColor);
+				// glm::vec3 lightPos = glm::vec3(lightmodel[3]);
+				
+				// ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
+				// ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
+				// ImGui::SliderFloat("Near plane", &near_plane,8500.0f,11000.f, "%.6f");
+				// ImGui::SliderFloat("Far plane", &far_plane,8500.0f,11000.f);
+				// ImGui::Checkbox("Wireframe Mode", &isWireframe);
+				// ImGui::Checkbox("ObjectID Debug", &showObjectPicking);
+				// ImGui::Checkbox("ShadowMap Debug", &showShadowMap);
+				// if (ImGui::Button("Import Model"))
+				// {	
+				// 	std::string filePath = OpenFileDialog();
+				// 	if(!filePath.empty())
+				// 	{
+				// 		GLTFModel model(filePath, baseShader);
+				// 		model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
+				// 		SceneManager::addPrimitives(model.primitives);
+				// 	}
+				// }
+				// polygonMode = isWireframe ? GL_LINE : GL_FILL;
+				// if (ImGui::Button("Reload Shaders")) 
+				// {
+				// 	UpdateLights(SceneManager::lights);
+				// 	SceneManager::reloadShaders();
+				// 	screenShader.reload();
+				// 	skyboxShader.reload();
+				// 	std::cout << "Shaders reloaded successfully!" << std::endl;
+				// }
+				// ImGui::End();
+				uiManager.draw();
+
+				UpdateLights(SceneManager::getLights());
+			}
+
 			glfwSwapBuffers(window);
 			glfwPollEvents();    
 		}
 
-		ImGui_ImplOpenGL3_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
-		ImGui::DestroyContext();
+
+
 	}
 
 

@@ -3,7 +3,7 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D screenTexture;
+layout (location = 0) uniform sampler2D screenTexture;
 uniform float near_plane;
 uniform float far_plane;
 
