@@ -31,6 +31,7 @@ add_executable(OpenGLLearn
 	src/cubemap.cpp
 	src/uiManager.cpp
 	src/sceneManager.cpp
+	src/appConfig.cpp
 	${IMGUI_SRC}
 )
 

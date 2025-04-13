@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <commdlg.h> 
+#include <iostream>
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_glfw.h"
@@ -9,8 +10,8 @@
 
 #include "sceneManager.hpp"
 #include "gltfImporter.hpp"
+#include "appConfig.hpp"
 #include "uiManager.hpp"
-
 
 
 UIManager::UIManager(GLFWwindow* window, float deltaTime, Camera& camera) : 
@@ -29,6 +30,7 @@ window(window)
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 460");
 }
+
 UIManager::~UIManager() 
 {
 	ImGui_ImplOpenGL3_Shutdown();
@@ -52,6 +54,7 @@ void UIManager::draw()
 	showCameraTransforms();
 	showObjectInspector();
 	showLights();
+	showTools();
 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -177,36 +180,35 @@ void UIManager::showObjectInspector()
 
 void UIManager::showTools()
 {
-	// ImGui::Begin("Tools");
-	// 	ImGui::ColorEdit4("BG Color", clearColor);
+	ImGui::Begin("Tools");
+		ImGui::ColorEdit4("BG Color", AppConfig::clearColor);
 		
-	// 	ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
-	// 	ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
-	// 	ImGui::SliderFloat("Near plane", &near_plane,8500.0f,11000.f, "%.6f");
-	// 	ImGui::SliderFloat("Far plane", &far_plane,8500.0f,11000.f);
-	// 	ImGui::Checkbox("Wireframe Mode", &isWireframe);
-	// 	ImGui::Checkbox("ObjectID Debug", &showObjectPicking);
-	// 	ImGui::Checkbox("ShadowMap Debug", &showShadowMap);
-	// 	if (ImGui::Button("Import Model"))
-	// 	{	
-	// 		std::string filePath = OpenFileDialog();
-	// 		if(!filePath.empty())
-	// 		{
-	// 			GLTFModel model(filePath, baseShader);
-	// 			model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
-	// 			SceneManager::addPrimitives(model.primitives);
-	// 		}
-	// 	}
-	// 	polygonMode = isWireframe ? GL_LINE : GL_FILL;
-	// 	if (ImGui::Button("Reload Shaders")) 
-	// 	{
-	// 		UpdateLights(SceneManager::getLights());
-	// 		SceneManager::reloadShaders();
-	// 		screenShader.reload();
-	// 		skyboxShader.reload();
-	// 		std::cout << "Shaders reloaded successfully!" << std::endl;
-	// 	}
-	// ImGui::End();
+		ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
+		ImGui::SliderFloat("Gamma", &AppConfig::gamma,0.01f,5);
+		ImGui::SliderFloat("Near plane", &AppConfig::near_plane,8500.0f,11000.f, "%.6f");
+		ImGui::SliderFloat("Far plane", &AppConfig::far_plane,8500.0f,11000.f);
+		ImGui::Checkbox("Wireframe Mode", &AppConfig::isWireframe);
+		ImGui::Checkbox("ObjectID Debug", &AppConfig::showObjectPicking);
+		ImGui::Checkbox("ShadowMap Debug", &AppConfig::showShadowMap);
+		if (ImGui::Button("Import Model"))
+		{	
+			std::string filePath = OpenFileDialog();
+			if(!filePath.empty())
+			{
+				GLTFModel model(filePath, AppConfig::baseShader);
+				model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
+				SceneManager::addPrimitives(std::move(model.primitives));
+			}
+		}
+		AppConfig::polygonMode = AppConfig::isWireframe ? GL_LINE : GL_FILL;
+		if (ImGui::Button("Reload Shaders")) 
+		{
+			SceneManager::reloadShaders();
+			AppConfig::screenShader.reload();
+			AppConfig::skyboxShader.reload();
+			std::cout << "Shaders reloaded successfully!" << std::endl;
+		}
+	ImGui::End();
 }
 
 std::string UIManager::OpenFileDialog()

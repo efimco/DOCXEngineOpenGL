@@ -10,8 +10,7 @@ class DepthBuffer
 		uint32_t depthMap;
 		DepthBuffer(const int width, const int height);
 		~DepthBuffer();	
-		
-		void bindDepthMap();
-		void unbindDepthMap();
-		uint32_t getDepthMap();
+
+		void bind();
+		void unbind();
 };

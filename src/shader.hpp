@@ -9,6 +9,7 @@ class Shader
 		uint32_t shaderProgram;
 		std::string vPath;
 		std::string fPath;
+		Shader() = default;
 		Shader(std::string vertexPath, std::string fragmentPath);
 
 		void use() const;

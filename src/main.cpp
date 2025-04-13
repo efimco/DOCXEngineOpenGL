@@ -22,10 +22,9 @@
 #include "cubemap.hpp"
 #include "depthBuffer.hpp"
 #include "uiManager.hpp"
+#include "appConfig.hpp"
 
 
-int32_t WINDOW_WIDTH = 1024;
-int32_t WINDOW_HEIGHT = 1024;
 Camera camera(glm::vec3(-10.0f, 3.0f, 13.0f), glm::vec3(0.0f,1.0f,0.0f), -45.0f, 0.0f);
 
 bool wireframeKeyPressed = false;
@@ -96,7 +95,6 @@ void processMovement(GLFWwindow* window, float deltaTime)
 		if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
 	}
 
-
 void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime, uint32_t& pickingFBO)
 {
 	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -112,16 +110,16 @@ void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime, uint32_
 		wireframeKeyPressed = false;
 
 	static bool wasMousePressed = false;
-	if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
+	if( AppConfig::WINDOW_WIDTH != 0 && AppConfig::WINDOW_HEIGHT != 0) 
 	{
 		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse)
 			wasMousePressed = true;
 		else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMousePressed)
 		{
 			wasMousePressed = false;
-			projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);    
+			projection = glm::perspective(glm::radians(camera.zoom), float(AppConfig::WINDOW_WIDTH)/float(AppConfig::WINDOW_HEIGHT),0.1f, 100.0f);    
 			view = camera.getViewMatrix();
-			glm::vec3 pickedColor = pickObjectAt(mousePosx, mousePosy, WINDOW_HEIGHT, pickingFBO);
+			glm::vec3 pickedColor = pickObjectAt(mousePosx, mousePosy, AppConfig::WINDOW_HEIGHT, pickingFBO);
 			Primitive* primitive = getIdFromPickColor(pickedColor);
 			if (primitive != nullptr)
 			{
@@ -145,9 +143,8 @@ void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime, uint32_
 	}
 }
 
-float lastX = (float)(WINDOW_WIDTH / 2), lastY = (float) (WINDOW_HEIGHT / 2);
+float lastX = (float)(AppConfig::WINDOW_WIDTH / 2), lastY = (float) (AppConfig::WINDOW_HEIGHT / 2);
 bool firstMouse = true;
-float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 
 	void mouseCallback(GLFWwindow* window, double xPos, double yPos)
 	{
@@ -158,7 +155,7 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 		}
 		mousePosx = xPos;
 		mousePosy = yPos;
-		glfwGetWindowSize(window,&WINDOW_WIDTH, &WINDOW_HEIGHT);
+		glfwGetWindowSize(window,&AppConfig::WINDOW_WIDTH, &AppConfig::WINDOW_HEIGHT);
 		
 		float xOffset = (float)xPos - (float)lastX;
 		float yOffset = lastY - (float)yPos ;
@@ -170,32 +167,6 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 	void scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
 	{
 		camera.processMouseScroll((float)yOffset);
-	}
-
-	std::string OpenFileDialog()
-	{
-		OPENFILENAMEA ofn;
-		char fileName[260] = { 0 };    // buffer for file name
-
-		ZeroMemory(&ofn, sizeof(ofn));
-		ofn.lStructSize = sizeof(ofn);
-		ofn.hwndOwner = nullptr;
-		ofn.lpstrFile = fileName;
-		ofn.nMaxFile = sizeof(fileName);
-
-		// Filter: display image files by default (you can adjust as needed)
-		ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.jpeg;*.bmp\0All Files\0*.*\0";
-		ofn.nFilterIndex = 1;
-		ofn.lpstrTitle = "Select a Texture";
-		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-		// Open the dialog box
-		if (GetOpenFileNameA(&ofn) == TRUE)
-		{
-			return std::string(ofn.lpstrFile);
-		}
-
-		return std::string();
 	}
 
 	uint32_t lightSSBO;
@@ -276,13 +247,13 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 		glCreateFramebuffers(1, &fbo);
 
 		glCreateRenderbuffers(1, &rbo);
-		glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
+		glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 		glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
 
 		// create a color attachment texture
 		glCreateTextures(GL_TEXTURE_2D, 1, &screenTexture);
-		glTextureStorage2D(screenTexture, 1, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT);
+		glTextureStorage2D(screenTexture, 1, GL_RGB8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 		glTextureParameteri(screenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, screenTexture, 0);
@@ -292,65 +263,39 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 	bool isFramebufferSizeSetted = true;
 	void framebufferSizeCallback(GLFWwindow* window, int32_t newWINDOW_WIDTH, int32_t newWINDOW_HEIGHT)
 	{
-		WINDOW_WIDTH = newWINDOW_WIDTH;
-		WINDOW_HEIGHT = newWINDOW_HEIGHT;
+		AppConfig::WINDOW_WIDTH = newWINDOW_WIDTH;
+		AppConfig::WINDOW_HEIGHT = newWINDOW_HEIGHT;
 		isFramebufferSizeSetted = false;
 	}
-
-	std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\multipleLightsSurface.frag").string();
-	std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.vert").string();
-
-	std::string fScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.frag").string();
-
-	std::string vScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.vert").string();
-
-	std::string vPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.vert").string();
-	std::string fPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.frag").string();
-
-	std::string vSkyboxShader = std::filesystem::absolute("..\\..\\src\\shaders\\cubemap\\cubemap.vert").string();
-	std::string fSkyboxShader = std::filesystem::absolute("..\\..\\src\\shaders\\\\cubemap\\cubemap.frag").string();
-
-	std::string simpleDepthShader = std::filesystem::absolute("..\\..\\src\\shaders\\simpleDepthShader.vert").string();
-	std::string fEmptyShader = std::filesystem::absolute("..\\..\\src\\shaders\\empty.frag").string();
 
 	glm::vec3 lightColor = glm::vec3(1.0f);
 	glm::mat4 lightmodel = glm::mat4(1.0f);
 
 	float lightIntensity = 1.0f;
 	glm::mat4 model = glm::mat4(1.0f);
-	GLenum polygonMode = GL_FILL;
 	bool isWireframe = false;
 
 	float lastFrame = 0;
 	float deltaTime = 0;
 
-	float gamma = 1;
-
 	float near_plane = 9978.0f, far_plane = 10021.0f;
 
 	void draw(GLFWwindow* window)
 	{
-		Shader baseShader (vShaderPath, fShaderPath);
-		Shader screenShader(vScreenShader,fScreenShader);
-		Shader pickingShader(vPickingShader,fPickingShader);
-		Shader skyboxShader(vSkyboxShader,fSkyboxShader);
-		Shader depthShader(simpleDepthShader,fEmptyShader);
-
 		Cubemap cubemap{};
 		initScreenQuad();
 		initDebugQuad();
 		initFrameBufferAndRenderTarget();
-		PickingBuffer pickingbuffer(WINDOW_WIDTH, WINDOW_WIDTH);
+		PickingBuffer pickingbuffer(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_WIDTH);
 		DepthBuffer depthBuffer(2048, 2048);
 		UIManager uiManager(window, deltaTime, camera);
 
-
+		AppConfig::initShaders();
 		//import
-		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\BarDiorama.glb").string(), baseShader);
+		GLTFModel gltfTent1(std::filesystem::absolute("..\\..\\res\\GltfModels\\BarDiorama.glb").string(), AppConfig::baseShader);
 		SceneManager::addPrimitives(std::move(gltfTent1.primitives));
 
 		//imgui
-
 
 		CreateLightSSBO();
 
@@ -421,20 +366,20 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 				glCreateFramebuffers(1, &fbo);
 
 				glCreateRenderbuffers(1, &rbo);
-				glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
+				glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 				glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 		
 		
 				// create a color attachment texture
 				glCreateTextures(GL_TEXTURE_2D, 1, &screenTexture);
-				glTextureStorage2D(screenTexture, 1, GL_RGB8, WINDOW_WIDTH, WINDOW_HEIGHT);
+				glTextureStorage2D(screenTexture, 1, GL_RGB8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 				glTextureParameteri(screenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, screenTexture, 0);
 
-				pickingbuffer.resize(WINDOW_WIDTH, WINDOW_HEIGHT);
+				pickingbuffer.resize(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 
-				glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+				glViewport(0, 0, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 
 				isFramebufferSizeSetted = true;
 			}
@@ -451,9 +396,9 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 			}
 			else cameraReseted = true; 
 
-			if( WINDOW_WIDTH != 0 && WINDOW_HEIGHT != 0) 
+			if( AppConfig::WINDOW_WIDTH != 0 && AppConfig::WINDOW_HEIGHT != 0) 
 			{
-				projection = glm::perspective(glm::radians(camera.zoom), float(WINDOW_WIDTH)/float(WINDOW_HEIGHT),0.1f, 100.0f);	
+				projection = glm::perspective(glm::radians(camera.zoom), float(AppConfig::WINDOW_WIDTH)/float(AppConfig::WINDOW_HEIGHT),0.1f, 100.0f);	
 				view = camera.getViewMatrix();
 			}
 
@@ -469,7 +414,7 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 
 			//DIRECTIONAL LIGHT SHADOW MAP PASS
 			glViewport(0, 0, depthBuffer.width, depthBuffer.height);
-			depthBuffer.bindDepthMap();
+			depthBuffer.bind();
 			glClear(GL_DEPTH_BUFFER_BIT);
 
 			glm::vec3 sceneCenter = glm::vec3(0.0f); 
@@ -483,42 +428,42 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 
 			glm::mat4 lightView = glm::lookAt(lightPos, lightDirection, glm::vec3(0.0, 1.0, 0.0));
 			glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-			SceneManager::setShader(depthShader);
-			SceneManager::draw(camera, lightSpaceMatrix, WINDOW_WIDTH, WINDOW_HEIGHT);
+			SceneManager::setShader(AppConfig::depthShader);
+			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 			//OBJECT ID PASS
-			glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+			glViewport(0, 0, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 			pickingbuffer.bind();
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			SceneManager::setShader(pickingShader);
-			SceneManager::draw(camera, lightSpaceMatrix, WINDOW_WIDTH, WINDOW_HEIGHT);
+			SceneManager::setShader(AppConfig::pickingShader);
+			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 
 			//MAIN RENDER PASS
 			glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
+			glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], AppConfig::clearColor[2], AppConfig::clearColor[3]); 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-			glPolygonMode(GL_FRONT_AND_BACK,polygonMode);
-			SceneManager::setShader(baseShader);
-			SceneManager::draw(camera, lightSpaceMatrix, WINDOW_WIDTH, WINDOW_HEIGHT, depthBuffer.depthMap, gamma);
+			glPolygonMode(GL_FRONT_AND_BACK,AppConfig::polygonMode);
+			SceneManager::setShader(AppConfig::baseShader);
+			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT, depthBuffer.depthMap, AppConfig::gamma);
 			
 			//CUBEMAP RENDER PASS
 			glDepthFunc(GL_LEQUAL);
 			glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 			glm::mat4 skyView = glm::mat4(glm::mat3(camera.getViewMatrix()));  
-			cubemap.draw(skyboxShader, projection, skyView);
+			cubemap.draw(AppConfig::skyboxShader, projection, skyView);
 			glDepthFunc(GL_LESS);
 
 			//SCREEN QUAD RENDER PASS
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDisable(GL_DEPTH_TEST);
-			glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]); 
+			glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], AppConfig::clearColor[2], AppConfig::clearColor[3]); 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-			screenShader.use();  
-			screenShader.setFloat("near_plane", near_plane);
-			screenShader.setFloat("far_plane", far_plane);
+			AppConfig::screenShader.use();  
+			AppConfig::screenShader.setFloat("near_plane", near_plane);
+			AppConfig::screenShader.setFloat("far_plane", far_plane);
 			glBindVertexArray(screenQuadVAO);
 			glBindTextureUnit(0, screenTexture);
 			glDrawArrays(GL_TRIANGLES, 0, 6);  
@@ -538,49 +483,13 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 			} 
 
 			//IMGUI RENDER PASS
-			{
-				// ImGui::Begin("Tools");
-				// ImGui::ColorEdit4("BG Color", clearColor);
-				// glm::vec3 lightPos = glm::vec3(lightmodel[3]);
-				
-				// ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
-				// ImGui::SliderFloat("Gamma", &gamma,0.01f,5);
-				// ImGui::SliderFloat("Near plane", &near_plane,8500.0f,11000.f, "%.6f");
-				// ImGui::SliderFloat("Far plane", &far_plane,8500.0f,11000.f);
-				// ImGui::Checkbox("Wireframe Mode", &isWireframe);
-				// ImGui::Checkbox("ObjectID Debug", &showObjectPicking);
-				// ImGui::Checkbox("ShadowMap Debug", &showShadowMap);
-				// if (ImGui::Button("Import Model"))
-				// {	
-				// 	std::string filePath = OpenFileDialog();
-				// 	if(!filePath.empty())
-				// 	{
-				// 		GLTFModel model(filePath, baseShader);
-				// 		model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
-				// 		SceneManager::addPrimitives(model.primitives);
-				// 	}
-				// }
-				// polygonMode = isWireframe ? GL_LINE : GL_FILL;
-				// if (ImGui::Button("Reload Shaders")) 
-				// {
-				// 	UpdateLights(SceneManager::lights);
-				// 	SceneManager::reloadShaders();
-				// 	screenShader.reload();
-				// 	skyboxShader.reload();
-				// 	std::cout << "Shaders reloaded successfully!" << std::endl;
-				// }
-				// ImGui::End();
-				uiManager.draw();
+			uiManager.draw();
 
-				UpdateLights(SceneManager::getLights());
-			}
+			UpdateLights(SceneManager::getLights());
 
 			glfwSwapBuffers(window);
 			glfwPollEvents();    
 		}
-
-
-
 	}
 
 
@@ -590,12 +499,12 @@ float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 		glfwInit();
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-		// glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+		// glfwWindowHint(GLFW_FLOATING, GLFW_TRUE); // Uncomment this line to make the window floating
 		glfwWindowHint(GLFW_SAMPLES, 16);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); 
 		
-		window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Main Window", NULL, NULL);
+		window = glfwCreateWindow(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT, "Main Window", NULL, NULL);
 		if (window == NULL)
 		{
 			std::cout << "Failed to create GLFW window" << std::endl;

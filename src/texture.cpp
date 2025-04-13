@@ -3,8 +3,6 @@
 #include "stb_image.h"
 #include "texture.hpp"
 
-
-
 Tex::Tex() : id(-1), type(""), path("") {};
 
 Tex::Tex(const char* path, std::string type):path(path), type(type)
@@ -69,6 +67,7 @@ uint32_t Tex::TextureFromFile(const char *path)
 
 		return textureID;
 	}
+
 uint32_t Tex::TextureFromGltf(tinygltf::Image& image)
 {
 	GLenum format;

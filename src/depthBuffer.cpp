@@ -5,38 +5,30 @@
 
 DepthBuffer::DepthBuffer(const int width, const int height):width(width), height(height)
 		{
-			glGenFramebuffers(1, &depthMapFBO);  
+			glCreateFramebuffers(1, &depthMapFBO);
 
-			glGenTextures(1, &depthMap);
-			glBindTexture(GL_TEXTURE_2D, depthMap);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER); 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);  
+			glCreateTextures(GL_TEXTURE_2D, 1, &depthMap);
+			glTextureStorage2D(depthMap, 1, GL_DEPTH_COMPONENT24, width, height);
+			glTextureParameteri(depthMap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTextureParameteri(depthMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTextureParameteri(depthMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+			glTextureParameteri(depthMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 			float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
-			
-			glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-			glDrawBuffer(GL_NONE);
-			glReadBuffer(GL_NONE);
-			glBindFramebuffer(GL_FRAMEBUFFER, 0); 
+			glTextureParameterfv(depthMap, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+			glNamedFramebufferTexture(depthMapFBO, GL_DEPTH_ATTACHMENT, depthMap, 0);
+			glNamedFramebufferDrawBuffer(depthMapFBO, GL_NONE);
+			glNamedFramebufferReadBuffer(depthMapFBO, GL_NONE);
 		};
 
 DepthBuffer::~DepthBuffer() = default;	
 		
-void DepthBuffer::bindDepthMap() 
+void DepthBuffer::bind() 
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO); 
 	};
 
-void DepthBuffer::unbindDepthMap() 
+void DepthBuffer::unbind() 
 	{ 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0); 
-	};
-	
-uint32_t DepthBuffer::getDepthMap() 
-	{
-	return depthMap; 
 	};
