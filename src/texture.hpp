@@ -6,12 +6,11 @@ class Tex
 {
 	public:
 	uint32_t id;
-	std::string type;
 	std::string path;
 
-	Tex(const char* path, std::string type);
+	Tex(const char* path);
 	Tex();
-	Tex(tinygltf::Image& image, std::string type);
+	Tex(tinygltf::Image& image);
 	~Tex();
 
 	void SetPath(const std::string& newPath);

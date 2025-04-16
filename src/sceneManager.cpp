@@ -5,9 +5,8 @@ namespace SceneManager
 	static Primitive* selectedPrimitive = nullptr;
 	static std::vector<Light> lights;
 	static std::vector<Primitive> primitives;
-	static std::vector<Mat> materials;
+	static std::unordered_map<uint32_t, std::shared_ptr<Mat>> materials;
 	static std::unordered_map<std::string, std::shared_ptr<Tex>> textureCache;
-	static std::unordered_map<uint16_t, std::shared_ptr<Tex>> textureIndexing;
 
 	void draw(Camera& camera,glm::mat4& lightSpaceMatrix, int32_t width, int32_t height) 
 	{
@@ -81,22 +80,14 @@ namespace SceneManager
 		}
 	}
 
-	std::vector<Mat> &getMaterials()
+	std::unordered_map<uint32_t, std::shared_ptr<Mat>>& getMaterials()
 	{
 		return materials;
 	}
 
-	void addMaterials(const std::vector<Mat> &materials)
+	void addMaterial(std::shared_ptr<Mat> &material, uint32_t uid)
 	{
-		for (auto& material: materials)
-		{
-			SceneManager::materials.push_back(std::move(material));
-		}
-	}
-
-	void addMaterial(Mat &material)
-	{
-		materials.push_back(std::move(material));
+		SceneManager::materials[uid] = material;
 	}
 
 	std::unordered_map<std::string, std::shared_ptr<Tex>> &getTextureCache()
@@ -104,19 +95,9 @@ namespace SceneManager
 		return textureCache;
 	}
 
-	void addTextureToCache(const std::string &name, std::shared_ptr<Tex> texture)
+	void addTextureToCache(const std::string &path, std::shared_ptr<Tex> texture)
 	{
-		textureCache[name] = texture;
-	}
-
-	std::unordered_map<uint16_t, std::shared_ptr<Tex>> getTextureIndexing()
-	{
-		return textureIndexing;
-	}
-
-	void addTextureIndex(uint16_t index, std::shared_ptr<Tex> texture)
-	{
-		textureIndexing[index] = texture;
+		textureCache[path] = texture;
 	}
 
 	void setShader(Shader &shader)

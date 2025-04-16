@@ -55,6 +55,7 @@ void UIManager::draw()
 	showObjectInspector();
 	showLights();
 	showTools();
+	showMaterialBrowser();
 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -146,17 +147,16 @@ void UIManager::showObjectInspector()
 	{
 		ImGui::Begin("Object Inspector");
 		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform[3]));
-		ImGui::Image(SceneManager::getSelectedPrimitive()->material.diffuse -> id, ImVec2(64, 64));
+		ImGui::Image(SceneManager::getSelectedPrimitive()->material->diffuse->id, ImVec2(64, 64));
 		ImGui::SameLine();
-		ImGui::Image(SceneManager::getSelectedPrimitive()->material.specular -> id, ImVec2(64, 64));
+		ImGui::Image(SceneManager::getSelectedPrimitive()->material->specular->id, ImVec2(64, 64));
 		if (ImGui::Button("Diffuse"))
 		{
 			std::string filePath = OpenFileDialog();
 			if (!filePath.empty())
 			{
 				// Update the object's texture path
-				SceneManager::getSelectedPrimitive()->material.diffuse -> type = "tDiffuse";
-				SceneManager::getSelectedPrimitive()->material.diffuse -> SetPath(filePath);
+				SceneManager::getSelectedPrimitive()->material->diffuse->SetPath(filePath);
 				glActiveTexture(GL_TEXTURE0);
 
 			}
@@ -168,8 +168,7 @@ void UIManager::showObjectInspector()
 			if (!filePath.empty())
 			{
 				// Update the object's texture path
-				SceneManager::getSelectedPrimitive()->material.specular -> type = "tSpecular";
-				SceneManager::getSelectedPrimitive()->material.specular -> SetPath(filePath);
+				SceneManager::getSelectedPrimitive()->material->specular->SetPath(filePath);
 				glActiveTexture(GL_TEXTURE0);
 
 			}
@@ -235,4 +234,94 @@ std::string UIManager::OpenFileDialog()
 	}
 
 	return std::string();
+}
+
+
+void UIManager::showMaterialBrowser()
+{
+	ImGui::Begin("Material Browser");
+		static int columns = 2;
+		ImGui::SliderInt("Columns", &columns, 1, 6);
+		
+		// Calculate item width based on window width and columns
+		ImGui::GetWindowContentRegionMax();
+		float windowWidth = ImGui::GetWindowWidth();
+		float cellWidth = (windowWidth / columns) - ImGui::GetStyle().ItemSpacing.x;
+		float imageSize = std::min(64.0f, cellWidth * 0.4f); // Adjust image size to fit cell
+		if (ImGui::BeginTable("MaterialGrid", columns, 
+			ImGuiTableFlags_ScrollY | 
+			ImGuiTableFlags_Borders | 
+			ImGuiTableFlags_SizingStretchProp))
+		{
+			auto materials = SceneManager::getMaterials();
+			int itemIdx = 0;
+	
+			for (const auto& uidAndMat : materials)
+			{
+				uint32_t uid = uidAndMat.first;
+				std::shared_ptr<Mat> mat = uidAndMat.second;
+				
+				if (itemIdx % columns == 0)
+					ImGui::TableNextRow();
+				
+				ImGui::TableNextColumn();
+				
+				// Create a group for each material
+				ImGui::BeginGroup();
+				{
+					ImGui::PushID(uid);
+					ImGui::TextWrapped("Material: %s", mat->name.c_str());
+
+					ImVec2 imagePos = ImGui::GetCursorPos();
+					if (mat->diffuse)
+					{
+						ImGui::Image(mat->diffuse->id, 
+							ImVec2(imageSize, imageSize));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Diffuse");
+					}
+					ImGui::SameLine();
+					if (mat->specular)
+					{
+						ImGui::Image(mat->specular->id, 
+							ImVec2(imageSize, imageSize));
+						if (ImGui::IsItemHovered())
+							ImGui::SetTooltip("Specular");
+					}
+					if (ImGui::Button("Diffuse", ImVec2(imageSize, 0)))
+					{
+						std::string filePath = OpenFileDialog();
+						if (!filePath.empty())
+						{
+							mat->diffuse->SetPath(filePath);
+							glActiveTexture(GL_TEXTURE0);
+						}
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Specular", ImVec2(imageSize, 0)))
+					{
+						std::string filePath = OpenFileDialog();
+						if (!filePath.empty())
+						{
+							mat->specular->SetPath(filePath);
+							glActiveTexture(GL_TEXTURE0);
+						}
+					}
+	
+					ImGui::PopID();
+				}
+				ImGui::EndGroup();
+				
+				itemIdx++;
+			}
+			ImGui::EndTable();
+		}
+		
+		ImGui::End();
+}
+
+bool UIManager::wantCaptureInput() const
+{
+	ImGuiIO& io = ImGui::GetIO();
+	return io.WantCaptureMouse || io.WantCaptureKeyboard;
 }

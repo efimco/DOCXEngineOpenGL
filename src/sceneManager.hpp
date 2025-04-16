@@ -16,15 +16,11 @@ namespace SceneManager
 	Primitive* getSelectedPrimitive();
 	void setSelectedPrimitive(Primitive* primitive);
 
-	std::vector<Mat>& getMaterials();
-	void addMaterials(const std::vector<Mat>& materials);
-	void addMaterial(const Mat& material);
+	std::unordered_map<uint32_t, std::shared_ptr<Mat>>& getMaterials();
+	void addMaterial(std::shared_ptr<Mat> &material, uint32_t uid);
 
 	std::unordered_map<std::string, std::shared_ptr<Tex>>& getTextureCache();
 	void addTextureToCache(const std::string& name, std::shared_ptr<Tex> texture);
-
-	std::unordered_map<uint16_t, std::shared_ptr<Tex>> getTextureIndexing();
-	void addTextureIndex(uint16_t index, std::shared_ptr<Tex> texture);
 
 	void addLight(Light& light);
 	void addLights(std::vector<Light>& lights);

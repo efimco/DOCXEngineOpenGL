@@ -8,7 +8,11 @@
 
 GLTFModel::GLTFModel(std::string path, const Shader& shader) : path(path), shader(shader)
 {
-	setup();
+	auto model = readGlb(path);
+	processTextures(model);
+	processMaterials(model);
+	processGLTFModel(model);
+
 }
 
 GLTFModel::~GLTFModel(){};
@@ -35,40 +39,6 @@ tinygltf::Model GLTFModel::readGlb(const std::string &path)
 
 void GLTFModel::processGLTFModel(tinygltf::Model &model)
 {
-
-	for (int i = 0; i < model.images.size(); i++)
-	{
-		// std::string path = std::filesystem::absolute("..\\..\\res\\GltfModels\\" + model.images[i].name + ".png").string();
-		std::string path = model.images[i].name;
-		if (SceneManager::getTextureCache().find(path) == (SceneManager::getTextureCache().end()))
-		{
-			SceneManager::addTextureToCache(path, std::make_shared<Tex>(model.images[i], "texture"));
-		}
-		SceneManager::addTextureIndex(i, SceneManager::getTextureCache()[path]);
-	} 
-	
-	for (int i = 0; i < model.materials.size(); i++)
-	{
-		Mat mat;
-		if (model.materials[i].pbrMetallicRoughness.baseColorTexture.index != -1)
-		{
-			SceneManager::getTextureIndexing()[model.materials[i].pbrMetallicRoughness.baseColorTexture.index] -> type = "tDiffuse";
-			mat.diffuse = SceneManager::getTextureIndexing()[model.materials[i].pbrMetallicRoughness.baseColorTexture.index];
-		}
-			
-		if (model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index != -1)
-		{
-			SceneManager::getTextureIndexing()[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index] -> type = "tSpecular";
-			mat.specular = SceneManager::getTextureIndexing()[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index];
-		}
-		if (model.materials[i].normalTexture.index != -1)
-		{
-			SceneManager::getTextureIndexing()[model.materials[i].normalTexture.index] -> type = "tNormal";
-			mat.normal = SceneManager::getTextureIndexing()[model.materials[i].normalTexture.index];
-		}
-		materials[i] = mat;
-	}
-
 	for (int i =0; i< model.meshes.size(); i++) 
 	{
 		for (int j = 0; j < model.meshes[i].primitives.size(); j++)
@@ -251,16 +221,49 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 			Primitive prim(vao, vbo, ebo,
 				shader, indexCount,
 				translation,
-				materials[model.meshes[i].primitives[j].material]);
+				materialsIndex[model.meshes[i].primitives[j].material]);
 			primitives.push_back(std::move(prim));
 		}
 	}
 }
 
-void GLTFModel::setup()
+void GLTFModel::processTextures(tinygltf::Model &model)
 {
-	auto model = readGlb(path);
-	processGLTFModel(model);
+	for (int i = 0; i < model.images.size(); i++)
+	{
+		std::string path = model.images[i].name;
+		if (SceneManager::getTextureCache().find(path) == (SceneManager::getTextureCache().end()))
+		{
+			SceneManager::addTextureToCache(path, std::make_shared<Tex>(model.images[i]));
+		}
+		texturesIndex[i] = SceneManager::getTextureCache()[path];
+	} 
+}
+
+void GLTFModel::processMaterials(tinygltf::Model &model)
+{
+	for (int i = 0; i < model.materials.size(); i++)
+	{
+		Mat mat;
+		if (model.materials[i].pbrMetallicRoughness.baseColorTexture.index != -1)
+		{
+			mat.diffuse = texturesIndex[model.materials[i].pbrMetallicRoughness.baseColorTexture.index];
+		}
+			
+		if (model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index != -1)
+		{
+			mat.specular = texturesIndex[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index];
+		}
+		if (model.materials[i].normalTexture.index != -1)
+		{
+			mat.normal = texturesIndex[model.materials[i].normalTexture.index];
+		}
+		mat.name = model.materials[i].name;
+		std::hash<std::string> hasher;
+		uint32_t uid = hasher(model.materials[i].name);
+		SceneManager::addMaterial(std::make_shared<Mat>(mat), uid);
+		materialsIndex[i] = SceneManager::getMaterials()[uid];
+	}
 }
 
 void GLTFModel::setTransform(glm::mat4 transform)

@@ -3,6 +3,7 @@
 .vscode
 build/
 out/
+*.ini
 
 # Compiled Object files
 *.slo

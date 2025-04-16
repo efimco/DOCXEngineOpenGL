@@ -23,150 +23,155 @@
 #include "depthBuffer.hpp"
 #include "uiManager.hpp"
 #include "appConfig.hpp"
-
-
-Camera camera(glm::vec3(-10.0f, 3.0f, 13.0f), glm::vec3(0.0f,1.0f,0.0f), -45.0f, 0.0f);
-
-bool wireframeKeyPressed = false;
-bool rightKeyPressed = false;
-float increasedSpeed = camera.speed *3;
-float defaultSpeed = camera.speed;
-
-std::vector<glm::vec3> defaultCameraMatrix = {camera.position, camera.front, camera.up};
-float defaultCameraRotation[] = {camera.pitch, camera.yaw};
-bool cameraReseted = true;
-
-double mousePosx, mousePosy;
-glm::mat4 view = glm::mat4(1.0f);
-glm::mat4 projection = glm::mat4(1.0f);
-
-bool showObjectPicking = false;
-bool showShadowMap = false;
-
-Primitive* getIdFromPickColor(const glm::vec3 &color) 
-	{
-		const float golden_ratio_conjugate = 0.618033988749895f;
-		glm::vec3 hsv = rgb2hsv(color);
-		float h = hsv.x;
-		Primitive* closestObject  = nullptr;
-		const unsigned int MAX_PICKABLE_OBJECTS = 1000;  // adjust as needed
-		for (Primitive& primitive: SceneManager::getPrimitives()) 
-			{
-				float computedH = glm::fract(primitive.vao * golden_ratio_conjugate);
-				std::cout << computedH << " " << h << std::endl;
-				// Allow a small tolerance since floating-point imprecision can occur
-				if (glm::abs(computedH - h) < 0.01f) 
-				{
-					closestObject = &primitive;
-					break;
-				}
-			}
-		return closestObject;
-	}
-
-void processMovement(GLFWwindow* window, float deltaTime)
-	{
-		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
-		{
-			if (!rightKeyPressed)
-			{
-				rightKeyPressed = true;
-				glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
-			}
-			if(glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard(FORWARD,deltaTime) , cameraReseted = true;
-			if(glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard(BACKWARD,deltaTime) , cameraReseted = true;
-			if(glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard(LEFT,deltaTime) , cameraReseted = true;
-			if(glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(RIGHT,deltaTime) , cameraReseted = true;
-			if(glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) camera.processKeyboard(DOWN,deltaTime) , cameraReseted = true;
-			if(glfwGetKey(window,GLFW_KEY_E) == GLFW_PRESS) camera.processKeyboard(UP,deltaTime) , cameraReseted = true;
-		}
-		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
-		{
-			if (rightKeyPressed) 
-				glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
-			rightKeyPressed = false;
-		} 
 	
-		if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-			camera.speed = increasedSpeed;
-		else 
-			camera.speed = defaultSpeed;
-	
-		if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
-	}
 
-void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime, uint32_t& pickingFBO)
-{
-	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window,true);
+	Camera camera(glm::vec3(-10.0f, 3.0f, 13.0f), glm::vec3(0.0f,1.0f,0.0f), -45.0f, 0.0f);
 
-	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && !wireframeKeyPressed)
+	bool wireframeKeyPressed = false;
+	bool rightKeyPressed = false;
+	float increasedSpeed = camera.speed *3;
+	float defaultSpeed = camera.speed;
+
+	std::vector<glm::vec3> defaultCameraMatrix = {camera.position, camera.front, camera.up};
+	float defaultCameraRotation[] = {camera.pitch, camera.yaw};
+	bool cameraReseted = true;
+
+	double mousePosx, mousePosy;
+	glm::mat4 view = glm::mat4(1.0f);
+	glm::mat4 projection = glm::mat4(1.0f);
+
+
+	Primitive* getIdFromPickColor(const glm::vec3 &color) 
 		{
-			wireframeKeyPressed = true;
-			isWireframe = !isWireframe;
-	}
-
-	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE)
-		wireframeKeyPressed = false;
-
-	static bool wasMousePressed = false;
-	if( AppConfig::WINDOW_WIDTH != 0 && AppConfig::WINDOW_HEIGHT != 0) 
-	{
-		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse)
-			wasMousePressed = true;
-		else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMousePressed)
-		{
-			wasMousePressed = false;
-			projection = glm::perspective(glm::radians(camera.zoom), float(AppConfig::WINDOW_WIDTH)/float(AppConfig::WINDOW_HEIGHT),0.1f, 100.0f);    
-			view = camera.getViewMatrix();
-			glm::vec3 pickedColor = pickObjectAt(mousePosx, mousePosy, AppConfig::WINDOW_HEIGHT, pickingFBO);
-			Primitive* primitive = getIdFromPickColor(pickedColor);
-			if (primitive != nullptr)
-			{
-				if (SceneManager::getSelectedPrimitive() != primitive)
+			const float golden_ratio_conjugate = 0.618033988749895f;
+			glm::vec3 hsv = rgb2hsv(color);
+			float h = hsv.x;
+			Primitive* closestObject  = nullptr;
+			const unsigned int MAX_PICKABLE_OBJECTS = 1000;  // adjust as needed
+			for (Primitive& primitive: SceneManager::getPrimitives()) 
 				{
-					if (SceneManager::getSelectedPrimitive() != nullptr) SceneManager::getSelectedPrimitive()->selected = false;
-					primitive->selected = true;
-					SceneManager::setSelectedPrimitive(primitive);
+					float computedH = glm::fract(primitive.vao * golden_ratio_conjugate);
+					std::cout << computedH << " " << h << std::endl;
+					// Allow a small tolerance since floating-point imprecision can occur
+					if (glm::abs(computedH - h) < 0.01f) 
+					{
+						closestObject = &primitive;
+						break;
+					}
 				}
-				std::cout << "VAO: " << primitive->vao << std::endl;
-			}
-			else
+			return closestObject;
+		}
+
+	void processMovement(GLFWwindow* window, float deltaTime)
+		{
+			if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
 			{
-				if (SceneManager::getSelectedPrimitive() != nullptr)
+				if (!rightKeyPressed)
 				{
-					SceneManager::getSelectedPrimitive()->selected = false;
-					SceneManager::setSelectedPrimitive(nullptr);
+					rightKeyPressed = true;
+					glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
+				}
+				if(glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard(FORWARD,deltaTime) , cameraReseted = true;
+				if(glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard(BACKWARD,deltaTime) , cameraReseted = true;
+				if(glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard(LEFT,deltaTime) , cameraReseted = true;
+				if(glfwGetKey(window,GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(RIGHT,deltaTime) , cameraReseted = true;
+				if(glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) camera.processKeyboard(DOWN,deltaTime) , cameraReseted = true;
+				if(glfwGetKey(window,GLFW_KEY_E) == GLFW_PRESS) camera.processKeyboard(UP,deltaTime) , cameraReseted = true;
+			}
+			if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
+			{
+				if (rightKeyPressed) 
+					glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_NORMAL);
+				rightKeyPressed = false;
+			} 
+		
+			if (glfwGetKey(window,GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+				camera.speed = increasedSpeed;
+			else 
+				camera.speed = defaultSpeed;
+		
+			if (glfwGetKey(window,GLFW_KEY_F) == GLFW_PRESS) cameraReseted = false;
+		}
+
+	void processInput(GLFWwindow* window,bool& isWireframe, float deltaTime, uint32_t& pickingFBO)
+	{
+		if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+			glfwSetWindowShouldClose(window,true);
+
+		if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && !wireframeKeyPressed)
+			{
+				wireframeKeyPressed = true;
+				isWireframe = !isWireframe;
+		}
+
+		if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE)
+			wireframeKeyPressed = false;
+
+		static bool wasMousePressed = false;
+		if( AppConfig::WINDOW_WIDTH != 0 && AppConfig::WINDOW_HEIGHT != 0) 
+		{
+			if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse)
+				wasMousePressed = true;
+			else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMousePressed)
+			{
+				wasMousePressed = false;
+				projection = glm::perspective(glm::radians(camera.zoom), float(AppConfig::WINDOW_WIDTH)/float(AppConfig::WINDOW_HEIGHT),0.1f, 100.0f);    
+				view = camera.getViewMatrix();
+				glm::vec3 pickedColor = pickObjectAt(mousePosx, mousePosy, AppConfig::WINDOW_HEIGHT, pickingFBO);
+				Primitive* primitive = getIdFromPickColor(pickedColor);
+				if (primitive != nullptr)
+				{
+					if (SceneManager::getSelectedPrimitive() != primitive)
+					{
+						if (SceneManager::getSelectedPrimitive() != nullptr) SceneManager::getSelectedPrimitive()->selected = false;
+						primitive->selected = true;
+						SceneManager::setSelectedPrimitive(primitive);
+					}
+					std::cout << "VAO: " << primitive->vao << std::endl;
+				}
+				else
+				{
+					if (SceneManager::getSelectedPrimitive() != nullptr)
+					{
+						SceneManager::getSelectedPrimitive()->selected = false;
+						SceneManager::setSelectedPrimitive(nullptr);
+					}
 				}
 			}
 		}
 	}
-}
 
-float lastX = (float)(AppConfig::WINDOW_WIDTH / 2), lastY = (float) (AppConfig::WINDOW_HEIGHT / 2);
-bool firstMouse = true;
+	float lastX = (float)(AppConfig::WINDOW_WIDTH / 2), lastY = (float) (AppConfig::WINDOW_HEIGHT / 2);
+	bool firstMouse = true;
 
 	void mouseCallback(GLFWwindow* window, double xPos, double yPos)
 	{
-		if (firstMouse)
-		{	lastX = (float)xPos;
+		UIManager* ui = static_cast<UIManager*>(glfwGetWindowUserPointer(window));
+		if (!ui->wantCaptureInput())
+		{
+			if (firstMouse)
+			{	lastX = (float)xPos;
+				lastY = (float)yPos;
+				firstMouse = false;
+			}
+			mousePosx = xPos;
+			mousePosy = yPos;
+			glfwGetWindowSize(window,&AppConfig::WINDOW_WIDTH, &AppConfig::WINDOW_HEIGHT);
+			
+			float xOffset = (float)xPos - (float)lastX;
+			float yOffset = lastY - (float)yPos ;
+			lastX = (float)xPos;
 			lastY = (float)yPos;
-			firstMouse = false;
+			if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) 
+				camera.processMouseMovement(xOffset,yOffset);
 		}
-		mousePosx = xPos;
-		mousePosy = yPos;
-		glfwGetWindowSize(window,&AppConfig::WINDOW_WIDTH, &AppConfig::WINDOW_HEIGHT);
-		
-		float xOffset = (float)xPos - (float)lastX;
-		float yOffset = lastY - (float)yPos ;
-		lastX = (float)xPos;
-		lastY = (float)yPos;
-		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) camera.processMouseMovement(xOffset,yOffset);
 	}
 
 	void scrollCallback(GLFWwindow* window, double xOffset, double yOffset)
 	{
-		camera.processMouseScroll((float)yOffset);
+		UIManager* ui = static_cast<UIManager*>(glfwGetWindowUserPointer(window));
+		if (!ui->wantCaptureInput())
+			camera.processMouseScroll((float)yOffset);
 	}
 
 	uint32_t lightSSBO;
@@ -260,12 +265,11 @@ bool firstMouse = true;
 
 	}
 
-	bool isFramebufferSizeSetted = true;
 	void framebufferSizeCallback(GLFWwindow* window, int32_t newWINDOW_WIDTH, int32_t newWINDOW_HEIGHT)
 	{
 		AppConfig::WINDOW_WIDTH = newWINDOW_WIDTH;
 		AppConfig::WINDOW_HEIGHT = newWINDOW_HEIGHT;
-		isFramebufferSizeSetted = false;
+		AppConfig::isFramebufferSizeSetted = false;
 	}
 
 	glm::vec3 lightColor = glm::vec3(1.0f);
@@ -273,12 +277,11 @@ bool firstMouse = true;
 
 	float lightIntensity = 1.0f;
 	glm::mat4 model = glm::mat4(1.0f);
-	bool isWireframe = false;
 
 	float lastFrame = 0;
 	float deltaTime = 0;
 
-	float near_plane = 9978.0f, far_plane = 10021.0f;
+
 
 	void draw(GLFWwindow* window)
 	{
@@ -353,11 +356,14 @@ bool firstMouse = true;
 			
 			deltaTime = time - lastFrame;
 			lastFrame = time;
-			processInput(window, isWireframe, deltaTime,pickingbuffer.pickingFBO);
-			processMovement(window, deltaTime);
+			if (!uiManager.wantCaptureInput())
+			{
+				processInput(window, AppConfig::isWireframe, deltaTime,pickingbuffer.pickingFBO);
+				processMovement(window, deltaTime);
+			}
 
 			//framebuffer size change callback processing
-			if (!isFramebufferSizeSetted)
+			if (!AppConfig::isFramebufferSizeSetted)
 			{
 				glDeleteTextures(1, &screenTexture); 
 				glDeleteRenderbuffers(1, &rbo);
@@ -381,7 +387,7 @@ bool firstMouse = true;
 
 				glViewport(0, 0, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 
-				isFramebufferSizeSetted = true;
+				AppConfig::isFramebufferSizeSetted = true;
 			}
 			
 			//camera interpolated reset
@@ -420,7 +426,7 @@ bool firstMouse = true;
 			glm::vec3 sceneCenter = glm::vec3(0.0f); 
 			float distance = 10000.0f;
 
-			glm::mat4 lightProjection = glm::ortho(-7.0f, 7.0f, -7.0f, 7.0f, near_plane, far_plane); 
+			glm::mat4 lightProjection = glm::ortho(-7.0f, 7.0f, -7.0f, 7.0f, distance + AppConfig::near_plane,distance + AppConfig::far_plane); 
 			
 			glm::vec3 lightDirection = glm::normalize(SceneManager::getLights()[1].direction);
 
@@ -462,20 +468,20 @@ bool firstMouse = true;
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 			AppConfig::screenShader.use();  
-			AppConfig::screenShader.setFloat("near_plane", near_plane);
-			AppConfig::screenShader.setFloat("far_plane", far_plane);
+			AppConfig::screenShader.setFloat("near_plane", distance + AppConfig::near_plane);
+			AppConfig::screenShader.setFloat("far_plane", distance + AppConfig::far_plane);
 			glBindVertexArray(screenQuadVAO);
 			glBindTextureUnit(0, screenTexture);
 			glDrawArrays(GL_TRIANGLES, 0, 6);  
 
 			//DEBUG QUAD RENDER PASS
-			if(showObjectPicking)
+			if(AppConfig::showObjectPicking)
 			{
 				glBindVertexArray(debugQuadVAO);
 				glBindTexture(GL_TEXTURE_2D, pickingbuffer.pickingTexture);
 				glDrawArrays(GL_TRIANGLES, 0, 6);  
 			} 
-			if(showShadowMap)
+			if(AppConfig::showShadowMap)
 			{
 				glBindVertexArray(debugQuadVAO);
 				glBindTexture(GL_TEXTURE_2D, depthBuffer.depthMap);
@@ -514,6 +520,7 @@ bool firstMouse = true;
 
 		glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 		glfwSetCursorPosCallback(window, mouseCallback);  
+		
 		glfwSetScrollCallback(window,scrollCallback);  
 		glfwMakeContextCurrent(window);
 

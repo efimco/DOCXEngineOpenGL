@@ -13,8 +13,8 @@ class Primitive
 		size_t indexCount;
 		glm::mat4 transform;
 		bool selected;
-		Mat material;
-		Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader shader, size_t indexCount, glm::mat4 transform, Mat material);
+		std::shared_ptr<Mat> material;
+		Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader shader, size_t indexCount, glm::mat4 transform, std::shared_ptr<Mat> material);
 		Primitive(const Primitive&) = delete;
 		Primitive& operator=(const Primitive&) = delete;
 		Primitive(Primitive&& other) noexcept;

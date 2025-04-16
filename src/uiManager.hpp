@@ -19,6 +19,8 @@ class UIManager
 		void showLights();
 		void showObjectInspector();
 		void showTools();
+		void showMaterialBrowser();
+		bool wantCaptureInput() const;
 
 	private:
 		std::string OpenFileDialog();

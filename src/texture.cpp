@@ -3,9 +3,9 @@
 #include "stb_image.h"
 #include "texture.hpp"
 
-Tex::Tex() : id(-1), type(""), path("") {};
+Tex::Tex() : id(-1), path("") {};
 
-Tex::Tex(const char* path, std::string type):path(path), type(type)
+Tex::Tex(const char* path):path(path)
 {
 	if (path && path[0] != '\0')
 	{
@@ -15,7 +15,7 @@ Tex::Tex(const char* path, std::string type):path(path), type(type)
 	else id = 0;
 };
 
-Tex::Tex(tinygltf::Image& image, std::string type):path(path), type(type)
+Tex::Tex(tinygltf::Image& image):path(path)
 {
 	id = TextureFromGlb(image);
 	std::cout << "Loaded texture from gltf: " << image.name << std::endl;

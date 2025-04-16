@@ -30,7 +30,8 @@ namespace AppConfig
 	Shader pickingShader{};
 	Shader depthShader{};
 	float gamma = 1;
-	float near_plane, far_plane;
+	float near_plane = 100.0f;
+	float far_plane = 100.0f;
 	GLenum polygonMode = GL_FILL;
 	bool isWireframe = false;
 	bool showObjectPicking = false;

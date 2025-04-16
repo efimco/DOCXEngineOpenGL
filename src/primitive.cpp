@@ -9,9 +9,15 @@
 #include <glad/glad.h>
 #include "primitive.hpp"
 
-Primitive::Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader shader, size_t indexCount, glm::mat4 transform, Mat material)
-: vao(vao), vbo(vbo), ebo(ebo), shader(shader), indexCount(indexCount), transform(transform),
-selected(false), material(material){};
+Primitive::Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader shader, size_t indexCount, glm::mat4 transform, std::shared_ptr<Mat> material)
+: vao(vao),
+	vbo(vbo),
+	ebo(ebo),
+	shader(shader),
+	indexCount(indexCount),
+	transform(transform),
+	selected(false), 
+	material(material){};
 
 Primitive::Primitive(Primitive&& other) noexcept
 	:vao(other.vao),
@@ -58,23 +64,23 @@ void Primitive::draw(Camera& camera, glm::mat4 lightSpaceMatrix, int32_t width, 
 	shader.setFloat("gamma", gamma);
 	glBindTextureUnit(5, depthMap);
 	shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-	if (material.diffuse -> path != "")
+	if (material->diffuse->path != "")
 	{
-		shader.setInt(material.diffuse -> type, 1);
-		glBindTextureUnit(1, material.diffuse -> id);
+		shader.setInt("tDiffuse", 1);
+		glBindTextureUnit(1, material->diffuse->id);
 	}else glBindTextureUnit(1, 0);
 	
-	if (material.specular -> path != "")
+	if (material->specular->path != "")
 	{
-		shader.setInt(material.specular -> type, 2);
+		shader.setInt("tSpecular", 2);
 		shader.setFloat("shininess", 32);
-		glBindTextureUnit(2, material.specular -> id);
+		glBindTextureUnit(2, material->specular->id);
 	}else glBindTextureUnit(2, 0);
 	
-	if (material.normal -> path != "")
+	if (material->normal->path != "")
 	{
-		shader.setInt(material.normal -> type, 3);
-		glBindTextureUnit(3, material.normal -> id);
+		shader.setInt("tNormal", 3);
+		glBindTextureUnit(3, material->normal->id);
 	}else glBindTextureUnit(3, 0);
 
 	shader.setMat4("projection",projection);
