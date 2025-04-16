@@ -184,8 +184,8 @@ void UIManager::showTools()
 		
 		ImGui::SliderFloat("FOV",&camera.zoom,1.f,100.f,"%.3f");
 		ImGui::SliderFloat("Gamma", &AppConfig::gamma,0.01f,5);
-		ImGui::SliderFloat("Near plane", &AppConfig::near_plane,8500.0f,11000.f, "%.6f");
-		ImGui::SliderFloat("Far plane", &AppConfig::far_plane,8500.0f,11000.f);
+		ImGui::SliderFloat("Near plane", &AppConfig::near_plane,-100.0f,100.f, "%.6f");
+		ImGui::SliderFloat("Far plane", &AppConfig::far_plane,-100.0f,100.f);
 		ImGui::Checkbox("Wireframe Mode", &AppConfig::isWireframe);
 		ImGui::Checkbox("ObjectID Debug", &AppConfig::showObjectPicking);
 		ImGui::Checkbox("ShadowMap Debug", &AppConfig::showShadowMap);
