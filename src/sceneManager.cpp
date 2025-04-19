@@ -1,4 +1,5 @@
 #include "sceneManager.hpp"
+#include <glad/glad.h>
 
 namespace SceneManager
 {
@@ -7,6 +8,7 @@ namespace SceneManager
 	static std::vector<Primitive> primitives;
 	static std::unordered_map<uint32_t, std::shared_ptr<Mat>> materials;
 	static std::unordered_map<std::string, std::shared_ptr<Tex>> textureCache;
+	static uint32_t lightSSBO = 0;
 
 	void draw(Camera& camera,glm::mat4& lightSpaceMatrix, int32_t width, int32_t height) 
 	{
@@ -58,12 +60,10 @@ namespace SceneManager
 		lights.push_back(std::move(light));
 	}
 
-	void addLights(const std::vector<Light> &lights)
+	void updateLights()
 	{
-		for (auto& light: lights)
-		{
-			SceneManager::lights.push_back(std::move(light));
-		}
+			glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(Light), lights.data(), GL_DYNAMIC_DRAW);
 	}
 
 	std::vector<Light>& getLights()

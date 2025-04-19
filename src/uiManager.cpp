@@ -87,7 +87,14 @@ void UIManager::showCameraTransforms()
 		ImGuiWindowFlags_NoScrollbar |
 		ImGuiWindowFlags_NoSavedSettings);
 	ImGui::Text("Pos: %.1f, %.1f, %.1f", camera.position.x, camera.position.y, camera.position.z); ImGui::SameLine();
-	ImGui::Text("Rot: %.1f, %.1f", camera.yaw, camera.pitch);
+	ImGui::Text("Rot: %.1f, %.1f", camera.pitch, camera.yaw);
+	ImGui::Text("Front: %.1f, %.1f, %.1f", camera.front.x, camera.front.y, camera.front.z); ImGui::SameLine();
+	ImGui::Text("Up: %.1f, %.1f, %.1f", camera.up.x, camera.up.y, camera.up.z);
+	ImGui::Text("Right: %.1f, %.1f, %.1f", camera.right.x, camera.right.y, camera.right.z);
+	ImGui::Text("Default Pos: %.1f, %.1f, %.1f", camera.defaultCameraMatrix[0].x, camera.defaultCameraMatrix[0].y, camera.defaultCameraMatrix[0].z);  ImGui::SameLine();
+	ImGui::Text("Default Rot: %.1f, %.1f", camera.defaultCameraRotation[0], camera.defaultCameraRotation[1]);
+	ImGui::Text("Default Front: %.1f, %.1f, %.1f", camera.defaultCameraMatrix[1].x, camera.defaultCameraMatrix[1].y, camera.defaultCameraMatrix[1].z);ImGui::SameLine();
+	ImGui::Text("Default Up: %.1f, %.1f, %.1f", camera.defaultCameraMatrix[2].x, camera.defaultCameraMatrix[2].y, camera.defaultCameraMatrix[2].z);
 	ImGui::End();
 }
 
@@ -101,7 +108,7 @@ void UIManager::showLights()
 			ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getLights()[i].position));
 			ImGui::SliderFloat("Intensity", &SceneManager::getLights()[i].intensity, 0.0f, 10.0f);
 			
-			static glm::vec3 lightRotation = glm::vec3(0.0f); 
+			glm::vec3 lightRotation = glm::vec3(0.0f); 
 			if (ImGui::DragFloat3("Light Rotation", glm::value_ptr(lightRotation), 0.1f)) 
 			{
 				float pitch = glm::radians(lightRotation.x);
@@ -271,20 +278,18 @@ void UIManager::showMaterialBrowser()
 				{
 					ImGui::PushID(uid);
 					ImGui::TextWrapped("Material: %s", mat->name.c_str());
-
 					ImVec2 imagePos = ImGui::GetCursorPos();
+
 					if (mat->diffuse)
 					{
-						ImGui::Image(mat->diffuse->id, 
-							ImVec2(imageSize, imageSize));
+						ImGui::Image(mat->diffuse->id, ImVec2(imageSize, imageSize));
 						if (ImGui::IsItemHovered())
 							ImGui::SetTooltip("Diffuse");
 					}
 					ImGui::SameLine();
 					if (mat->specular)
 					{
-						ImGui::Image(mat->specular->id, 
-							ImVec2(imageSize, imageSize));
+						ImGui::Image(mat->specular->id, ImVec2(imageSize, imageSize));
 						if (ImGui::IsItemHovered())
 							ImGui::SetTooltip("Specular");
 					}
@@ -307,7 +312,6 @@ void UIManager::showMaterialBrowser()
 							glActiveTexture(GL_TEXTURE0);
 						}
 					}
-	
 					ImGui::PopID();
 				}
 				ImGui::EndGroup();

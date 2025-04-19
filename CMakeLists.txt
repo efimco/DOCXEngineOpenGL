@@ -32,6 +32,7 @@ add_executable(OpenGLLearn
 	src/uiManager.cpp
 	src/sceneManager.cpp
 	src/appConfig.cpp
+	src/inputManager.cpp
 	${IMGUI_SRC}
 )
 

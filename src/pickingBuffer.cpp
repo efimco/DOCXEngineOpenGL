@@ -1,10 +1,12 @@
-#include "glm/glm.hpp"
 #include <vector>
-#include "primitive.hpp"
 #include <glad/glad.h>
 #include <iostream>
-#include "glm/gtc/type_ptr.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include "primitive.hpp"
+#include "sceneManager.hpp"
 #include "pickingBuffer.hpp"
+
 
 
 
@@ -62,7 +64,7 @@ void PickingBuffer::resize(int& windowWidth, int& windowHeight)
 
 }
 
-glm::vec3 pickObjectAt(double mouseX, double mouseY, int32_t windowHeight, uint32_t pickingFBO)
+glm::vec3 PickingBuffer::pickColorAt(double mouseX, double mouseY, int32_t windowHeight)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
 
@@ -79,6 +81,26 @@ glm::vec3 pickObjectAt(double mouseX, double mouseY, int32_t windowHeight, uint3
 
 }
 
+Primitive* PickingBuffer::getIdFromPickColor(const glm::vec3 &color) 
+{
+	const float golden_ratio_conjugate = 0.618033988749895f;
+	glm::vec3 hsv = rgb2hsv(color);
+	float h = hsv.x;
+	Primitive* closestObject  = nullptr;
+	const unsigned int MAX_PICKABLE_OBJECTS = 1000;  // adjust as needed
+	for (Primitive& primitive: SceneManager::getPrimitives()) 
+		{
+			float computedH = glm::fract(primitive.vao * golden_ratio_conjugate);
+			std::cout << computedH << " " << h << std::endl;
+			// Allow a small tolerance since floating-point imprecision can occur
+			if (glm::abs(computedH - h) < 0.01f) 
+			{
+				closestObject = &primitive;
+				break;
+			}
+		}
+	return closestObject;
+}
 
 glm::vec3 rgb2hsv(const glm::vec3 &rgb) {
 	float r = rgb.r, g = rgb.g, b = rgb.b;

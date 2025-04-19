@@ -1,5 +1,6 @@
 #pragma once
 #include "glm/glm.hpp"
+#include <vector>
 enum CameraMovement {
 	FORWARD,
 	BACKWARD,
@@ -23,12 +24,17 @@ class Camera
 		glm::vec3 up;
 		glm::vec3 right;
 		glm::vec3 worldUp;
+		std::vector<glm::vec3> defaultCameraMatrix;
+		float defaultCameraRotation[2];
+		bool cameraReseted;
 
 		float yaw;
 		float pitch;
 
 		float zoom;
 		float speed;
+		float defaultSpeed;
+		float increasedSpeed;
 		float sensitivity;
 
 		Camera(glm::vec3 pos, glm::vec3 upv, float yaw , float pitch);

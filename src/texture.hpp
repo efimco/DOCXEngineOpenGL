@@ -4,7 +4,7 @@
 
 class Tex
 {
-	public:
+public:
 	uint32_t id;
 	std::string path;
 

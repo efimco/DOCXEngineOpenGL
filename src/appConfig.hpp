@@ -1,9 +1,9 @@
 #pragma once
 #include "shader.hpp"
-#include "glad/glad.h"
+#include "pickingBuffer.hpp"
 
 
-
+typedef unsigned int GLenum;
 namespace AppConfig
 {
 	extern int WINDOW_WIDTH;

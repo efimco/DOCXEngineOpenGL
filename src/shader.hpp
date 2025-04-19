@@ -5,7 +5,7 @@
 
 class Shader
 {
-	public:
+public:
 	uint32_t shaderProgram;
 	std::string vPath;
 	std::string fPath;

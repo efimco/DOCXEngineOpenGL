@@ -2,6 +2,7 @@
 #include "glad/glad.h"
 #include "stb_image.h"
 #include "texture.hpp"
+#include "sceneManager.hpp"
 
 Tex::Tex() : id(-1), path("") {};
 
@@ -24,8 +25,15 @@ Tex::Tex(tinygltf::Image& image):path(path)
 
 Tex::~Tex(){};
 
-void Tex::SetPath(const std::string& newPath) 
+void Tex::SetPath(const std::string& newPath)
 {
+	auto& cache = SceneManager::getTextureCache();
+	auto it = cache.find(path);
+	if (it != cache.end())
+	{
+		cache[newPath] = it->second;
+		cache.erase(it);
+	}
 	path = newPath;
 	id = TextureFromFile(newPath.c_str());
 }

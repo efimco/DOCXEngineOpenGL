@@ -23,9 +23,9 @@ namespace SceneManager
 	void addTextureToCache(const std::string& name, std::shared_ptr<Tex> texture);
 
 	void addLight(Light& light);
-	void addLights(std::vector<Light>& lights);
+	void updateLights();
 	std::vector<Light>& getLights();
 
 	void reloadShaders();
 	void setShader(Shader& shader);
-};
+	};
