@@ -260,7 +260,7 @@ void GLTFModel::processMaterials(tinygltf::Model &model)
 		}
 		mat.name = model.materials[i].name;
 		std::hash<std::string> hasher;
-		uint32_t uid = hasher(model.materials[i].name);
+		uint32_t uid = (uint32_t)hasher(model.materials[i].name);
 		SceneManager::addMaterial(std::make_shared<Mat>(mat), uid);
 		materialsIndex[i] = SceneManager::getMaterials()[uid];
 	}
