@@ -5,7 +5,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <commdlg.h> 
@@ -264,7 +263,7 @@
 			glm::vec3 sceneCenter = glm::vec3(0.0f); 
 			float distance = 10000.0f;
 
-			glm::mat4 lightProjection = glm::ortho(-7.0f, 7.0f, -7.0f, 7.0f, distance + AppConfig::near_plane,distance + AppConfig::far_plane); 
+			glm::mat4 lightProjection = glm::ortho(-3.0f, 3.0f, -3.0f, 3.0f, distance + AppConfig::near_plane, distance + AppConfig::far_plane); 
 			
 			glm::vec3 lightDirection = glm::normalize(SceneManager::getLights()[1].direction);
 

@@ -23,7 +23,7 @@ tinygltf::Model GLTFModel::readGlb(const std::string &path)
 	tinygltf::TinyGLTF loader;
 	std::string err;
 	std::string warn;
-	printf("Loading...\n");
+	printf("Loading...%s\n ",path.c_str());
 	bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
 	// bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
 	if (!warn.empty()) 

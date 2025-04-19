@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include "shader.hpp"
+#include <regex>
 
 Shader::Shader(std::string vertexPath, std::string fragmentPath)
 {
@@ -141,21 +142,44 @@ std::string Shader::readShaderFromFile(std::string filePath)
 	std::ifstream shaderFile;
 	std::stringstream shaderStream;
 
-
 	shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	try
 	{
 		shaderFile.open(filePath);
-
 		shaderStream << shaderFile.rdbuf();
 		shaderFile.close();
-		shaderCode = shaderStream.str();
 	}
 	catch(const std::ifstream::failure e)
 	{
-		
 		std::cout << std::filesystem::absolute(filePath) << std::endl;
 		std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
 	}
+	
+	std::string processedShader;
+	std::string line;
+	std::filesystem::path parentPath = std::filesystem::path(filePath).parent_path();
+	while (std::getline(shaderStream, line))
+	{
+		std::regex includeRegex(R"(^\s*#include\s+[\"<](.+)[\">])");
+		std::smatch matches;
+		if (std::regex_search(line, matches, includeRegex))
+		{
+			std::string includeFileName = matches[1].str();
+			std::filesystem::path includePath = parentPath / includeFileName;
+			std::ifstream includeFile(includePath);
+			if (includeFile)
+			{
+				std::string includeContent;
+				includeContent = readShaderFromFile(includePath.string());
+				processedShader += includeContent;
+			}
+			else
+				std::cout << "ERROR::SHADER::INCLUDE_FILE_NOT_SUCCESFULLY_READ: " << includePath << std::endl;
+			continue;
+		}
+		processedShader += line + "\n";
+	}
+	shaderCode = processedShader;
+
 	return shaderCode;
 }

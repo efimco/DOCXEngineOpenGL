@@ -1,6 +1,6 @@
 #version 460 core
+#include "light.glsl"
 out vec4 FragColor;
-
 layout (location = 3) in VS_OUT {
 	vec3 FragPos;
 	vec3 Normal;
@@ -17,111 +17,14 @@ uniform float shininess;
 uniform samplerCube skybox;
 uniform sampler2D shadowMap;
 
-struct Light 
-{
-	int type;
-	float intensity;
-	float position[3];
-	float direction[3];
-	float ambient[3];
-	float diffuse[3];
-	float specular[3];
-
-	// Attenuation
-	float constant;
-	float linear;
-	float quadratic;
-
-	float cutOff;       // inner cone angle
-	float outerCutOff;  // outer cone angle
-};
-
 layout (std430, binding = 0) buffer LightBuffer {
 	Light lights[];
 };
 
-
-float kernel[9] = float[](
-	1.0,	2.0,	1.0,
-
-	2.0,	4.0,	2.0,
-	
-	1.0,	2.0,	1.0
-);
-
-const float offset = 1.0 / 300.0;
-
-vec2 offsets[9] = vec2[](
-		vec2(-offset,  offset), // top-left
-		vec2( 0.0f,    offset), // top-center
-		vec2( offset,  offset), // top-right
-		vec2(-offset,  0.0f),   // center-left
-		vec2( 0.0f,    0.0f),   // center-center
-		vec2( offset,  0.0f),   // center-right
-		vec2(-offset, -offset), // bottom-left
-		vec2( 0.0f,   -offset), // bottom-center
-		vec2( offset, -offset)  // bottom-right    
-	);
-
-float rand(vec2 co) {
-	return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453123);
-}
-
-vec2 randomOffset(int i, vec2 texelSize) {
-	// Generate more varied offsets using the fragment position
-	vec2 noise = vec2(
-		rand(vec2(i * 0.764331, fs_in.FragPos.x)),
-		rand(vec2(fs_in.FragPos.z, i * 0.358318))
-	);
-
-	// Convert to polar coordinates for better distribution
-	float angle = noise.x * 2.0 * 3.14159;
-	float radius = noise.y;
-
-	// Apply smoothstep for better radius distribution
-	radius = smoothstep(0.0, 1.0, radius);
-
-	return vec2(cos(angle), sin(angle)) * radius * texelSize * 4.0; // Increased radius for softer shadows
-}
-
-float ShadowCalculation(vec4 fragPosLightSpace, vec3 lightPos)
-{
-	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-	projCoords = projCoords * 0.5 + 0.5;
-
-	float closestDepth = texture(shadowMap, projCoords.xy).r;
-
-	float currentDepth = projCoords.z;
-
-	vec3 normal = normalize(fs_in.Normal);
-	vec3 lightDir = normalize(lightPos - fs_in.FragPos);
-	float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.001);
-
-	float shadow = 0.0;
-
-	vec2 texelSize = 1.0 / textureSize(shadowMap,0);
-	int samples = 32;
-
-	for(int i = 0; i < samples; ++i) 
-	{
-		vec2 offset = randomOffset(i, texelSize);
-		float pcfDepth = texture(shadowMap, projCoords.xy + offset).r;
-		shadow += (currentDepth - bias) > pcfDepth ? 1.0 : 0.0;
-	}
-	
-	shadow /= float(samples)*2;
-
-	// shadow = (currentDepth - bias) >  closestDepth ? 1.0 : 0.0;
-	if(projCoords.z > 1.0)
-		shadow = 0.0;
-	
-		
-	return shadow;
-}
-
+#include "shadow.glsl"
 
 vec3 calcPointLight(Light light)
-	{
+{
 	vec3 lightDir = normalize(vec3(light.position[0], light.position[1], light.position[2]) - fs_in.FragPos);
 	float diff = max(dot(fs_in.Normal, lightDir), 0.0);
 
@@ -152,34 +55,34 @@ vec3 calcPointLight(Light light)
 }
 
 vec3 calcDirectionalLight(Light light)
+{
+	vec3 lightDir = normalize(vec3(light.direction[0], light.direction[1], light.direction[2]));
+	float diff = max(dot(fs_in.Normal, lightDir), 0.0);
+
+	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
+	vec3 halfwayDir = normalize(lightDir + viewDir);
+	float spec = pow(max(dot(fs_in.Normal, halfwayDir), 0.0), shininess);
+	vec3 specular = vec3(light.specular[0], light.specular[1], light.specular[2]) * spec * texture(tSpecular, fs_in.TexCoords).r;
+
+	if (texture(tSpecular, fs_in.TexCoords).r == 0)
 	{
-		vec3 lightDir = normalize(vec3(light.direction[0], light.direction[1], light.direction[2]));
-		float diff = max(dot(fs_in.Normal, lightDir), 0.0);
-
-		vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-		vec3 halfwayDir = normalize(lightDir + viewDir);
-		float spec = pow(max(dot(fs_in.Normal, halfwayDir), 0.0), shininess);
-		vec3 specular = vec3(light.specular[0], light.specular[1], light.specular[2]) * spec * texture(tSpecular, fs_in.TexCoords).r;
-
-		if (texture(tSpecular, fs_in.TexCoords).r == 0)
-		{
-			spec = pow(max(dot(fs_in.Normal, halfwayDir), 0.0), 8);
-			specular = vec3(light.specular[0], light.specular[1], light.specular[2]) * spec * diff * vec3(0.25);
-		}
-
-				vec3 diffuse = vec3(light.diffuse[0],light.diffuse[1],light.diffuse[2]) * diff * texture(tDiffuse, fs_in.TexCoords).rgb;
-		if (texture(tDiffuse, fs_in.TexCoords).r == 0)
-		{
-				diffuse = vec3(light.diffuse[0],light.diffuse[1],light.diffuse[2]) * diff * vec3(1);
-		}
-		float shadow = ShadowCalculation(fs_in.FragPosLightSpace, vec3(light.position[0], light.position[1], light.position[2]));
-		vec3 ambient = vec3(light.ambient[0], light.ambient[1], light.ambient[2]) * texture(tDiffuse, fs_in.TexCoords).rgb;
-
-		return vec3((ambient + (1.0 - shadow) * (diffuse + specular)) * light.intensity);
+		spec = pow(max(dot(fs_in.Normal, halfwayDir), 0.0), 8);
+		specular = vec3(light.specular[0], light.specular[1], light.specular[2]) * spec * diff * vec3(0.25);
 	}
 
-vec3 calcSpotLight(Light light)
+			vec3 diffuse = vec3(light.diffuse[0],light.diffuse[1],light.diffuse[2]) * diff * texture(tDiffuse, fs_in.TexCoords).rgb;
+	if (texture(tDiffuse, fs_in.TexCoords).r == 0)
 	{
+			diffuse = vec3(light.diffuse[0],light.diffuse[1],light.diffuse[2]) * diff * vec3(1);
+	}
+	float shadow = ShadowCalculation(fs_in.FragPosLightSpace, vec3(light.position[0], light.position[1], light.position[2]));
+	vec3 ambient = vec3(light.ambient[0], light.ambient[1], light.ambient[2]) * texture(tDiffuse, fs_in.TexCoords).rgb;
+
+	return vec3((ambient + (1.0 - shadow) * (diffuse + specular)) * light.intensity);
+}
+
+vec3 calcSpotLight(Light light)
+{
 	vec3 lightDir = normalize(vec3(light.position[0], light.position[1], light.position[2]) - fs_in.FragPos);
 	float diff = max(dot(fs_in.Normal, lightDir), 0.0);
 
@@ -221,9 +124,7 @@ vec3 calcSpotLight(Light light)
 	{
 		return ambient;
 	}
-	
-		
-	}
+}
 
 void main() {
 	vec3 result = vec3(0.0);
