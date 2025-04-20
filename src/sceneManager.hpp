@@ -25,6 +25,9 @@ namespace SceneManager
 	void addLight(Light& light);
 	void updateLights();
 	std::vector<Light>& getLights();
+	void createLightsSSBO();
+	uint32_t& getLightsSSBO();
+	void checkLightBuffer();
 
 	void reloadShaders();
 	void setShader(Shader& shader);

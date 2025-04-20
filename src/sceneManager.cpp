@@ -1,5 +1,6 @@
 #include "sceneManager.hpp"
 #include <glad/glad.h>
+#include <iostream>
 
 namespace SceneManager
 {
@@ -58,18 +59,41 @@ namespace SceneManager
 	void addLight(Light& light)
 	{
 		lights.push_back(std::move(light));
+		glNamedBufferData(lightSSBO, lights.size() * sizeof(Light), nullptr, GL_DYNAMIC_DRAW);
 	}
 
 	void updateLights()
 	{
-			glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
-			glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(Light), lights.data(), GL_DYNAMIC_DRAW);
+			glNamedBufferSubData(lightSSBO, 0, lights.size() * sizeof(Light), lights.data());
+	}
+
+	void checkLightBuffer() 
+	{
+		GLint bufferSize = 0;
+		glGetNamedBufferParameteriv(lightSSBO, GL_BUFFER_SIZE, &bufferSize);
+		std::cout << "Light buffer size: " << bufferSize << " bytes" << std::endl;
+		std::cout << "Lights count: " << SceneManager::getLights().size() << std::endl;
+		std::cout << "Light size: " << sizeof(Light) << std::endl;
+	}
+
+	void createLightsSSBO()
+	{
+		glCreateBuffers(1, &SceneManager::getLightsSSBO());
+		glNamedBufferData(SceneManager::getLightsSSBO(), SceneManager::getLights().size() * sizeof(Light), nullptr, GL_DYNAMIC_DRAW);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, SceneManager::getLightsSSBO());
+	}
+
+	uint32_t& getLightsSSBO()
+	{
+		return lightSSBO;
 	}
 
 	std::vector<Light>& getLights()
 	{
 		return lights;
 	}
+
+
 
 	void reloadShaders()
 	{

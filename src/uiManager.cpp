@@ -58,7 +58,11 @@ void UIManager::draw()
 	showMaterialBrowser();
 
 	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	auto draw_data = ImGui::GetDrawData();
+	if (draw_data != nullptr)
+	{
+		ImGui_ImplOpenGL3_RenderDrawData(draw_data);
+	}
 }
 
 void UIManager::showFps()
@@ -108,7 +112,7 @@ void UIManager::showLights()
 			ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getLights()[i].position));
 			ImGui::SliderFloat("Intensity", &SceneManager::getLights()[i].intensity, 0.0f, 10.0f);
 			
-			glm::vec3 lightRotation = glm::vec3(0.0f); 
+			static glm::vec3 lightRotation = glm::vec3(0.0f); 
 			if (ImGui::DragFloat3("Light Rotation", glm::value_ptr(lightRotation), 0.1f)) 
 			{
 				float pitch = glm::radians(lightRotation.x);
@@ -144,6 +148,7 @@ void UIManager::showLights()
 			}
 			ImGui::ColorEdit3("Color", glm::value_ptr(SceneManager::getLights()[i].diffuse));
 			ImGui::PopID();
+			SceneManager::updateLights();
 		}
 	ImGui::End();
 }

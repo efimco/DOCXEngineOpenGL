@@ -64,20 +64,22 @@ void Primitive::draw(Camera& camera, glm::mat4 lightSpaceMatrix, int32_t width, 
 	shader.setFloat("gamma", gamma);
 	glBindTextureUnit(5, depthMap);
 	shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-	if (material->diffuse->path != "")
+	if (material && material->diffuse && !material->diffuse->path.empty())
 	{
 		shader.setInt("tDiffuse", 1);
 		glBindTextureUnit(1, material->diffuse->id);
-	}else glBindTextureUnit(1, 0);
+	}
+	else
+		glBindTextureUnit(1, 0);
 	
-	if (material->specular->path != "")
+	if (material && material->specular && !material->specular->path.empty())
 	{
 		shader.setInt("tSpecular", 2);
 		shader.setFloat("shininess", 32);
 		glBindTextureUnit(2, material->specular->id);
 	}else glBindTextureUnit(2, 0);
 	
-	if (material->normal->path != "")
+	if (material && material->normal && !material->normal->path.empty())
 	{
 		shader.setInt("tNormal", 3);
 		glBindTextureUnit(3, material->normal->id);

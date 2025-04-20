@@ -4,10 +4,15 @@ struct Light
 {
 	int   type;
 	float intensity;
+	glm::vec2 stub0; // padding to align to 16 bytes
 	glm::vec3 position;
+	float stub1;
 	glm::vec3 direction;
-	glm::vec3 ambient; 
-	glm::vec3 diffuse; 
+	float stub2;
+	glm::vec3 ambient;
+	float stub3;
+	glm::vec3 diffuse;
+	float stub4;
 	glm::vec3 specular;
 
 	// Attenuation 
@@ -17,5 +22,6 @@ struct Light
 
 	float cutOff;       // inner cone angle
 	float outerCutOff;  // outer cone angle
+
 };
 

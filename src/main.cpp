@@ -29,20 +29,6 @@
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4 projection = glm::mat4(1.0f);
 
-	uint32_t lightSSBO;
-
-	void CreateLightSSBO() 
-	{
-		glCreateBuffers(1, &lightSSBO);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
-	};	
-
-	void UpdateLights(std::vector<Light>& lights)
-	{
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, lights.size() * sizeof(Light), lights.data(), GL_DYNAMIC_DRAW);
-	}
-
 	float quadVertices[] = { 
 		// positions   // texCoords
 		-1.0f,  1.0f,  0.0f, 1.0f,
@@ -150,22 +136,22 @@
 		GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Knight.glb").string(), AppConfig::baseShader);
 		SceneManager::addPrimitives(std::move(model.primitives));
 
-		CreateLightSSBO();
+		SceneManager::createLightsSSBO();
 		//lights
 	{
-		Light pointLight;
-		pointLight.type = 2;
-		pointLight.intensity = 1;
-		pointLight.position = glm::vec3(1.58f, 1.95f, 1.94f);
-		pointLight.direction = glm::vec3(0.0f, -1.0f, 0.0f);
-		pointLight.ambient   = glm::vec3(0.05f);
-		pointLight.diffuse   = glm::vec3(0.8f);
-		pointLight.specular  = glm::vec3(1.0f);
-		pointLight.constant  = 1.0f;
-		pointLight.linear    = 0.09f;
-		pointLight.quadratic = 0.032f;
-		pointLight.cutOff    = glm::cos(glm::radians(20.5f));
-		pointLight.outerCutOff = glm::cos(glm::radians(72.5f));
+		Light spotLight1;
+		spotLight1.type = 2;
+		spotLight1.intensity = 1;
+		spotLight1.position = glm::vec3(1.58f, 1.95f, 1.94f);
+		spotLight1.direction = glm::vec3(0.0f, -1.0f, 0.0f);
+		spotLight1.ambient   = glm::vec3(0.05f);
+		spotLight1.diffuse   = glm::vec3(0.8f);
+		spotLight1.specular  = glm::vec3(1.0f);
+		spotLight1.constant  = 1.0f;
+		spotLight1.linear    = 0.09f;
+		spotLight1.quadratic = 0.032f;
+		spotLight1.cutOff    = glm::cos(glm::radians(20.5f));
+		spotLight1.outerCutOff = glm::cos(glm::radians(72.5f));
 
 		Light spotLight;
 		spotLight.type = 2;
@@ -193,10 +179,11 @@
 		directionalLight.linear    = 0.09f;
 		directionalLight.quadratic = 0.032f;
 
-		SceneManager::addLight(pointLight);
-		SceneManager::addLight(directionalLight);
+		SceneManager::addLight(spotLight1);
 		SceneManager::addLight(spotLight);
-		UpdateLights(SceneManager::getLights());
+		SceneManager::addLight(directionalLight);
+		SceneManager::updateLights();
+		SceneManager::checkLightBuffer();
 	}
 
 		while(!glfwWindowShouldClose(window))
@@ -265,7 +252,7 @@
 
 			glm::mat4 lightProjection = glm::ortho(-3.0f, 3.0f, -3.0f, 3.0f, distance + AppConfig::near_plane, distance + AppConfig::far_plane); 
 			
-			glm::vec3 lightDirection = glm::normalize(SceneManager::getLights()[1].direction);
+			glm::vec3 lightDirection = glm::normalize(SceneManager::getLights()[2].direction);
 
 			glm::vec3 lightPos = camera.position + lightDirection * distance;
 
@@ -327,8 +314,6 @@
 
 			//IMGUI RENDER PASS
 			uiManager.draw();
-
-			UpdateLights(SceneManager::getLights());
 
 			glfwSwapBuffers(window);
 			glfwPollEvents();    

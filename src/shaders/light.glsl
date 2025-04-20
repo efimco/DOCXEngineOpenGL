@@ -2,11 +2,11 @@ struct Light
 {
 	int type;
 	float intensity;
-	float position[3];
-	float direction[3];
-	float ambient[3];
-	float diffuse[3];
-	float specular[3];
+	vec3 position;
+	vec3 direction;
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
 
 	// Attenuation
 	float constant;
