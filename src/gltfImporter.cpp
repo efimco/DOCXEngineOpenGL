@@ -1,10 +1,12 @@
 #include <string>
 #include <iostream>
+#include <iterator>
 #include "glad/glad.h"
 #include "shader.hpp"
 #include "tiny_gltf.h"
 #include "sceneManager.hpp"
 #include "gltfImporter.hpp"
+
 
 GLTFModel::GLTFModel(std::string path, const Shader& shader) : path(path), shader(shader)
 {
@@ -15,7 +17,10 @@ GLTFModel::GLTFModel(std::string path, const Shader& shader) : path(path), shade
 
 }
 
-GLTFModel::~GLTFModel(){};
+GLTFModel::~GLTFModel()
+{
+	std::cout << "GLTF Importer destructor called!\n" << std::endl;
+}
 
 tinygltf::Model GLTFModel::readGlb(const std::string &path)
 {		
@@ -39,192 +44,88 @@ tinygltf::Model GLTFModel::readGlb(const std::string &path)
 
 void GLTFModel::processGLTFModel(tinygltf::Model &model)
 {
-	for (int i =0; i< model.meshes.size(); i++) 
+	for (const auto& mesh: model.meshes) 
 	{
-		for (int j = 0; j < model.meshes[i].primitives.size(); j++)
+		for (const auto& primitive: mesh.primitives)
 		{	
-			// --- Process POSITION attribute ---
-			if (model.meshes[i].primitives[j].attributes.find("POSITION") == model.meshes[i].primitives[j].attributes.end())
+			std::vector<float> posBuffer = processPosAttrib(primitive, mesh, model);
+			std::vector<float> texBuffer = processTexCoordAttrib(primitive, mesh, model);
+			std::vector<float> normalBuffer = processNormalAttrib(primitive, mesh, model);
+			std::vector<uint32_t>indexBuffer = processIndexAttrib(primitive, mesh, model);
+			if (posBuffer.empty() || texBuffer.empty() || normalBuffer.empty())
 			{
-				std::cerr << "No POSITION attribute found in mesh " << model.meshes[i].name << std::endl;
+				std::cerr << "Failed to process attributes for mesh " << mesh.name << std::endl;
 				continue;
 			}
-			const auto &posAccessor = model.accessors[model.meshes[i].primitives[j].attributes.at("POSITION")];
-			const auto &posBufferView = model.bufferViews[posAccessor.bufferView];
-			const auto &posBuffer = model.buffers[posBufferView.buffer];
-			const float* pPosData = reinterpret_cast<const float*>(posBuffer.data.data() + posBufferView.byteOffset + posAccessor.byteOffset);
-
-			size_t vertexCount = posAccessor.count;
-			int posComponents = (posAccessor.type == TINYGLTF_TYPE_VEC3) ? 3 : 0;
-			std::vector<float> posData;
-			posData.reserve(vertexCount * posComponents);
-			for (size_t i = 0; i < vertexCount; i++)
+			if (indexBuffer.empty())
 			{
-				for (int j = 0; j < posComponents; j++)
-				{
-					posData.push_back(pPosData[i * posComponents + j]);
-				}
-			}
-
-			// --- Process TEXCOORD_0 attribute if available ---
-			bool hasTexCoords = false;
-			std::vector<float> texCoordData;
-			int texComponents = 0;
-			if (model.meshes[i].primitives[j].attributes.find("TEXCOORD_0") != model.meshes[i].primitives[j].attributes.end())
-			{
-				hasTexCoords = true;
-				const auto &texAccessor = model.accessors[model.meshes[i].primitives[j].attributes.at("TEXCOORD_0")];
-				const auto &texBufferView = model.bufferViews[texAccessor.bufferView];
-				const auto &texBuffer = model.buffers[texBufferView.buffer];
-				const float* pTexData = reinterpret_cast<const float*>(
-					texBuffer.data.data() + texBufferView.byteOffset + texAccessor.byteOffset);
-
-				if (texAccessor.count != vertexCount)
-				{
-					std::cerr << "Mismatch in vertex count between POSITION and TEXCOORD_0 in mesh "
-							<< model.meshes[i].name << std::endl;
-					continue;
-				}
-				texComponents = (texAccessor.type == TINYGLTF_TYPE_VEC2) ? 2 : 0;
-				texCoordData.reserve(vertexCount * texComponents);
-				for (size_t i = 0; i < vertexCount; i++)
-				{
-					for (int j = 0; j < texComponents; j++)
-					{
-						texCoordData.push_back(pTexData[i * texComponents + j]);
-					}
-				}
-			}
-			std::vector<float> normalData;
-			// --- Process Normal attribute ---
-			if (model.meshes[i].primitives[j].attributes.find("NORMAL") == model.meshes[i].primitives[j].attributes.end())
-			{
-				std::cerr << "No NORMAL attribute found in mesh " << model.meshes[i].name << std::endl;
+				std::cerr << "Failed to process indices for mesh " << mesh.name << std::endl;
 				continue;
 			}
-			const auto &normalAccessor = model.accessors[model.meshes[i].primitives[j].attributes.at("NORMAL")];
-			const auto &normalBufferView = model.bufferViews[normalAccessor.bufferView];
-			const auto &normalBuffer = model.buffers[normalBufferView.buffer];
-			const float* pNormalData = reinterpret_cast<const float*>(
-				normalBuffer.data.data() + normalBufferView.byteOffset + normalAccessor.byteOffset);
+			uint32_t vao;
+			uint32_t vbo;
+			uint32_t ebo;
 
-			int normalComponents = (normalAccessor.type == TINYGLTF_TYPE_VEC3) ? 3 : 0;
-			normalData.reserve(normalAccessor.count * normalComponents);
-			for (size_t i = 0; i < normalAccessor.count; i++)
-			{
-				for (int j = 0; j < normalComponents; j++)
-				{
-					normalData.push_back(pNormalData[i * normalComponents + j]);
-				}
-			}
-
-			// --- Process indices if available ---
-			size_t indexCount = 0;
-			std::vector<uint32_t> indexData;
-			if (model.meshes[i].primitives[j].indices >= 0)
-			{
-				const auto &indexAccessor = model.accessors[model.meshes[i].primitives[j].indices];
-				const auto &indexBufferView = model.bufferViews[indexAccessor.bufferView];
-				const auto &indexBuffer = model.buffers[indexBufferView.buffer];
-
-				const void *pIndexData = indexBuffer.data.data() +
-										indexBufferView.byteOffset + indexAccessor.byteOffset;
-				indexCount = indexAccessor.count;
-				if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
-				{
-					const uint16_t *indices = reinterpret_cast<const uint16_t *>(pIndexData);
-					indexData.assign(indices, indices + indexCount);
-				} 
-				else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) 
-				{
-					const uint32_t *indices = reinterpret_cast<const uint32_t *>(pIndexData);
-					indexData.assign(indices, indices + indexCount);
-				}
-				else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) 
-				{
-					const uint8_t *indices = reinterpret_cast<const uint8_t *>(pIndexData);
-					indexData.assign(indices, indices + indexCount);
-				}
-			}
-
-			// --- Create OpenGL buffers (VAO, VBO, and optionally EBO) ---
-			uint32_t vao = 0, vbo = 0, ebo = 0;
 			glCreateVertexArrays(1, &vao);
-			
-			if (hasTexCoords)
-			{
-				// Interleave positions and texture coordinates.
-				int strideComponents = posComponents + texComponents + normalComponents; // e.g., 3 + 2 + 3 = 8
-				std::vector<float> interleavedData;
-				interleavedData.resize(vertexCount * strideComponents);
-				for (size_t i = 0; i < vertexCount; i++)
-				{
-					// Copy position data.
-					for (int j = 0; j < posComponents; j++)
-					{
-						interleavedData[i * strideComponents + j] = posData[i * posComponents + j];
-					}
-					// Copy texcoord data.
-					for (int j = 0; j < texComponents; j++)
-					{
-						interleavedData[i * strideComponents + posComponents + j] = texCoordData[i * texComponents + j];
-					}
-					// Copy normal data.
-					for (int j = 0; j < normalComponents; j++)
-					{
-						interleavedData[i * strideComponents + posComponents + texComponents + j] = normalData[i * normalComponents + j];
-					}
-				}
-				glCreateBuffers(1, &vbo);
-				glNamedBufferData(vbo, interleavedData.size() * sizeof(float),
-									interleavedData.data(), GL_STATIC_DRAW);
-				glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(float) * strideComponents);
+			glCreateBuffers(1, &vbo);
 
-				// Set attribute 0: position (first posComponents floats).
-				glEnableVertexArrayAttrib(vao, 0);
-				glVertexArrayAttribFormat(vao, 0, posComponents, GL_FLOAT, GL_FALSE, 0);
-				glVertexArrayAttribBinding(vao, 0, 0);
+			size_t posSize = posBuffer.size() * sizeof(float);
+			size_t texSize = texBuffer.size() * sizeof(float);
+			size_t normalSize = normalBuffer.size() * sizeof(float);
+			size_t bufferSize = posSize + texSize + normalSize;
 
-				// Set attribute 1: texture coordinates (next texComponents floats).
-				glEnableVertexArrayAttrib(vao, 1);
-				glVertexArrayAttribFormat(vao, 1, texComponents, GL_FLOAT, GL_FALSE, sizeof(float) * posComponents);
-				glVertexArrayAttribBinding(vao, 1, 0);
+			size_t indexSize = indexBuffer.size() * sizeof(uint32_t);
 
-				// Set attribute 2: normal coordinates (next normalComponents floats).
-				glEnableVertexArrayAttrib(vao, 2);
-				glVertexArrayAttribFormat(vao, 2, normalComponents, GL_FLOAT, GL_FALSE, sizeof(float) * (posComponents + texComponents));
-				glVertexArrayAttribBinding(vao, 2, 0);
-			}
-			else
-			{
-				// Only position data is available.
-				glCreateBuffers(1, &vbo);
-				glNamedBufferData(vbo, posData.size() * sizeof(float),
-									posData.data(), GL_STATIC_DRAW);
-				glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(float) * posComponents);
-				glEnableVertexArrayAttrib(vao, 0);
-				glVertexArrayAttribFormat(vao, 0, posComponents, GL_FLOAT, GL_FALSE, 0);
-				glVertexArrayAttribBinding(vao, 0, 0);
-			}
+			std::cout << "Pos buffer size: " << posSize << std::endl;
+			std::cout << "Tex buffer size: " << texSize << std::endl;
+			std::cout << "Norm buffer size: " << normalSize << std::endl;
+			std::cout << "Index buffer size: " << indexSize << std::endl;
+			std::cout << "Final buffer size: " << bufferSize << std::endl;
+			std::cout << std::endl;
 
-			if (!indexData.empty())
-			{
-				glCreateBuffers(1, &ebo);
-				glNamedBufferData(ebo, indexData.size() * sizeof(uint32_t),
-									indexData.data(), GL_STATIC_DRAW);
-				glVertexArrayElementBuffer(vao, ebo);
-			}
-			glBindVertexArray(0);
+
+			glCreateBuffers(1, &ebo);
+			glNamedBufferData(ebo, indexBuffer.size() * sizeof(uint32_t),indexBuffer.data(), GL_STATIC_DRAW);
+			glVertexArrayElementBuffer(vao, ebo);
+
+
+			glNamedBufferData(vbo, bufferSize, NULL, GL_STATIC_DRAW);
+			glNamedBufferSubData(vbo, 0, posSize, posBuffer.data());
+			glNamedBufferSubData(vbo, posSize, texSize, texBuffer.data());
+			glNamedBufferSubData(vbo, posSize + texSize, normalSize, normalBuffer.data());
+
+			glVertexArrayVertexBuffer(vao, 0, vbo, 0, 3 * sizeof(float));
+			glVertexArrayVertexBuffer(vao, 1, vbo, posSize, 2 * sizeof(float));
+			glVertexArrayVertexBuffer(vao, 2, vbo, posSize + texSize, 3 * sizeof(float));
+
+			glEnableVertexArrayAttrib(vao, 0);
+			glEnableVertexArrayAttrib(vao, 1);
+			glEnableVertexArrayAttrib(vao, 2);
+
+			glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+			glVertexArrayAttribFormat(vao, 1, 2, GL_FLOAT, GL_FALSE, 0);
+			glVertexArrayAttribFormat(vao, 2, 3, GL_FLOAT, GL_FALSE, 0);
+
+			glVertexArrayAttribBinding(vao, 0, 0);
+			glVertexArrayAttribBinding(vao, 1, 1);
+			glVertexArrayAttribBinding(vao, 2, 2);
+
 			glm::mat4 translation(1.0f);
-			if (model.nodes[i].translation.size() != 0)
-				translation[3] = glm::vec4(model.nodes[i].translation[0], model.nodes[i].translation[1], model.nodes[i].translation[2], 1.0f);
+			size_t meshIndex = &mesh - &model.meshes[0];
+			if (model.nodes[meshIndex].translation.size() != 0)
+				translation[3] = glm::vec4(model.nodes[meshIndex].translation[0], model.nodes[meshIndex].translation[1], model.nodes[meshIndex].translation[2], 1.0f);
+		
+				assert(indexBuffer.size() == model.accessors[primitive.indices].count);
+			size_t indexCount = indexBuffer.size();
 			Primitive prim(vao, vbo, ebo,
 				shader, indexCount,
 				translation,
-				materialsIndex[model.meshes[i].primitives[j].material]);
+				materialsIndex[primitive.material]);
 			primitives.push_back(std::move(prim));
 		}
 	}
+	SceneManager::addPrimitives(std::move(primitives));
+	std::cout << "Loaded " << primitives.size() << " primitives from model." << std::endl;
 }
 
 void GLTFModel::processTextures(tinygltf::Model &model)
@@ -277,3 +178,120 @@ void GLTFModel::setTransform(glm::mat4 transform)
 	}
 }
 
+const std::vector<float> GLTFModel::processPosAttrib(const tinygltf::Primitive& primitive, const tinygltf::Mesh& mesh, const tinygltf::Model& model)
+{
+	if (primitive.attributes.find("POSITION") == primitive.attributes.end())
+	{
+		std::cerr << "No POSITION attribute found in primitive " << mesh.name << std::endl;
+	}
+	const tinygltf::Accessor& posAccessor = model.accessors[primitive.attributes.at("POSITION")];
+	const tinygltf::BufferView& posBufferView = model.bufferViews[posAccessor.bufferView];
+	const tinygltf::Buffer& posBuffer = model.buffers[posBufferView.buffer];
+	
+	const float* pPosData = reinterpret_cast<const float*>(posBuffer.data.data() +
+														posBufferView.byteOffset +
+														posAccessor.byteOffset);
+
+	size_t vertexCount = posAccessor.count;
+	int posComponents = (posAccessor.type == TINYGLTF_TYPE_VEC3) ? 3 : 0;
+	std::vector<float> posData;
+	posData.reserve(vertexCount * posComponents);
+	for (size_t i = 0; i < vertexCount; i++)
+	{
+		for (int j = 0; j < posComponents; j++)
+		{
+			posData.push_back(pPosData[i * posComponents + j]);
+		}
+	}
+	return posData;
+
+}
+
+const std::vector<float> GLTFModel::processTexCoordAttrib(const tinygltf::Primitive& primitive, const tinygltf::Mesh& mesh, const tinygltf::Model& model)
+{
+	if (primitive.attributes.find("TEXCOORD_0") == primitive.attributes.end())
+	{
+		std::cerr << "No TEXCOORD_0 attribute found in primitive " << mesh.name << std::endl;
+	}
+	const tinygltf::Accessor& texAccessor = model.accessors[primitive.attributes.at("TEXCOORD_0")];
+	const tinygltf::BufferView& texBufferView = model.bufferViews[texAccessor.bufferView];
+	const tinygltf::Buffer& texBuffer = model.buffers[texBufferView.buffer];
+
+	const float* pTexCoordData = reinterpret_cast<const float*>(texBuffer.data.data() +
+														texBufferView.byteOffset +
+														texAccessor.byteOffset);
+
+	size_t vertexCount = texAccessor.count;
+	int posComponents = (texAccessor.type == TINYGLTF_TYPE_VEC2) ? 2 : 0;
+	std::vector<float> texCoordData;
+	texCoordData.reserve(vertexCount * posComponents);
+	for (size_t i = 0; i < vertexCount; i++)
+	{
+		for (int j = 0; j < posComponents; j++)
+		{
+			texCoordData.push_back(pTexCoordData[i * posComponents + j]);
+		}
+	}
+	return texCoordData;
+}
+
+const std::vector<float> GLTFModel::processNormalAttrib(const tinygltf::Primitive& primitive, const tinygltf::Mesh& mesh, const tinygltf::Model& model)
+{
+
+	if (primitive.attributes.find("NORMAL") == primitive.attributes.end())
+	{
+		std::cerr << "No NORMAL attribute found in primitive " << mesh.name << std::endl;
+	}
+	const tinygltf::Accessor& normalAccessor = model.accessors[primitive.attributes.at("NORMAL")];
+	const tinygltf::BufferView& normalBufferView = model.bufferViews[normalAccessor.bufferView];
+	const tinygltf::Buffer& normalBuffer = model.buffers[normalBufferView.buffer];
+
+	const float* pNormalData = reinterpret_cast<const float*>(normalBuffer.data.data() +
+															normalBufferView.byteOffset +
+															normalAccessor.byteOffset);
+
+	size_t vertexCount = normalAccessor.count;
+	int posComponents = (normalAccessor.type == TINYGLTF_TYPE_VEC3) ? 3 : 0;
+	std::vector<float> normalData;
+	normalData.reserve(vertexCount * posComponents);
+	for (size_t i = 0; i < vertexCount; i++)
+	{
+		for (int j = 0; j < posComponents; j++)
+		{
+			normalData.push_back(pNormalData[i * posComponents + j]);
+		}
+	}
+	return normalData;
+}
+
+const std::vector<uint32_t> GLTFModel::processIndexAttrib(const tinygltf::Primitive& primitive, const tinygltf::Mesh& mesh, const tinygltf::Model& model)
+{
+	if (primitive.indices < 0)
+	{
+		std::cerr << "No indices found in primitive " << mesh.name << std::endl;
+	}
+	const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
+	const tinygltf::BufferView& indexBufferView = model.bufferViews[indexAccessor.bufferView];
+	const tinygltf::Buffer& indexBuffer = model.buffers[indexBufferView.buffer];
+
+	std::vector<uint32_t> indexData;
+
+	const void *pIndexData = indexBuffer.data.data() + indexBufferView.byteOffset + indexAccessor.byteOffset;
+	size_t indexCount = indexAccessor.count;
+	if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+	{
+		const uint16_t *indices = reinterpret_cast<const uint16_t *>(pIndexData);
+		indexData.assign(indices, indices + indexCount);
+	} 
+	else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) 
+	{
+		const uint32_t *indices = reinterpret_cast<const uint32_t *>(pIndexData);
+		indexData.assign(indices, indices + indexCount);
+	}
+	else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) 
+	{
+		const uint8_t *indices = reinterpret_cast<const uint8_t *>(pIndexData);
+		indexData.assign(indices, indices + indexCount);
+	}
+	return indexData;
+}

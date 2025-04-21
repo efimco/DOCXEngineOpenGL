@@ -134,7 +134,6 @@
 		AppConfig::initShaders();
 		//import
 		GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Knight.glb").string(), AppConfig::baseShader);
-		SceneManager::addPrimitives(std::move(model.primitives));
 
 		SceneManager::createLightsSSBO();
 		//lights
@@ -272,7 +271,8 @@
 
 			//MAIN RENDER PASS
 			glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-			glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], AppConfig::clearColor[2], AppConfig::clearColor[3]); 
+			glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], 
+						AppConfig::clearColor[2], AppConfig::clearColor[3]); 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glPolygonMode(GL_FRONT_AND_BACK,AppConfig::polygonMode);
 			SceneManager::setShader(AppConfig::baseShader);
