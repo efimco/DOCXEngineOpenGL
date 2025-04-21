@@ -16,7 +16,6 @@ namespace SceneManager
 		for (auto& primitive:primitives)
 		{	
 			primitive.draw(camera,lightSpaceMatrix, width, height);
-			
 		}
 	}
 	void draw(Camera& camera, glm::mat4& lightSpaceMatrix, int32_t width, int32_t height, uint32_t depthMap, float gamma) 
@@ -24,7 +23,6 @@ namespace SceneManager
 		for (auto& primitive:primitives)
 		{	
 			primitive.draw(camera, lightSpaceMatrix, width, height, depthMap, gamma);
-			
 		}
 	}
 

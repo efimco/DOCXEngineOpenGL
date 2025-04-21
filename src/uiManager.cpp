@@ -159,8 +159,10 @@ void UIManager::showObjectInspector()
 	{
 		ImGui::Begin("Object Inspector");
 		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform[3]));
+		if (SceneManager::getSelectedPrimitive()->material->diffuse != nullptr)
 		ImGui::Image(SceneManager::getSelectedPrimitive()->material->diffuse->id, ImVec2(64, 64));
 		ImGui::SameLine();
+		if (SceneManager::getSelectedPrimitive()->material->diffuse != nullptr)
 		ImGui::Image(SceneManager::getSelectedPrimitive()->material->specular->id, ImVec2(64, 64));
 		if (ImGui::Button("Diffuse"))
 		{

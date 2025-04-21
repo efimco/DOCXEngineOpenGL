@@ -7,13 +7,14 @@ class PickingBuffer
 {
 public:
 	uint32_t pickingFBO;
+	uint32_t pickingRBO;	
 	uint32_t pickingTexture;
 
-	PickingBuffer(int& windowWidth, int& windowHeight);
+	PickingBuffer();
 	~PickingBuffer();
 
 	void bind();
-	void resize(int& windowWidth, int& windowHeight);
+	void resize();
 	glm::vec3 pickColorAt(double mouseX, double mouseY, int32_t windowHeight);
 	Primitive* getIdFromPickColor(const glm::vec3 &color) ;
 };

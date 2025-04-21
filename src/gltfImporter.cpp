@@ -51,8 +51,9 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 			std::vector<float> posBuffer = processPosAttrib(primitive, mesh, model);
 			std::vector<float> texBuffer = processTexCoordAttrib(primitive, mesh, model);
 			std::vector<float> normalBuffer = processNormalAttrib(primitive, mesh, model);
+			std::vector<float> tangentNormalBuffer = processTangentNormalAttrib(primitive, mesh, model);
 			std::vector<uint32_t>indexBuffer = processIndexAttrib(primitive, mesh, model);
-			if (posBuffer.empty() || texBuffer.empty() || normalBuffer.empty())
+			if (posBuffer.empty() || texBuffer.empty() || normalBuffer.empty() || tangentNormalBuffer.empty())
 			{
 				std::cerr << "Failed to process attributes for mesh " << mesh.name << std::endl;
 				continue;
@@ -72,13 +73,15 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 			size_t posSize = posBuffer.size() * sizeof(float);
 			size_t texSize = texBuffer.size() * sizeof(float);
 			size_t normalSize = normalBuffer.size() * sizeof(float);
-			size_t bufferSize = posSize + texSize + normalSize;
+			size_t tangentNormalSize = tangentNormalBuffer.size() * sizeof(float);
+			size_t bufferSize = posSize + texSize + normalSize +tangentNormalSize ;
 
 			size_t indexSize = indexBuffer.size() * sizeof(uint32_t);
 
 			std::cout << "Pos buffer size: " << posSize << std::endl;
 			std::cout << "Tex buffer size: " << texSize << std::endl;
 			std::cout << "Norm buffer size: " << normalSize << std::endl;
+			std::cout << "TangNorm buffer size: " << tangentNormalSize << std::endl;
 			std::cout << "Index buffer size: " << indexSize << std::endl;
 			std::cout << "Final buffer size: " << bufferSize << std::endl;
 			std::cout << std::endl;
@@ -93,22 +96,27 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 			glNamedBufferSubData(vbo, 0, posSize, posBuffer.data());
 			glNamedBufferSubData(vbo, posSize, texSize, texBuffer.data());
 			glNamedBufferSubData(vbo, posSize + texSize, normalSize, normalBuffer.data());
+			glNamedBufferSubData(vbo, posSize + texSize+ normalSize, tangentNormalSize, tangentNormalBuffer.data());
 
 			glVertexArrayVertexBuffer(vao, 0, vbo, 0, 3 * sizeof(float));
 			glVertexArrayVertexBuffer(vao, 1, vbo, posSize, 2 * sizeof(float));
 			glVertexArrayVertexBuffer(vao, 2, vbo, posSize + texSize, 3 * sizeof(float));
+			glVertexArrayVertexBuffer(vao, 3, vbo, posSize + texSize + normalSize, 4 * sizeof(float));
 
 			glEnableVertexArrayAttrib(vao, 0);
 			glEnableVertexArrayAttrib(vao, 1);
 			glEnableVertexArrayAttrib(vao, 2);
+			glEnableVertexArrayAttrib(vao, 3);
 
 			glVertexArrayAttribFormat(vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
 			glVertexArrayAttribFormat(vao, 1, 2, GL_FLOAT, GL_FALSE, 0);
 			glVertexArrayAttribFormat(vao, 2, 3, GL_FLOAT, GL_FALSE, 0);
+			glVertexArrayAttribFormat(vao, 3, 4, GL_FLOAT, GL_FALSE, 0);
 
 			glVertexArrayAttribBinding(vao, 0, 0);
 			glVertexArrayAttribBinding(vao, 1, 1);
 			glVertexArrayAttribBinding(vao, 2, 2);
+			glVertexArrayAttribBinding(vao, 3, 3);
 
 			glm::mat4 translation(1.0f);
 			size_t meshIndex = &mesh - &model.meshes[0];
@@ -193,14 +201,14 @@ const std::vector<float> GLTFModel::processPosAttrib(const tinygltf::Primitive& 
 														posAccessor.byteOffset);
 
 	size_t vertexCount = posAccessor.count;
-	int posComponents = (posAccessor.type == TINYGLTF_TYPE_VEC3) ? 3 : 0;
+	int components = (posAccessor.type == TINYGLTF_TYPE_VEC3) ? 3 : 0;
 	std::vector<float> posData;
-	posData.reserve(vertexCount * posComponents);
+	posData.reserve(vertexCount * components);
 	for (size_t i = 0; i < vertexCount; i++)
 	{
-		for (int j = 0; j < posComponents; j++)
+		for (int j = 0; j < components; j++)
 		{
-			posData.push_back(pPosData[i * posComponents + j]);
+			posData.push_back(pPosData[i * components + j]);
 		}
 	}
 	return posData;
@@ -222,14 +230,14 @@ const std::vector<float> GLTFModel::processTexCoordAttrib(const tinygltf::Primit
 														texAccessor.byteOffset);
 
 	size_t vertexCount = texAccessor.count;
-	int posComponents = (texAccessor.type == TINYGLTF_TYPE_VEC2) ? 2 : 0;
+	int components = (texAccessor.type == TINYGLTF_TYPE_VEC2) ? 2 : 0;
 	std::vector<float> texCoordData;
-	texCoordData.reserve(vertexCount * posComponents);
+	texCoordData.reserve(vertexCount * components);
 	for (size_t i = 0; i < vertexCount; i++)
 	{
-		for (int j = 0; j < posComponents; j++)
+		for (int j = 0; j < components; j++)
 		{
-			texCoordData.push_back(pTexCoordData[i * posComponents + j]);
+			texCoordData.push_back(pTexCoordData[i * components + j]);
 		}
 	}
 	return texCoordData;
@@ -251,17 +259,46 @@ const std::vector<float> GLTFModel::processNormalAttrib(const tinygltf::Primitiv
 															normalAccessor.byteOffset);
 
 	size_t vertexCount = normalAccessor.count;
-	int posComponents = (normalAccessor.type == TINYGLTF_TYPE_VEC3) ? 3 : 0;
+	int components = (normalAccessor.type == TINYGLTF_TYPE_VEC3) ? 3 : 0;
 	std::vector<float> normalData;
-	normalData.reserve(vertexCount * posComponents);
+	normalData.reserve(vertexCount * components);
 	for (size_t i = 0; i < vertexCount; i++)
 	{
-		for (int j = 0; j < posComponents; j++)
+		for (int j = 0; j < components; j++)
 		{
-			normalData.push_back(pNormalData[i * posComponents + j]);
+			normalData.push_back(pNormalData[i * components + j]);
 		}
 	}
 	return normalData;
+}
+
+const std::vector<float> GLTFModel::processTangentNormalAttrib(const tinygltf::Primitive& primitive, const tinygltf::Mesh& mesh, const tinygltf::Model& model)
+{
+
+	if (primitive.attributes.find("TANGENT") == primitive.attributes.end())
+	{
+		std::cerr << "No TANGENT attribute found in primitive " << mesh.name << std::endl;
+	}
+	const tinygltf::Accessor& tangentNormalAccessor = model.accessors[primitive.attributes.at("TANGENT")];
+	const tinygltf::BufferView& tangentNormalBufferView = model.bufferViews[tangentNormalAccessor.bufferView];
+	const tinygltf::Buffer& tangentBuffer = model.buffers[tangentNormalBufferView.buffer];
+
+	const float* pTangentNormalData = reinterpret_cast<const float*>(tangentBuffer.data.data() +
+															tangentNormalBufferView.byteOffset +
+															tangentNormalAccessor.byteOffset);
+
+	size_t vertexCount = tangentNormalAccessor.count;
+	int components = (tangentNormalAccessor.type == TINYGLTF_TYPE_VEC4) ? 4 : 0;
+	std::vector<float> tangentNormalData;
+	tangentNormalData.reserve(vertexCount * components);
+	for (size_t i = 0; i < vertexCount; i++)
+	{
+		for (int j = 0; j < components; j++)
+		{
+			tangentNormalData.push_back(pTangentNormalData[i * components + j]);
+		}
+	}
+	return tangentNormalData;
 }
 
 const std::vector<uint32_t> GLTFModel::processIndexAttrib(const tinygltf::Primitive& primitive, const tinygltf::Mesh& mesh, const tinygltf::Model& model)

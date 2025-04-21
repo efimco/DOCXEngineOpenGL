@@ -6,19 +6,23 @@
 #include "primitive.hpp"
 #include "sceneManager.hpp"
 #include "pickingBuffer.hpp"
+#include "appConfig.hpp"
 
 
 
 
-PickingBuffer::PickingBuffer(int& windowWidth, int& windowHeight)
+PickingBuffer::PickingBuffer()
 	{
 		glCreateFramebuffers(1, &pickingFBO);
 		glCreateTextures(GL_TEXTURE_2D, 1, &pickingTexture);
+
+		glCreateRenderbuffers(1, &pickingRBO);
+		glNamedRenderbufferStorage(pickingRBO, GL_DEPTH24_STENCIL8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+		glNamedFramebufferRenderbuffer(pickingFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, pickingRBO);
 		
-		glTextureStorage2D(pickingTexture, 1, GL_RGB8, windowWidth, windowHeight);
+		glTextureStorage2D(pickingTexture, 1, GL_RGB8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 		glTextureParameteri(pickingTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(pickingTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		
 		glNamedFramebufferTexture(pickingFBO, GL_COLOR_ATTACHMENT0, pickingTexture, 0);
 		
 		if (glCheckNamedFramebufferStatus(pickingFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -40,18 +44,24 @@ void PickingBuffer::bind()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-	glClearDepth(1.0f);
-	glClearStencil(0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
-void PickingBuffer::resize(int& windowWidth, int& windowHeight)
+void PickingBuffer::resize()
 {
-	glDeleteTextures(1, &pickingTexture);
+	glDeleteTextures(1, &pickingTexture); 
+	glDeleteRenderbuffers(1, &pickingRBO);
+	glDeleteFramebuffers(1, &pickingFBO);
+
+	glCreateFramebuffers(1, &pickingFBO);
+	glCreateRenderbuffers(1, &pickingRBO);
+
+	glNamedRenderbufferStorage(pickingRBO, GL_DEPTH24_STENCIL8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+	glNamedFramebufferRenderbuffer(pickingFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, pickingRBO);
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &pickingTexture);
 	
-	glTextureStorage2D(pickingTexture, 1, GL_RGB8, windowWidth, windowHeight);
+	glTextureStorage2D(pickingTexture, 1, GL_RGB8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 	glTextureParameteri(pickingTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTextureParameteri(pickingTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	

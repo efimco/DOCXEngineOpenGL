@@ -7,6 +7,7 @@ layout (location = 3) in VS_OUT {
 	vec3 Normal;
 	vec2 TexCoords;
 	vec4 FragPosLightSpace; 
+	mat3 TBN;
 } fs_in;
 
 
@@ -15,6 +16,7 @@ uniform float gamma;
 
 layout (location = 1) uniform sampler2D tDiffuse;
 layout (location = 2) uniform sampler2D tSpecular;
+layout (location = 3) uniform sampler2D tNormal;
 uniform float shininess;
 uniform samplerCube skybox;
 uniform sampler2D shadowMap;
@@ -27,19 +29,26 @@ layout (std140, binding = 0) buffer LightBuffer {
 
 vec3 calcPointLight(inout Light light)
 {
+	vec3 normal = texture(tNormal, fs_in.TexCoords).rgb;
+	normal = normalize(normal * 2.0 - 1.0);
+	normal = normalize(fs_in.TBN * normal);  
+	if (texture(tNormal, fs_in.TexCoords).r == 0)
+	{
+		normal = fs_in.Normal;
+	}
 	vec3 lightDir = normalize(light.position - fs_in.FragPos);
-	float diff = max(dot(fs_in.Normal, lightDir), 0.0);
+	float diff = max(dot(normal, lightDir), 0.0);
 
 	vec3 diffuse =light.diffuse * diff * texture(tDiffuse, fs_in.TexCoords).rgb;
 
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(fs_in.Normal, halfwayDir), 0.0), shininess);
+	float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
 	vec3 specular =light.specular * spec * texture(tSpecular, fs_in.TexCoords).r;
 
 	if (texture(tSpecular, fs_in.TexCoords).r == 0)
 	{
-		spec = pow(max(dot(fs_in.Normal, halfwayDir), 0.0), 8);
+		spec = pow(max(dot(normal, halfwayDir), 0.0), 8);
 		specular = light.specular * spec * diff * vec3(0.25);
 	}
 
@@ -58,17 +67,24 @@ vec3 calcPointLight(inout Light light)
 
 vec3 calcDirectionalLight(inout Light light)
 {
+	vec3 normal = texture(tNormal, fs_in.TexCoords).rgb;
+	normal = normalize(normal * 2.0 - 1.0);
+	normal = normalize(fs_in.TBN * normal); 
+	if (texture(tNormal, fs_in.TexCoords).r == 0)
+	{
+		normal = fs_in.Normal;
+	}
 	vec3 lightDir = normalize(light.direction);
-	float diff = max(dot(fs_in.Normal, lightDir), 0.0);
+	float diff = max(dot(normal, lightDir), 0.0);
 
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(fs_in.Normal, halfwayDir), 0.0), shininess);
+	float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
 	vec3 specular = light.specular * spec * texture(tSpecular, fs_in.TexCoords).r;
 
 	if (texture(tSpecular, fs_in.TexCoords).r == 0)
 	{
-		spec = pow(max(dot(fs_in.Normal, halfwayDir), 0.0), 8);
+		spec = pow(max(dot(normal, halfwayDir), 0.0), 8);
 		specular = light.specular * spec * diff * vec3(0.25);
 	}
 
@@ -83,17 +99,24 @@ vec3 calcDirectionalLight(inout Light light)
 	return vec3((ambient + (1.0 - shadow) * (diffuse + specular)) * light.intensity);
 }
 
-
 vec3 calcSpotLight(inout Light light)
 {
+
+	vec3 normal = texture(tNormal, fs_in.TexCoords).rgb;
+	normal = normalize(normal * 2.0 - 1.0);
+	normal = normalize(fs_in.TBN * normal);  
+	if (texture(tNormal, fs_in.TexCoords).r == 0)
+	{
+		normal = fs_in.Normal;
+	}
 	vec3 lightDir = normalize(light.position - fs_in.FragPos);
-	float diff = max(dot(fs_in.Normal, lightDir), 0.0);
+	float diff = max(dot(normal, lightDir), 0.0);
 
 	vec3 diffuse = light.diffuse * diff * texture(tDiffuse, fs_in.TexCoords).rgb;
 
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(fs_in.Normal, halfwayDir), 0.0), shininess);
+	float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
 	vec3 specular =light.specular * spec * texture(tSpecular, fs_in.TexCoords).r;
 	
 	float theta     = dot(lightDir, normalize(-vec3(light.direction[0], light.direction[1], light.direction[2])));
@@ -102,7 +125,7 @@ vec3 calcSpotLight(inout Light light)
 
 	if (texture(tSpecular, fs_in.TexCoords).r == 0)
 	{
-		spec = pow(max(dot(fs_in.Normal, halfwayDir), 0.0), 8);
+		spec = pow(max(dot(normal, halfwayDir), 0.0), 8);
 		specular =light.specular * spec * diff * vec3(0.25);
 	}
 

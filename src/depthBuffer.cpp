@@ -29,7 +29,9 @@ DepthBuffer::~DepthBuffer()
 
 void DepthBuffer::bind() 
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO); 
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 };
 
 void DepthBuffer::unbind() 

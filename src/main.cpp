@@ -86,7 +86,7 @@
 		glVertexArrayAttribBinding(debugQuadVAO, 1, 0);
 
 	}
-	uint32_t fbo, textureColorBufferMultiSampled, rbo, intermediateFBO, screenTexture;
+	uint32_t fbo, rbo, intermediateFBO, screenTexture;
 	void initFrameBufferAndRenderTarget()
 	{
 		glCreateFramebuffers(1, &fbo);
@@ -127,7 +127,7 @@
 		initScreenQuad();
 		initDebugQuad();
 		initFrameBufferAndRenderTarget();
-		PickingBuffer pickingbuffer(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_WIDTH);
+		PickingBuffer pickingbuffer{};
 		DepthBuffer depthBuffer(2048, 2048);
 		UIManager uiManager(window, deltaTime, camera);
 
@@ -217,7 +217,7 @@
 				glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, screenTexture, 0);
 
-				pickingbuffer.resize(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+				pickingbuffer.resize();
 
 				glViewport(0, 0, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 
@@ -231,20 +231,11 @@
 				view = camera.getViewMatrix();
 			}
 
-			glEnable(GL_MULTISAMPLE);
-			glEnable(GL_BLEND);
-			glEnable(GL_CULL_FACE);
 			glEnable(GL_DEPTH_TEST);
-			glEnable(GL_STENCIL_TEST);
-			glDepthFunc(GL_LESS);
-			glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
-			glStencilMask(0x00);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 			//DIRECTIONAL LIGHT SHADOW MAP PASS
 			glViewport(0, 0, depthBuffer.width, depthBuffer.height);
 			depthBuffer.bind();
-			glClear(GL_DEPTH_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 			glm::vec3 sceneCenter = glm::vec3(0.0f); 
 			float distance = 10000.0f;
@@ -253,7 +244,7 @@
 			
 			glm::vec3 lightDirection = glm::normalize(SceneManager::getLights()[2].direction);
 
-			glm::vec3 lightPos = camera.position + lightDirection * distance;
+			glm::vec3 lightPos = lightDirection * distance;
 
 			glm::mat4 lightView = glm::lookAt(lightPos, lightDirection, glm::vec3(0.0, 1.0, 0.0));
 			glm::mat4 lightSpaceMatrix = lightProjection * lightView;
@@ -265,6 +256,7 @@
 			//OBJECT ID PASS
 			glViewport(0, 0, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 			pickingbuffer.bind();
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			SceneManager::setShader(AppConfig::pickingShader);
 			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
