@@ -107,6 +107,11 @@ namespace SceneManager
 		return materials;
 	}
 
+	std::shared_ptr<Mat>& getMaterial(uint32_t uid)
+	{
+		return materials[uid];
+	}
+
 	void addMaterial(std::shared_ptr<Mat> &material, uint32_t uid)
 	{
 		SceneManager::materials[uid] = material;
@@ -117,9 +122,14 @@ namespace SceneManager
 		return textureCache;
 	}
 
-	void addTextureToCache(const std::string &path, std::shared_ptr<Tex> texture)
+	std::shared_ptr<Tex>& getTexture(std::string name)
 	{
-		textureCache[path] = texture;
+		return textureCache[name];
+	}
+
+	void addTexture(const std::string &name, std::shared_ptr<Tex> texture)
+	{
+		textureCache[name] = texture;
 	}
 
 	void setShader(Shader &shader)

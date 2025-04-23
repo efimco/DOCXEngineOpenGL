@@ -140,12 +140,12 @@ void GLTFModel::processTextures(tinygltf::Model &model)
 {
 	for (int i = 0; i < model.images.size(); i++)
 	{
-		std::string path = model.images[i].name;
-		if (SceneManager::getTextureCache().find(path) == (SceneManager::getTextureCache().end()))
+		std::string name = model.images[i].name;
+		if (SceneManager::getTexture(name) == nullptr)
 		{
-			SceneManager::addTextureToCache(path, std::make_shared<Tex>(model.images[i]));
+			SceneManager::addTexture(name, std::make_shared<Tex>(model.images[i]));
 		}
-		texturesIndex[i] = SceneManager::getTextureCache()[path];
+		texturesIndex[i] = SceneManager::getTexture(name);
 	} 
 }
 
@@ -153,28 +153,29 @@ void GLTFModel::processMaterials(tinygltf::Model &model)
 {
 	for (int i = 0; i < model.materials.size(); i++)
 	{
+		const auto& material = model.materials[i];
 		Mat mat;
-		if (model.materials[i].pbrMetallicRoughness.baseColorTexture.index != -1)
+		if (material.pbrMetallicRoughness.baseColorTexture.index != -1)
 		{
-			mat.diffuse = texturesIndex[model.materials[i].pbrMetallicRoughness.baseColorTexture.index];
+			mat.diffuse = texturesIndex[material.pbrMetallicRoughness.baseColorTexture.index];
 		}
 			
-		if (model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index != -1)
+		if (material.pbrMetallicRoughness.metallicRoughnessTexture.index != -1)
 		{
-			mat.specular = texturesIndex[model.materials[i].pbrMetallicRoughness.metallicRoughnessTexture.index];
+			mat.specular = texturesIndex[material.pbrMetallicRoughness.metallicRoughnessTexture.index];
 		}
-		if (model.materials[i].normalTexture.index != -1)
+		if (material.normalTexture.index != -1)
 		{
-			mat.normal = texturesIndex[model.materials[i].normalTexture.index];
+			mat.normal = texturesIndex[material.normalTexture.index];
 		}
-		mat.name = model.materials[i].name;
+		mat.name = material.name;
 		std::hash<std::string> hasher;
 		uint32_t uid = (uint32_t)hasher(model.materials[i].name);
-		if(SceneManager::getMaterials()[uid] == nullptr)
+		if(SceneManager::getMaterial(uid) == nullptr)
 		{
 			SceneManager::addMaterial(std::make_shared<Mat>(mat), uid);
 		}
-		materialsIndex[i] = SceneManager::getMaterials()[uid];
+		materialsIndex[i] = SceneManager::getMaterial(uid);
 	}
 }
 

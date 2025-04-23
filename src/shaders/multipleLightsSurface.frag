@@ -1,6 +1,9 @@
 #version 460 core
+
 #extension GL_GOOGLE_include_directive : enable
 #include "light.glsl"
+#include "BRDF.glsl"
+
 out vec4 FragColor;
 layout (location = 3) in VS_OUT {
 	vec3 FragPos;
@@ -74,29 +77,57 @@ vec3 calcDirectionalLight(inout Light light)
 	{
 		normal = fs_in.Normal;
 	}
-	vec3 lightDir = normalize(light.direction);
-	float diff = max(dot(normal, lightDir), 0.0);
+
+	vec3 albedo = texture(tDiffuse, fs_in.TexCoords).rgb;
+	if (albedo.r == 0)
+	{
+		albedo = vec3(0.5);
+	}
+	float metallic = texture(tSpecular, fs_in.TexCoords).r;
+	if (metallic == 0)
+	{
+		metallic = 0.9;
+	}
+	float roughness = texture(tSpecular, fs_in.TexCoords).g;
+	if (roughness == 0)
+	{
+		roughness = 0.0;
+	}
 
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
-	vec3 specular = light.specular * spec * texture(tSpecular, fs_in.TexCoords).r;
+	vec3 lightDir = normalize(1.0 - light.direction); 
+	vec3 halfwayDir = normalize(viewDir + lightDir);
 
-	if (texture(tSpecular, fs_in.TexCoords).r == 0)
-	{
-		spec = pow(max(dot(normal, halfwayDir), 0.0), 8);
-		specular = light.specular * spec * diff * vec3(0.25);
-	}
+	// float distance = length(- fs_in.FragPos);
+	// float attenuation = 1.0 / (distance * distance);
+	vec3 radiance = light.diffuse  * light.intensity;
 
-			vec3 diffuse = light.diffuse * diff * texture(tDiffuse, fs_in.TexCoords).rgb;
-	if (texture(tDiffuse, fs_in.TexCoords).r == 0)
-	{
-			diffuse = light.diffuse * diff * vec3(1);
-	}
+	vec3 F0 = mix(vec3(0.04), albedo, metallic); // базовое отражение
+
+	float NDF = DistributionGGX(normal, halfwayDir, roughness);
+	float G   = GeometrySmith(normal, viewDir, lightDir, roughness);
+	vec3  F   = fresnelSchlick(max(dot(halfwayDir, viewDir), .5), F0);
+
+
+	vec3 kS = F;
+	vec3 kD = vec3(1.0) - kS;
+	kD *= 1.0 - metallic;
+	float NormaldotLightDir = max(dot(normal, lightDir), 0.0);
+
+	vec3 nominator = NDF * G * F;
+	float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * NormaldotLightDir + 0.001;
+	vec3 specular = nominator / denominator;
+
+	vec3 Lo = (kD * albedo / PI + specular) * radiance * NormaldotLightDir;
+
 	float shadow = ShadowCalculation(fs_in.FragPosLightSpace, light.position);
-	vec3 ambient = light.ambient * texture(tDiffuse, fs_in.TexCoords).rgb;
-
-	return vec3((ambient + (1.0 - shadow) * (diffuse + specular)) * light.intensity);
+	vec3 ambient = vec3(0.03) * albedo;
+	vec3 color = ambient + (1.0 - shadow) *  Lo;
+	color = color / (color + vec3(1.0));
+	color = pow(color, vec3(1.0/2.2)); 
+	// color = pow(color, vec3(1.0/2.2));
+	// return color;
+	return color;
 }
 
 vec3 calcSpotLight(inout Light light)
@@ -158,22 +189,12 @@ void main()
 	for(int i = 0; i < lights.length(); i++) 
 	{
 		switch(lights[i].type) {
-			case 0: result += calcPointLight(lights[i]); break;
+			// case 0: result += calcPointLight(lights[i]); break;
 			case 1: result +=  calcDirectionalLight(lights[i]); break;
-			case 2: result += calcSpotLight(lights[i]); break;
+			// case 2: result += calcSpotLight(lights[i]); break;
 		}
 	}
 
-	// Apply gamma correction
 	result = pow(result, vec3(1.0 / gamma));
-	// FragColor = texture(tDiffuse, fs_in.TexCoords);
 	FragColor = vec4(result, 1.0);
-	// FragColor = vec4(vec3(lights[0].position * lights[0].intensity),1.0);
-	// FragColor = vec4(vec3(lights.length()),1.0);
-	vec3 projCoords = fs_in.FragPosLightSpace.xyz / fs_in.FragPosLightSpace.w;
-	// transform to [0,1] range
-	projCoords = projCoords * 0.5 + 0.5;
-	// get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-	float closestDepth = texture(shadowMap, projCoords.xy).r; 
-	// FragColor = vec4(vec3(closestDepth),1);
 }
