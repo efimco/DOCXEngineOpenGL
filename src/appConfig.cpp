@@ -37,6 +37,7 @@ namespace AppConfig
 	bool showObjectPicking = false;
 	bool showShadowMap = false;
 	bool isFramebufferSizeSetted = true;
+	float exposure = 0.1;
 
 	void initShaders()
 	{

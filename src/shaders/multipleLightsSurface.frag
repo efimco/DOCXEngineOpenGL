@@ -123,9 +123,8 @@ vec3 calcDirectionalLight(inout Light light)
 	float shadow = ShadowCalculation(fs_in.FragPosLightSpace, light.position);
 	vec3 ambient = vec3(0.03) * albedo;
 	vec3 color = ambient + (1.0 - shadow) *  Lo;
-	color = color / (color + vec3(1.0));
-	color = pow(color, vec3(1.0/2.2)); 
-	// color = pow(color, vec3(1.0/2.2));
+	// color = color / (color + vec3(1.0));
+	// // color = pow(color, vec3(1.0/2.2)); 
 	// return color;
 	return color;
 }

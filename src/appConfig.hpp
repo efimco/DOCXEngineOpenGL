@@ -21,6 +21,7 @@ namespace AppConfig
 	extern bool showObjectPicking;
 	extern bool showShadowMap;
 	extern bool isFramebufferSizeSetted;
+	extern float exposure;
 
 	void initShaders();
 

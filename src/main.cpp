@@ -98,9 +98,12 @@
 
 		// create a color attachment texture
 		glCreateTextures(GL_TEXTURE_2D, 1, &screenTexture);
-		glTextureStorage2D(screenTexture, 1, GL_RGB8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+		int nMipLevels = (int)floor(log2(std::max(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT))) + 1;
+		glTextureStorage2D(screenTexture, nMipLevels, GL_RGBA32F, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 		glTextureParameteri(screenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTextureParameteri(screenTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(screenTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, screenTexture, 0);
 
 	}
@@ -185,6 +188,7 @@
 		SceneManager::checkLightBuffer();
 	}
 
+
 		while(!glfwWindowShouldClose(window))
 		{   
 			glBindTexture(GL_TEXTURE_2D, 0);
@@ -212,7 +216,8 @@
 
 				// create a color attachment texture
 				glCreateTextures(GL_TEXTURE_2D, 1, &screenTexture);
-				glTextureStorage2D(screenTexture, 1, GL_RGB8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+				int nMipLevels = (int)floor(log2(std::max(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT))) + 1;
+				glTextureStorage2D(screenTexture, nMipLevels, GL_RGBA32F, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
 				glTextureParameteri(screenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 				glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, screenTexture, 0);
@@ -270,12 +275,36 @@
 			SceneManager::setShader(AppConfig::baseShader);
 			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT, depthBuffer.depthMap, AppConfig::gamma);
 			
-			//CUBEMAP RENDER PASS
-			glDepthFunc(GL_LEQUAL);
-			glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-			glm::mat4 skyView = glm::mat4(glm::mat3(camera.getViewMatrix()));  
-			cubemap.draw(AppConfig::skyboxShader, projection, skyView);
-			glDepthFunc(GL_LESS);
+				//CUBEMAP RENDER PASS
+				glDepthFunc(GL_LEQUAL);
+				glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+				glm::mat4 skyView = glm::mat4(glm::mat3(camera.getViewMatrix()));  
+				cubemap.draw(AppConfig::skyboxShader, projection, skyView);
+				glDepthFunc(GL_LESS);
+
+			glGenerateTextureMipmap(screenTexture);
+
+			int levels = (int)floor(log2(std::max(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT))); 
+			float avgLum[4]; 
+
+			glGetTextureImage(screenTexture,
+				levels,
+				GL_RGBA, GL_FLOAT,
+				sizeof(avgLum), avgLum);
+
+			// compute luminance (e.g. Rec. 709)
+			float sceneLum = 0.2126f*avgLum[0]
+						+ 0.7152f*avgLum[1]
+						+ 0.0722f*avgLum[2];
+			const float key = 0.18f;
+			const float eps = 1e-2f;
+			sceneLum = glm::max(sceneLum, eps);
+			float newExposure = key / (sceneLum + eps);
+			const float tau = 2.0f;  
+			float alpha = 1.0f - glm::exp(-deltaTime / tau);
+			if (!std::isfinite(newExposure)) newExposure = 1.0f;
+			if (!std::isfinite(alpha))        alpha       = 1.0f;
+			AppConfig::exposure = glm::mix(AppConfig::exposure, newExposure, alpha);
 
 			//SCREEN QUAD RENDER PASS
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -286,6 +315,7 @@
 			AppConfig::screenShader.use();  
 			AppConfig::screenShader.setFloat("near_plane", distance + AppConfig::near_plane);
 			AppConfig::screenShader.setFloat("far_plane", distance + AppConfig::far_plane);
+			AppConfig::screenShader.setFloat("exposure", AppConfig::exposure);
 			glBindVertexArray(screenQuadVAO);
 			glBindTextureUnit(0, screenTexture);
 			glDrawArrays(GL_TRIANGLES, 0, 6);  
