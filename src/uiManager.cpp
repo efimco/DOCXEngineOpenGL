@@ -139,19 +139,14 @@ void UIManager::showFramebufferViewport(float deltaTime)
 		ImGui::SetCursorScreenPos(ImVec2(origin.x + 10, origin.y + 20));
 		ImGui::Text("ms: %.4f", deltaTime);
 
-		float ratio = 1;
-		if (AppConfig::RENDER_HEIGHT != 0)
-		{
-			ratio = (float)AppConfig::RENDER_WIDTH/AppConfig::RENDER_HEIGHT;
-		}
-
+		//DEBUG QUAD PASS
 		// fetch parent window pos & size
 		ImVec2 winPos   = ImGui::GetWindowPos();
 		ImVec2 winSize  = ImGui::GetWindowSize();
 		ImVec2 padding  = ImGui::GetStyle().WindowPadding;
 
 		const ImVec2 debugQuadSize(winSize.x/10, winSize.y/10);
-		ImVec2 thumbPos(winPos.x + winSize.x - debugQuadSize.x - padding.x, winPos.y*ratio + padding.y); // compute top-right corner inside the window
+		ImVec2 thumbPos(winPos.x + winSize.x - debugQuadSize.x - padding.x, winPos.y + padding.y); // compute top-right corner inside the window
 
 		ImGui::SetCursorScreenPos(thumbPos);
 
