@@ -5,7 +5,7 @@ const float PI = 3.14159265359;
 
 // Функция френеля
 vec3 fresnelSchlick(float cosTheta, vec3 F0) {
-	return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+	return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 2.0);
 }
 
 // GGX нормальное распределение микрофасеток

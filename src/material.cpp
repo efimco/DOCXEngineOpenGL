@@ -25,9 +25,3 @@ Mat::Mat() :
 	metallicStrength(0),
 	roughnessStrength(0)
 {};
-
-
-
-
-
-

@@ -60,20 +60,20 @@ void Camera::processKeyboard(CameraMovement direction, float deltaTime)
 }
 
 void Camera::processMouseMovement(float xOffset, float yOffset, bool constrainPitch)
-	{	
-			xOffset *= sensitivity;
-			yOffset *= sensitivity;
+{	
+		xOffset *= sensitivity;
+		yOffset *= sensitivity;
 
-			yaw += xOffset;
-			pitch += yOffset;
+		yaw += xOffset;
+		pitch += yOffset;
 
-			if(constrainPitch)
-			{
-				if (pitch > 89.0f) pitch = 89.0f;
-				if (pitch < -89.0f) pitch = -89.0f;
-			}
-			updateCameraVecotrs();
-	}
+		if(constrainPitch)
+		{
+			if (pitch > 89.0f) pitch = 89.0f;
+			if (pitch < -89.0f) pitch = -89.0f;
+		}
+		updateCameraVecotrs();
+}
 
 void Camera::processMouseScroll(float yOffset)
 {

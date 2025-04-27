@@ -1,6 +1,7 @@
 #pragma once
 #include <GLFW/glfw3.h>
 #include "camera.hpp"
+#include "pickingBuffer.hpp"
 
 class InputManager
 {
@@ -20,9 +21,9 @@ private:
 public:
 	InputManager(GLFWwindow* window, Camera& camera);
 
-	void processInput(PickingBuffer& pickingBuffer, float& deltaTime);
-	void scrollCallback(GLFWwindow* window, double xOffset, double yOffset);
-	void mouseCallback(GLFWwindow* window, double xPos, double yPos);
+	void processInput(float deltaTime);
+	void scrollCallback();
+	void mouseCallback();
 	void processExitCallback();
 	void processWireframeToggleCallback();
 	void processObjectPickingCallback(PickingBuffer& pickingBuffer);

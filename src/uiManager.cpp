@@ -14,17 +14,23 @@
 #include "uiManager.hpp"
 
 
-UIManager::UIManager(GLFWwindow* window, float deltaTime, Camera& camera) : 
-deltaTime(deltaTime),
+UIManager::UIManager(GLFWwindow* window, Camera& camera) : 
 camera(camera),
 window(window)
 {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 
+	inputManager = new InputManager(window, camera);
+
 	int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    io.DisplaySize = ImVec2((float)width, (float)height);
+	glfwGetFramebufferSize(window, &width, &height);
+
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+	io.DisplaySize = ImVec2((float)width, (float)height);
 
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -36,10 +42,9 @@ UIManager::~UIManager()
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-
 };
 
-void UIManager::draw()
+void UIManager::draw(float deltaTime)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	int width, height;
@@ -48,16 +53,50 @@ void UIManager::draw()
 
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
 
-	showFps();
-	showCameraTransforms();
+	ImGui::NewFrame();
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar 
+									| ImGuiWindowFlags_NoResize 
+									| ImGuiWindowFlags_NoMove 
+									| ImGuiWindowFlags_NoCollapse 
+									| ImGuiWindowFlags_NoBringToFrontOnFocus 
+									| ImGuiWindowFlags_NoNavFocus
+									| ImGuiWindowFlags_NoBackground; 
+
+	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->Pos);
+	ImGui::SetNextWindowSize(viewport->Size);
+	ImGui::SetNextWindowViewport(viewport->ID);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+	ImGui::Begin("InvisibleDockSpaceWindow", nullptr, window_flags);
+		ImGui::PopStyleVar(3);
+
+		// 3) DockSpace call — this is where other windows will dock
+		ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+	ImGui::End();
+	
+	inputManager->processInput(deltaTime);
+	showFramebufferViewport(deltaTime);
 	showObjectInspector();
 	showLights();
 	showTools();
 	showMaterialBrowser();
 
+
 	ImGui::Render();
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		GLFWwindow* backup_current_context = glfwGetCurrentContext();
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+		glfwMakeContextCurrent(backup_current_context);
+	}
+	
 	auto draw_data = ImGui::GetDrawData();
 	if (draw_data != nullptr)
 	{
@@ -65,19 +104,77 @@ void UIManager::draw()
 	}
 }
 
-void UIManager::showFps()
+
+void UIManager::showFramebufferViewport(float deltaTime)
 {
-	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
-	ImGui::SetNextWindowBgAlpha(0.3f);
-	ImGui::Begin("FPS", nullptr,
-		ImGuiWindowFlags_NoTitleBar |
-		ImGuiWindowFlags_NoResize |
-		ImGuiWindowFlags_AlwaysAutoResize |
-		ImGuiWindowFlags_NoScrollbar |
-		ImGuiWindowFlags_NoSavedSettings);
-	ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-	ImGui::Text("ms: %.4f", deltaTime);
+	ImGui::Begin("Viewport",nullptr,ImGuiWindowFlags_NoScrollbar);
+
+		ImTextureID texID = (ImTextureID)m_screenTexture;
+
+		// flip UVs if your texture appears upside-down
+		ImVec2 uv0 = ImVec2(0, 1);
+		ImVec2 uv1 = ImVec2(1, 0);
+
+		m_vpSize = ImGui::GetContentRegionAvail();
+		ImVec2 origin = ImGui::GetCursorScreenPos();
+
+		if ((AppConfig::RENDER_WIDTH != (int)m_vpSize.x) || (AppConfig::RENDER_HEIGHT != (int)m_vpSize.y))
+		{
+			viewportSizeSetteled = false;
+		}
+
+		m_viewportHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+
+		if (m_viewportHovered)
+		{
+			inputManager->mouseCallback();
+			inputManager->scrollCallback();
+		}
+
+		ImGui::Image(texID, m_vpSize, uv0, uv1);
+		
+		//show FPS
+		ImGui::SetCursorScreenPos(ImVec2(origin.x + 10, origin.y + 10));
+		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+		ImGui::SetCursorScreenPos(ImVec2(origin.x + 10, origin.y + 20));
+		ImGui::Text("ms: %.4f", deltaTime);
+
+		float ratio = 1;
+		if (AppConfig::RENDER_HEIGHT != 0)
+		{
+			ratio = (float)AppConfig::RENDER_WIDTH/AppConfig::RENDER_HEIGHT;
+		}
+
+		// fetch parent window pos & size
+		ImVec2 winPos   = ImGui::GetWindowPos();
+		ImVec2 winSize  = ImGui::GetWindowSize();
+		ImVec2 padding  = ImGui::GetStyle().WindowPadding;
+
+		const ImVec2 debugQuadSize(winSize.x/10, winSize.y/10);
+		ImVec2 thumbPos(winPos.x + winSize.x - debugQuadSize.x - padding.x, winPos.y*ratio + padding.y); // compute top-right corner inside the window
+
+		ImGui::SetCursorScreenPos(thumbPos);
+
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs; // block inputs so clicks pass through
+
+		ImGui::BeginChild("PassPreview", debugQuadSize, false, flags);
+
+			ImTextureID passTex = (ImTextureID)m_screenTexture; 
+			ImGui::Image(passTex, debugQuadSize, uv0, uv1);
+
+		ImGui::EndChild();
 	ImGui::End();
+
+}
+
+glm::vec2 UIManager::getViewportSize()
+{
+	return glm::vec2(m_vpSize.x, m_vpSize.y);
+}
+
+void UIManager::setScreenTexture(uint32_t texId)
+{
+	m_screenTexture = texId;
 }
 
 void UIManager::showCameraTransforms()
@@ -250,7 +347,6 @@ std::string UIManager::OpenFileDialog()
 	return std::string();
 }
 
-
 void UIManager::showMaterialBrowser()
 {
 	ImGui::Begin("Material Browser");
@@ -334,5 +430,5 @@ void UIManager::showMaterialBrowser()
 bool UIManager::wantCaptureInput() const
 {
 	ImGuiIO& io = ImGui::GetIO();
-	return io.WantCaptureMouse || io.WantCaptureKeyboard;
+	return (io.WantCaptureMouse || io.WantCaptureKeyboard) && !m_viewportHovered;
 }

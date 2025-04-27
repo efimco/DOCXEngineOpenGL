@@ -8,6 +8,7 @@ std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\multi
 std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.vert").string();
 
 std::string fScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.frag").string();
+std::string fDebugQuadShader = std::filesystem::absolute("..\\..\\src\\shaders\\frameDebug.frag").string();
 std::string vScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.vert").string();
 
 std::string vSkyboxShader = std::filesystem::absolute("..\\..\\src\\shaders\\cubemap\\cubemap.vert").string();
@@ -23,9 +24,12 @@ namespace AppConfig
 {
 	int WINDOW_WIDTH = 1024;
 	int WINDOW_HEIGHT = 1024;
+	int RENDER_WIDTH = 0;
+	int RENDER_HEIGHT = 0;
 	float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 	Shader baseShader{};
 	Shader screenShader{};
+	Shader debugDrawShader{};
 	Shader skyboxShader{};
 	Shader pickingShader{};
 	Shader depthShader{};
@@ -47,6 +51,7 @@ namespace AppConfig
 		skyboxShader = Shader(vSkyboxShader, fSkyboxShader);
 		pickingShader = Shader(vPickingShader, fPickingShader);
 		depthShader = Shader(simpleDepthShader, fEmptyShader);
+		debugDrawShader = Shader(vScreenShader,fDebugQuadShader);
 	}
 
 }

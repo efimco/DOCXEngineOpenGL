@@ -22,7 +22,6 @@
 #include "depthBuffer.hpp"
 #include "uiManager.hpp"
 #include "appConfig.hpp"
-#include "inputManager.hpp"
 	
 	Camera camera(glm::vec3(-10.0f, 3.0f, 13.0f), glm::vec3(0.0f,1.0f,0.0f), -45.0f, 0.0f);
 
@@ -87,24 +86,37 @@
 
 	}
 	uint32_t fbo, rbo, intermediateFBO, screenTexture;
-	void initFrameBufferAndRenderTarget()
+	void createOrResizeFrameBufferAndRenderTarget()
 	{
+		if (fbo)
+		{
+			glDeleteTextures(1, &screenTexture); 
+			glDeleteRenderbuffers(1, &rbo);
+			glDeleteFramebuffers(1, &fbo);
+		}
+
 		glCreateFramebuffers(1, &fbo);
 
 		glCreateRenderbuffers(1, &rbo);
-		glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+		glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 		glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
 
 		// create a color attachment texture
 		glCreateTextures(GL_TEXTURE_2D, 1, &screenTexture);
-		int nMipLevels = (int)floor(log2(std::max(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT))) + 1;
-		glTextureStorage2D(screenTexture, nMipLevels, GL_RGBA32F, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+		int nMipLevels = (int)floor(log2(std::max(AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT))) + 1;
+		glTextureStorage2D(screenTexture, nMipLevels, GL_RGBA32F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 		glTextureParameteri(screenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTextureParameteri(screenTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(screenTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, screenTexture, 0);
+
+		GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+		glNamedFramebufferDrawBuffers(fbo, 1, drawBuffers);
+
+		if (glCheckNamedFramebufferStatus(fbo, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cerr << "FBO incomplete after create/resize\n";
+						AppConfig::isFramebufferSizeSetted = true;
 
 	}
 
@@ -115,24 +127,18 @@
 		AppConfig::isFramebufferSizeSetted = false;
 	}
 
-	glm::vec3 lightColor = glm::vec3(1.0f);
-	glm::mat4 lightmodel = glm::mat4(1.0f);
-
-	float lightIntensity = 1.0f;
-	glm::mat4 model = glm::mat4(1.0f);
-
 	float lastFrame = 0;
 	float deltaTime = 0;
 
-	void draw(GLFWwindow* window, InputManager& inputManager)
+	void draw(GLFWwindow* window)
 	{
 		Cubemap cubemap{};
 		initScreenQuad();
 		initDebugQuad();
-		initFrameBufferAndRenderTarget();
+		createOrResizeFrameBufferAndRenderTarget();
 		PickingBuffer pickingbuffer{};
 		DepthBuffer depthBuffer(2048, 2048);
-		UIManager uiManager(window, deltaTime, camera);
+		UIManager uiManager(window, camera);
 
 		AppConfig::initShaders();
 		//import
@@ -188,7 +194,7 @@
 		SceneManager::checkLightBuffer();
 	}
 
-
+		
 		while(!glfwWindowShouldClose(window))
 		{   
 			glBindTexture(GL_TEXTURE_2D, 0);
@@ -196,43 +202,25 @@
 			
 			deltaTime = time - lastFrame;
 			lastFrame = time;
-			if (!uiManager.wantCaptureInput())
-			{
-				inputManager.processInput(pickingbuffer, deltaTime);
-			}
 
 			//framebuffer size change callback processing
-			if (!AppConfig::isFramebufferSizeSetted)
+			if (!AppConfig::isFramebufferSizeSetted || !uiManager.viewportSizeSetteled)
 			{
-				glDeleteTextures(1, &screenTexture); 
-				glDeleteRenderbuffers(1, &rbo);
-				glDeleteFramebuffers(1, &fbo);
-
-				glCreateFramebuffers(1, &fbo);
-
-				glCreateRenderbuffers(1, &rbo);
-				glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
-				glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-				// create a color attachment texture
-				glCreateTextures(GL_TEXTURE_2D, 1, &screenTexture);
-				int nMipLevels = (int)floor(log2(std::max(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT))) + 1;
-				glTextureStorage2D(screenTexture, nMipLevels, GL_RGBA32F, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
-				glTextureParameteri(screenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, screenTexture, 0);
+				createOrResizeFrameBufferAndRenderTarget();
+				AppConfig::RENDER_WIDTH = (int)uiManager.getViewportSize().x;
+				AppConfig::RENDER_HEIGHT = (int)uiManager.getViewportSize().y;
 
 				pickingbuffer.resize();
 
-				glViewport(0, 0, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+				glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 
 				AppConfig::isFramebufferSizeSetted = true;
 			}
 			
 
-			if( AppConfig::WINDOW_WIDTH != 0 && AppConfig::WINDOW_HEIGHT != 0) 
+			if( AppConfig::RENDER_WIDTH != 0 && AppConfig::RENDER_HEIGHT != 0) 
 			{
-				projection = glm::perspective(glm::radians(camera.zoom), float(AppConfig::WINDOW_WIDTH)/float(AppConfig::WINDOW_HEIGHT),0.1f, 100.0f);	
+				projection = glm::perspective(glm::radians(camera.zoom), float(AppConfig::RENDER_WIDTH)/float(AppConfig::RENDER_HEIGHT),0.1f, 100.0f);	
 				view = camera.getViewMatrix();
 			}
 
@@ -254,17 +242,17 @@
 			glm::mat4 lightView = glm::lookAt(lightPos, lightDirection, glm::vec3(0.0, 1.0, 0.0));
 			glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 			SceneManager::setShader(AppConfig::depthShader);
-			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 			//OBJECT ID PASS
-			glViewport(0, 0, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+			glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 			pickingbuffer.bind();
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			SceneManager::setShader(AppConfig::pickingShader);
-			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 
 			//MAIN RENDER PASS
 			glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -273,7 +261,7 @@
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glPolygonMode(GL_FRONT_AND_BACK,AppConfig::polygonMode);
 			SceneManager::setShader(AppConfig::baseShader);
-			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT, depthBuffer.depthMap, AppConfig::gamma);
+			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT, depthBuffer.depthMap, AppConfig::gamma);
 			
 				//CUBEMAP RENDER PASS
 				glDepthFunc(GL_LEQUAL);
@@ -284,7 +272,7 @@
 
 			glGenerateTextureMipmap(screenTexture);
 
-			int levels = (int)floor(log2(std::max(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT))); 
+			int levels = (int)floor(log2(std::max(AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT))); 
 			float avgLum[4]; 
 
 			glGetTextureImage(screenTexture,
@@ -308,37 +296,41 @@
 
 			//SCREEN QUAD RENDER PASS
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glDisable(GL_DEPTH_TEST);
-			glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], AppConfig::clearColor[2], AppConfig::clearColor[3]); 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+			glDisable(GL_DEPTH_TEST);
+			// glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], AppConfig::clearColor[2], AppConfig::clearColor[3]); 
+			// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-			AppConfig::screenShader.use();  
-			AppConfig::screenShader.setFloat("near_plane", distance + AppConfig::near_plane);
-			AppConfig::screenShader.setFloat("far_plane", distance + AppConfig::far_plane);
-			AppConfig::screenShader.setFloat("exposure", AppConfig::exposure);
-			glBindVertexArray(screenQuadVAO);
-			glBindTextureUnit(0, screenTexture);
-			glDrawArrays(GL_TRIANGLES, 0, 6);  
+			// AppConfig::screenShader.use();  
+			// AppConfig::screenShader.setFloat("near_plane", distance + AppConfig::near_plane);
+			// AppConfig::screenShader.setFloat("far_plane", distance + AppConfig::far_plane);
+			// AppConfig::screenShader.setFloat("exposure", AppConfig::exposure);
+			// glBindVertexArray(screenQuadVAO);
+			// glBindTextureUnit(0, screenTexture);
+			// glDrawArrays(GL_TRIANGLES, 0, 6);  
 
-			//DEBUG QUAD RENDER PASS
-			if(AppConfig::showObjectPicking)
-			{
-				glBindVertexArray(debugQuadVAO);
-				glBindTexture(GL_TEXTURE_2D, pickingbuffer.pickingTexture);
-				glDrawArrays(GL_TRIANGLES, 0, 6);  
-			} 
-			if(AppConfig::showShadowMap)
-			{
-				glBindVertexArray(debugQuadVAO);
-				glBindTexture(GL_TEXTURE_2D, depthBuffer.depthMap);
-				glDrawArrays(GL_TRIANGLES, 0, 6);  
-			} 
+			// //DEBUG QUAD RENDER PASS
+			// if(AppConfig::showObjectPicking)
+			// {
+			// 	AppConfig::debugDrawShader.use();
+			// 	glBindVertexArray(debugQuadVAO);
+			// 	glBindTextureUnit(0, pickingbuffer.pickingTexture);
+			// 	glDrawArrays(GL_TRIANGLES, 0, 6);  
+			// } 
+			// if(AppConfig::showShadowMap)
+			// {
+			// 	AppConfig::debugDrawShader.use();
+			// 	glBindVertexArray(debugQuadVAO);
+			// 	glBindTextureUnit(0, depthBuffer.depthMap);
+			// 	glDrawArrays(GL_TRIANGLES, 0, 6);  
+			// } 
 
 			//IMGUI RENDER PASS
-			uiManager.draw();
-
+			glfwPollEvents();
+			uiManager.setScreenTexture(screenTexture);
+			uiManager.draw(deltaTime);
 			glfwSwapBuffers(window);
-			glfwPollEvents();    
+
 		}
 	}
 
@@ -362,9 +354,6 @@
 		}
 
 		glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-		InputManager inputManager(window, camera);
-		glfwSetWindowUserPointer(window, &inputManager);
-
 		glfwMakeContextCurrent(window);
 
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -373,7 +362,7 @@
 			return -1;
 		}
 
-		draw(window, inputManager);
+		draw(window);
 
 		glfwTerminate();
 		return 0;

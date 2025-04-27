@@ -12,6 +12,7 @@ set (
 	${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_impl_glfw.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_impl_opengl3.cpp 
 	${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_tables.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/include/ImGui/imgui_demo.cpp
 	)
 
 

@@ -17,10 +17,10 @@ PickingBuffer::PickingBuffer()
 		glCreateTextures(GL_TEXTURE_2D, 1, &pickingTexture);
 
 		glCreateRenderbuffers(1, &pickingRBO);
-		glNamedRenderbufferStorage(pickingRBO, GL_DEPTH24_STENCIL8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+		glNamedRenderbufferStorage(pickingRBO, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 		glNamedFramebufferRenderbuffer(pickingFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, pickingRBO);
 		
-		glTextureStorage2D(pickingTexture, 1, GL_RGB8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+		glTextureStorage2D(pickingTexture, 1, GL_RGB8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 		glTextureParameteri(pickingTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(pickingTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glNamedFramebufferTexture(pickingFBO, GL_COLOR_ATTACHMENT0, pickingTexture, 0);
@@ -56,12 +56,12 @@ void PickingBuffer::resize()
 	glCreateFramebuffers(1, &pickingFBO);
 	glCreateRenderbuffers(1, &pickingRBO);
 
-	glNamedRenderbufferStorage(pickingRBO, GL_DEPTH24_STENCIL8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+	glNamedRenderbufferStorage(pickingRBO, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 	glNamedFramebufferRenderbuffer(pickingFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, pickingRBO);
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &pickingTexture);
 	
-	glTextureStorage2D(pickingTexture, 1, GL_RGB8, AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT);
+	glTextureStorage2D(pickingTexture, 1, GL_RGB8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 	glTextureParameteri(pickingTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTextureParameteri(pickingTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	
@@ -142,6 +142,3 @@ glm::vec3 rgb2hsv(const glm::vec3 &rgb) {
 	float v = cmax;
 	return glm::vec3(h, s, v);
 }
-
-
-
