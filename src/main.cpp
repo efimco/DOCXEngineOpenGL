@@ -85,31 +85,47 @@
 		glVertexArrayAttribBinding(debugQuadVAO, 1, 0);
 
 	}
-	uint32_t fbo, rbo, intermediateFBO, screenTexture;
+	uint32_t fbo, rbo, screenTexture, composedFbo, composedRbo, composedTexture;
 	void createOrResizeFrameBufferAndRenderTarget()
 	{
 		if (fbo)
 		{
 			glDeleteTextures(1, &screenTexture); 
+			glDeleteTextures(1, &composedTexture); 
 			glDeleteRenderbuffers(1, &rbo);
 			glDeleteFramebuffers(1, &fbo);
+			glDeleteFramebuffers(1, &composedFbo);
+			glDeleteRenderbuffers(1, &composedRbo);
 		}
 
 		glCreateFramebuffers(1, &fbo);
+		glCreateFramebuffers(1, &composedFbo);
 
 		glCreateRenderbuffers(1, &rbo);
 		glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 		glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
+		glCreateRenderbuffers(1, &composedRbo);
+		glNamedRenderbufferStorage(composedRbo, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+		glNamedFramebufferRenderbuffer(composedFbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, composedRbo);
+
+		int nMipLevels = (int)floor(log2(std::max(AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT))) + 1;
 		// create a color attachment texture
 		glCreateTextures(GL_TEXTURE_2D, 1, &screenTexture);
-		int nMipLevels = (int)floor(log2(std::max(AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT))) + 1;
 		glTextureStorage2D(screenTexture, nMipLevels, GL_RGBA32F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 		glTextureParameteri(screenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTextureParameteri(screenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTextureParameteri(screenTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTextureParameteri(screenTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, screenTexture, 0);
+
+		glCreateTextures(GL_TEXTURE_2D, 1, &composedTexture);
+		glTextureStorage2D(composedTexture, nMipLevels, GL_RGBA32F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+		glTextureParameteri(composedTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTextureParameteri(composedTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTextureParameteri(composedTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(composedTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glNamedFramebufferTexture(composedFbo, GL_COLOR_ATTACHMENT0, composedTexture, 0);
 
 		GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
 		glNamedFramebufferDrawBuffers(fbo, 1, drawBuffers);
@@ -295,19 +311,20 @@
 			AppConfig::exposure = glm::mix(AppConfig::exposure, newExposure, alpha);
 
 			//SCREEN QUAD RENDER PASS
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glBindFramebuffer(GL_FRAMEBUFFER, composedFbo);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glDisable(GL_DEPTH_TEST);
-			// glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], AppConfig::clearColor[2], AppConfig::clearColor[3]); 
-			// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+			glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], AppConfig::clearColor[2], AppConfig::clearColor[3]); 
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-			// AppConfig::screenShader.use();  
-			// AppConfig::screenShader.setFloat("near_plane", distance + AppConfig::near_plane);
-			// AppConfig::screenShader.setFloat("far_plane", distance + AppConfig::far_plane);
-			// AppConfig::screenShader.setFloat("exposure", AppConfig::exposure);
-			// glBindVertexArray(screenQuadVAO);
-			// glBindTextureUnit(0, screenTexture);
-			// glDrawArrays(GL_TRIANGLES, 0, 6);  
+			AppConfig::screenShader.use();  
+			AppConfig::screenShader.setFloat("near_plane", distance + AppConfig::near_plane);
+			AppConfig::screenShader.setFloat("far_plane", distance + AppConfig::far_plane);
+			AppConfig::screenShader.setFloat("exposure", AppConfig::exposure);
+			glBindVertexArray(screenQuadVAO);
+			glBindTextureUnit(0, screenTexture);
+			glDrawArrays(GL_TRIANGLES, 0, 6);  
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 			// //DEBUG QUAD RENDER PASS
 			// if(AppConfig::showObjectPicking)
@@ -327,7 +344,7 @@
 
 			//IMGUI RENDER PASS
 			glfwPollEvents();
-			uiManager.setScreenTexture(screenTexture);
+			uiManager.setScreenTexture(composedTexture);
 			uiManager.draw(deltaTime);
 			glfwSwapBuffers(window);
 
