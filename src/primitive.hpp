@@ -19,9 +19,7 @@ public:
 	Primitive& operator=(const Primitive&) = delete;
 	Primitive(Primitive&& other) noexcept;
 	~Primitive();
-	void draw(Camera camera,glm::mat4 lightSpaceMatrix, int32_t width, int32_t height);
-	void draw(Camera camera, glm::mat4 lightSpaceMatrix, int32_t width, int32_t height, uint32_t depthMap, float gamma);
-	void draw(Camera& camera, glm::mat4 lightSpaceMatrix, int32_t width, int32_t height, Shader& shader, uint32_t depthMap, float gamma);
+	void draw(Camera& camera, int32_t width, int32_t height, uint32_t depthMap, float gammam, uint32_t cubemapID);
 
 private:
 	glm::vec3 setPickColor(unsigned int id);

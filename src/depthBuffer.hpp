@@ -1,5 +1,7 @@
 #include <glad/glad.h>
 #include <cstdint>
+#include "camera.hpp"
+#include "glm/glm.hpp"
 
 class DepthBuffer
 {
@@ -13,4 +15,5 @@ public:
 
 	void bind();
 	void unbind();
+	void draw(Camera& camera, glm::mat4 lightSpaceMatrix, int32_t width, int32_t height);
 };

@@ -41,16 +41,7 @@ Primitive::~Primitive()
 	glDeleteBuffers(1, &ebo);
 }
 
-void Primitive::draw(Camera camera,glm::mat4 lightSpaceMatrix, int32_t width, int32_t height)
-{
-	draw(camera, lightSpaceMatrix, width, height, shader, 0,0);
-}
-void Primitive::draw(Camera camera, glm::mat4 lightSpaceMatrix, int32_t width, int32_t height, uint32_t depthMap, float gamma)
-{
-	draw(camera, lightSpaceMatrix, width, height, shader, depthMap, gamma);
-}
-
-void Primitive::draw(Camera& camera, glm::mat4 lightSpaceMatrix, int32_t width, int32_t height, Shader& shader, uint32_t depthMap, float gamma)
+void Primitive::draw(Camera& camera, int32_t width, int32_t height, uint32_t depthMap, float gamma, uint32_t cubemapID)
 {
 	glm::mat4 projection = glm::mat4(1.0f);
 	if( width != 0 && height != 0) 
@@ -60,10 +51,9 @@ void Primitive::draw(Camera& camera, glm::mat4 lightSpaceMatrix, int32_t width, 
 	shader.use();
 	shader.setVec3("viewPos", camera.position);
 	shader.setVec3("objectIDColor", setPickColor(vao));
-	shader.setInt("shadowMap", 5);
 	shader.setFloat("gamma", gamma);
 	glBindTextureUnit(5, depthMap);
-	shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+	glBindTextureUnit(4, cubemapID);
 	if (material && material->diffuse && !material->diffuse->path.empty())
 	{
 		shader.setInt("tDiffuse", 1);

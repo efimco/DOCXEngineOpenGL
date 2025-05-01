@@ -6,8 +6,7 @@
 
 namespace SceneManager
 {
-	void draw(Camera& camera,glm::mat4& lightSpaceMatrix, int32_t width, int32_t height);
-	void draw(Camera& camera, glm::mat4& lightSpaceMatrix, int32_t width, int32_t height, uint32_t depthMap, float gamma);
+	void draw(Camera& camera, int32_t width, int32_t height, uint32_t depthMap, float gamma, uint32_t cubemapID);
 	
 	void addPrimitives(std::vector<Primitive>&& Primitives);
 	std::vector<Primitive>& getPrimitives();

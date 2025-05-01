@@ -1,6 +1,5 @@
 #version 460 core
 
-#extension GL_GOOGLE_include_directive : enable
 #include "light.glsl"
 #include "BRDF.glsl"
 
@@ -20,9 +19,9 @@ uniform float gamma;
 layout (location = 1) uniform sampler2D tDiffuse;
 layout (location = 2) uniform sampler2D tSpecular;
 layout (location = 3) uniform sampler2D tNormal;
+layout (location = 4)uniform samplerCube skybox;
+layout (location = 5)uniform sampler2D shadowMap;
 uniform float shininess;
-uniform samplerCube skybox;
-uniform sampler2D shadowMap;
 
 layout (std140, binding = 0) buffer LightBuffer {
 	Light lights[];
@@ -83,23 +82,12 @@ vec3 calcDirectionalLight(inout Light light)
 	{
 		albedo = vec3(0.5);
 	}
-	float metallic = texture(tSpecular, fs_in.TexCoords).r;
-	if (metallic == 0)
-	{
-		metallic = 0.9;
-	}
+	float metallic = texture(tSpecular, fs_in.TexCoords).b;
 	float roughness = texture(tSpecular, fs_in.TexCoords).g;
-	if (roughness == 0)
-	{
-		roughness = 0.0;
-	}
 
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 lightDir = normalize(1.0 - light.direction); 
 	vec3 halfwayDir = normalize(viewDir + lightDir);
-
-	// float distance = length(- fs_in.FragPos);
-	// float attenuation = 1.0 / (distance * distance);
 	vec3 radiance = light.diffuse  * light.intensity;
 
 	vec3 F0 = mix(vec3(0.04), albedo, metallic); // базовое отражение
@@ -123,9 +111,6 @@ vec3 calcDirectionalLight(inout Light light)
 	float shadow = ShadowCalculation(fs_in.FragPosLightSpace, light.position);
 	vec3 ambient = vec3(0.03) * albedo;
 	vec3 color = ambient + (1.0 - shadow) *  Lo;
-	// color = color / (color + vec3(1.0));
-	// // color = pow(color, vec3(1.0/2.2)); 
-	// return color;
 	return color;
 }
 
@@ -184,6 +169,8 @@ vec3 calcSpotLight(inout Light light)
 
 void main() 
 {
+	vec4 texColor = texture(tDiffuse, fs_in.TexCoords);
+	if (texColor.a < 0.2) discard;
 	vec3 result = vec3(0.0);
 	for(int i = 0; i < lights.length(); i++) 
 	{

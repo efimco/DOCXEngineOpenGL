@@ -11,18 +11,11 @@ namespace SceneManager
 	static std::unordered_map<std::string, std::shared_ptr<Tex>> textureCache;
 	static uint32_t lightSSBO = 0;
 
-	void draw(Camera& camera,glm::mat4& lightSpaceMatrix, int32_t width, int32_t height) 
+	void draw(Camera& camera, int32_t width, int32_t height, uint32_t depthMap, float gamma, uint32_t cubemapID)
 	{
 		for (auto& primitive:primitives)
 		{	
-			primitive.draw(camera,lightSpaceMatrix, width, height);
-		}
-	}
-	void draw(Camera& camera, glm::mat4& lightSpaceMatrix, int32_t width, int32_t height, uint32_t depthMap, float gamma) 
-	{
-		for (auto& primitive:primitives)
-		{	
-			primitive.draw(camera, lightSpaceMatrix, width, height, depthMap, gamma);
+			primitive.draw(camera, width, height, depthMap, gamma, cubemapID);
 		}
 	}
 
@@ -90,8 +83,6 @@ namespace SceneManager
 	{
 		return lights;
 	}
-
-
 
 	void reloadShaders()
 	{

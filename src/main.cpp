@@ -85,7 +85,7 @@
 		glVertexArrayAttribBinding(debugQuadVAO, 1, 0);
 
 	}
-	uint32_t fbo, rbo, screenTexture, composedFbo, composedRbo, composedTexture;
+	uint32_t fbo, rbo, screenTexture, composedFbo, composedTexture;
 	void createOrResizeFrameBufferAndRenderTarget()
 	{
 		if (fbo)
@@ -95,7 +95,6 @@
 			glDeleteRenderbuffers(1, &rbo);
 			glDeleteFramebuffers(1, &fbo);
 			glDeleteFramebuffers(1, &composedFbo);
-			glDeleteRenderbuffers(1, &composedRbo);
 		}
 
 		glCreateFramebuffers(1, &fbo);
@@ -104,10 +103,6 @@
 		glCreateRenderbuffers(1, &rbo);
 		glNamedRenderbufferStorage(rbo, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 		glNamedFramebufferRenderbuffer(fbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-		glCreateRenderbuffers(1, &composedRbo);
-		glNamedRenderbufferStorage(composedRbo, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
-		glNamedFramebufferRenderbuffer(composedFbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, composedRbo);
 
 		int nMipLevels = (int)floor(log2(std::max(AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT))) + 1;
 		// create a color attachment texture
@@ -158,7 +153,7 @@
 
 		AppConfig::initShaders();
 		//import
-		GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Knight.glb").string(), AppConfig::baseShader);
+		GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Face_1.glb").string(), AppConfig::baseShader);
 
 		SceneManager::createLightsSSBO();
 		//lights
@@ -258,7 +253,7 @@
 			glm::mat4 lightView = glm::lookAt(lightPos, lightDirection, glm::vec3(0.0, 1.0, 0.0));
 			glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 			SceneManager::setShader(AppConfig::depthShader);
-			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+			depthBuffer.draw(camera, lightSpaceMatrix, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -268,7 +263,7 @@
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			SceneManager::setShader(AppConfig::pickingShader);
-			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+			SceneManager::draw(camera, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT, depthBuffer.depthMap, AppConfig::gamma, cubemap.cubemapID);
 
 			//MAIN RENDER PASS
 			glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -277,7 +272,7 @@
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 			glPolygonMode(GL_FRONT_AND_BACK,AppConfig::polygonMode);
 			SceneManager::setShader(AppConfig::baseShader);
-			SceneManager::draw(camera, lightSpaceMatrix, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT, depthBuffer.depthMap, AppConfig::gamma);
+			SceneManager::draw(camera, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT, depthBuffer.depthMap, AppConfig::gamma, cubemap.cubemapID);
 			
 				//CUBEMAP RENDER PASS
 				glDepthFunc(GL_LEQUAL);
@@ -304,7 +299,7 @@
 			const float eps = 1e-2f;
 			sceneLum = glm::max(sceneLum, eps);
 			float newExposure = key / (sceneLum + eps);
-			const float tau = 2.0f;  
+			const float tau = 0.4f;  
 			float alpha = 1.0f - glm::exp(-deltaTime / tau);
 			if (!std::isfinite(newExposure)) newExposure = 1.0f;
 			if (!std::isfinite(alpha))        alpha       = 1.0f;
