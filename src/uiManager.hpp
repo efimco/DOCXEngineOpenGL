@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include "camera.hpp"
 #include "inputManager.hpp"
+#include "ImGui/imgui.h"
 
 class UIManager 
 {

@@ -161,10 +161,10 @@ void InputManager::processCameraMovementCallback(GLFWwindow *window, float delta
 void InputManager::processCameraResetCallback(GLFWwindow *window, float deltaTime)
 {
 	if(!camera.cameraReseted && (glm::length(camera.position - camera.defaultCameraMatrix[0]) > .05 ||
-								 glm::length(camera.front - camera.defaultCameraMatrix[1]) > .05 ||
-								 glm::length(camera.up - camera.defaultCameraMatrix[2]) > .05 ||
-								 glm::abs(camera.pitch - camera.defaultCameraRotation[0]) > .05 ||
-								 glm::abs(camera.yaw - camera.defaultCameraRotation[1]) > .05))
+								glm::length(camera.front - camera.defaultCameraMatrix[1]) > .05 ||
+								glm::length(camera.up - camera.defaultCameraMatrix[2]) > .05 ||
+								glm::abs(camera.pitch - camera.defaultCameraRotation[0]) > .05 ||
+								glm::abs(camera.yaw - camera.defaultCameraRotation[1]) > .05))
 	{	
 		float speed = 10 * deltaTime;
 		camera.position = glm::mix(camera.position, camera.defaultCameraMatrix[0], speed);

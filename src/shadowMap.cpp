@@ -1,11 +1,13 @@
 #include <glad/glad.h>
 #include <cstdint>
-#include "depthBuffer.hpp"
+#include <stdexcept>
+#include "shadowMap.hpp"
 #include "primitive.hpp"
 #include "sceneManager.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#include "appConfig.hpp"
 
-DepthBuffer::DepthBuffer(const int width, const int height):width(width), height(height)
+ShadowMap::ShadowMap(const int width, const int height):width(width), height(height)
 {
 	glCreateFramebuffers(1, &depthMapFBO);
 
@@ -23,29 +25,55 @@ DepthBuffer::DepthBuffer(const int width, const int height):width(width), height
 	glNamedFramebufferReadBuffer(depthMapFBO, GL_NONE);
 };
 
-DepthBuffer::~DepthBuffer()
+ShadowMap::~ShadowMap()
 {
 	glDeleteTextures(1, &depthMap);
 	glDeleteFramebuffers(1, &depthMapFBO);
 };
 
-void DepthBuffer::bind() 
+void ShadowMap::bind() 
 {
+	glViewport(0, 0, width, height);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
 };
 
-void DepthBuffer::unbind() 
+void ShadowMap::unbind() 
 { 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0); 
 }
-void DepthBuffer::draw(Camera& camera, glm::mat4 lightSpaceMatrix, int32_t width, int32_t height) 
+
+void ShadowMap::draw(Camera& camera) 
 {
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Shadow Map Pass");
+
+	glm::vec3 sceneCenter = glm::vec3(0.0f); 
+	float distance = 10000.0f;
+
+	glm::mat4 lightProjection = glm::ortho(-3.0f, 3.0f, -3.0f, 3.0f, distance + AppConfig::near_plane, distance + AppConfig::far_plane); 
+	
+	Light& light = [&]() -> Light& 
+		{
+			for (auto& light : SceneManager::getLights()) 
+			{
+				if (light.type == 1) return light; // directional light
+			}
+		throw std::runtime_error("No directional light found");
+		}();
+	glm::vec3 lightDirection = glm::normalize(light.direction);
+
+	glm::vec3 lightPos = lightDirection * distance;
+
+	glm::mat4 lightView = glm::lookAt(lightPos, lightDirection, glm::vec3(0.0, 1.0, 0.0));
+	glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+	SceneManager::setShader(AppConfig::depthShader);
+
 	for (Primitive& primitive: SceneManager::getPrimitives())
 	{
 		glm::mat4 projection = glm::mat4(1.0f);
-		if( width != 0 && height != 0) 
+		if( AppConfig::RENDER_WIDTH != 0 && AppConfig::RENDER_HEIGHT != 0) 
 		{
 			projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);	
 		}
@@ -65,6 +93,8 @@ void DepthBuffer::draw(Camera& camera, glm::mat4 lightSpaceMatrix, int32_t width
 		glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
 		glActiveTexture(GL_TEXTURE0);
 		glBindVertexArray(0);
+		
 	}
-
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glPopDebugGroup();
 };

@@ -1,8 +1,9 @@
+#pragma once
 #include "glm/glm.hpp"
 
 struct Light 
 {
-	int   type;
+	int   type; //0 - point, 1 - directional, 2 - spot
 	float intensity;
 	glm::vec2 stub0; // padding to align to 16 bytes
 	glm::vec3 position;

@@ -1,5 +1,6 @@
 #pragma once
 #include "shader.hpp"
+#include "camera.hpp"
 #include <cstdint>
 #include <vector>
 #include <filesystem>
@@ -8,10 +9,12 @@ class Cubemap
 {
 	public:
 		uint32_t skyboxVAO, skyboxVBO, cubemapID;
-		Cubemap();
+		Shader cubemapShader;
+		Camera& camera;
+		Cubemap(Camera& camera);
 		~Cubemap();
 
-		void draw(Shader shader, glm::mat4 projection, glm::mat4 view);
+		void draw(glm::mat4 projection);
 
 	private:
 		std::vector<std::string> cubemapFaces = {

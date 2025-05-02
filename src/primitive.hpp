@@ -22,7 +22,5 @@ public:
 	void draw(Camera& camera, int32_t width, int32_t height, uint32_t depthMap, float gammam, uint32_t cubemapID);
 
 private:
-	glm::vec3 setPickColor(unsigned int id);
-	glm::vec3 hsv2rgb(float h, float s, float v);
 	glm::mat4 scaledTransform;
 };

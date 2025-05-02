@@ -27,13 +27,14 @@ add_executable(OpenGLLearn
 	src/gltfImporter.cpp
 	src/stb_image_impl.cpp
 	src/tiny_gltf_impl.cpp
-	src/depthBuffer.cpp
+	src/shadowMap.cpp
 	src/pickingBuffer.cpp
 	src/cubemap.cpp
 	src/uiManager.cpp
 	src/sceneManager.cpp
 	src/appConfig.cpp
 	src/inputManager.cpp
+	src/renderer.cpp
 	${IMGUI_SRC}
 )
 

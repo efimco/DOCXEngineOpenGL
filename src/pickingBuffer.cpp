@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include <iostream>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "primitive.hpp"
 #include "sceneManager.hpp"
@@ -13,19 +14,19 @@
 
 PickingBuffer::PickingBuffer()
 	{
-		glCreateFramebuffers(1, &pickingFBO);
-		glCreateTextures(GL_TEXTURE_2D, 1, &pickingTexture);
+		glCreateFramebuffers(1, &m_pickingFBO);
+		glCreateTextures(GL_TEXTURE_2D, 1, &m_pickingTexture);
 
-		glCreateRenderbuffers(1, &pickingRBO);
-		glNamedRenderbufferStorage(pickingRBO, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
-		glNamedFramebufferRenderbuffer(pickingFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, pickingRBO);
+		glCreateRenderbuffers(1, &m_pickingRBO);
+		glNamedRenderbufferStorage(m_pickingRBO, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+		glNamedFramebufferRenderbuffer(m_pickingFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_pickingRBO);
 		
-		glTextureStorage2D(pickingTexture, 1, GL_RGB8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
-		glTextureParameteri(pickingTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(pickingTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glNamedFramebufferTexture(pickingFBO, GL_COLOR_ATTACHMENT0, pickingTexture, 0);
+		glTextureStorage2D(m_pickingTexture, 1, GL_RGB8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+		glTextureParameteri(m_pickingTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTextureParameteri(m_pickingTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glNamedFramebufferTexture(m_pickingFBO, GL_COLOR_ATTACHMENT0, m_pickingTexture, 0);
 		
-		if (glCheckNamedFramebufferStatus(pickingFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		if (glCheckNamedFramebufferStatus(m_pickingFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		{
 			std::cerr << "Error: Picking FBO is not complete!" << std::endl;
 		}
@@ -35,39 +36,83 @@ PickingBuffer::PickingBuffer()
 
 PickingBuffer::~PickingBuffer()
 {
-	glDeleteTextures(1, &pickingTexture);
-	glDeleteFramebuffers(1, &pickingFBO);
+	glDeleteTextures(1, &m_pickingTexture);
+	glDeleteFramebuffers(1, &m_pickingFBO);
+	glDeleteRenderbuffers(1, &m_pickingRBO);
 }
 
 void PickingBuffer::bind()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_pickingFBO);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+void PickingBuffer::draw(Camera& camera)
+{
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Picking Pass");
+	SceneManager::setShader(AppConfig::pickingShader);
+
+	for (auto& primitive : SceneManager::getPrimitives())
+	{
+		glm::mat4 projection = glm::mat4(1.0f);
+		if( AppConfig::RENDER_WIDTH != 0 && AppConfig::RENDER_HEIGHT != 0) 
+		{
+			projection = glm::perspective(glm::radians(camera.zoom), float(AppConfig::RENDER_WIDTH)/float(AppConfig::RENDER_HEIGHT),0.1f, 100.0f);	
+		}
+		primitive.shader.use();
+		primitive.shader.setVec3("objectIDColor", setPickColor(primitive.vao));
+	
+		primitive.shader.setMat4("projection",projection);
+		primitive.shader.setMat4("view",camera.getViewMatrix());
+		primitive.shader.setMat4("model",primitive.transform);
+		
+		glBindVertexArray(primitive.vao);
+		int eboSize = 0;
+		glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
+		int indexSize = eboSize / sizeof(int);
+	
+		
+		glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
+		glActiveTexture(GL_TEXTURE0);
+		if (primitive.selected == true)
+		{
+			std::cerr << "drawing outline of: "  << primitive.vao << std::endl;
+		}
+		glBindVertexArray(0);
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glPopDebugGroup();
 }
 
 void PickingBuffer::resize()
 {
-	glDeleteTextures(1, &pickingTexture); 
-	glDeleteRenderbuffers(1, &pickingRBO);
-	glDeleteFramebuffers(1, &pickingFBO);
+	if (m_pickingFBO == 0)
+	{
+		glDeleteTextures(1, &m_pickingTexture); 
+		glDeleteRenderbuffers(1, &m_pickingRBO);
+		glDeleteFramebuffers(1, &m_pickingFBO);
+	}
 
-	glCreateFramebuffers(1, &pickingFBO);
-	glCreateRenderbuffers(1, &pickingRBO);
+	glCreateFramebuffers(1, &m_pickingFBO);
+	glCreateRenderbuffers(1, &m_pickingRBO);
 
-	glNamedRenderbufferStorage(pickingRBO, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
-	glNamedFramebufferRenderbuffer(pickingFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, pickingRBO);
+	glNamedRenderbufferStorage(m_pickingRBO, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glNamedFramebufferRenderbuffer(m_pickingFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_pickingRBO);
 
-	glCreateTextures(GL_TEXTURE_2D, 1, &pickingTexture);
+	glCreateTextures(GL_TEXTURE_2D, 1, &m_pickingTexture);
 	
-	glTextureStorage2D(pickingTexture, 1, GL_RGB8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
-	glTextureParameteri(pickingTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(pickingTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureStorage2D(m_pickingTexture, 0, GL_RGB8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureParameteri(m_pickingTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTextureParameteri(m_pickingTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	
-	glNamedFramebufferTexture(pickingFBO, GL_COLOR_ATTACHMENT0, pickingTexture, 0);
+	glNamedFramebufferTexture(m_pickingFBO, GL_COLOR_ATTACHMENT0, m_pickingTexture, 0);
 	
-	if (glCheckNamedFramebufferStatus(pickingFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	if (glCheckNamedFramebufferStatus(m_pickingFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
 		std::cerr << "Error: Picking FBO is not complete!" << std::endl;
 	}
@@ -76,7 +121,7 @@ void PickingBuffer::resize()
 
 glm::vec3 PickingBuffer::pickColorAt(double mouseX, double mouseY, int32_t windowHeight)
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_pickingFBO);
 
 	int readX = (int) mouseX;
 	int readY = (int) (windowHeight - mouseY);
@@ -112,7 +157,20 @@ Primitive* PickingBuffer::getIdFromPickColor(const glm::vec3 &color)
 	return closestObject;
 }
 
-glm::vec3 rgb2hsv(const glm::vec3 &rgb) {
+glm::vec3 PickingBuffer::setPickColor(unsigned int id)
+{
+	float golden_ratio_conjugate = 0.618033988749895f;
+	float h = glm::fract(id * golden_ratio_conjugate);
+	float s = 0.7f; // moderately saturated
+	float v = 1.0f; // bright
+
+	glm::vec3 idColor = hsv2rgb(h,s,v);
+	return idColor;
+}
+
+
+glm::vec3 rgb2hsv(const glm::vec3 &rgb) 
+{
 	float r = rgb.r, g = rgb.g, b = rgb.b;
 	float cmax = glm::max(r, glm::max(g, b));
 	float cmin = glm::min(r, glm::min(g, b));
@@ -142,3 +200,29 @@ glm::vec3 rgb2hsv(const glm::vec3 &rgb) {
 	float v = cmax;
 	return glm::vec3(h, s, v);
 }
+
+glm::vec3 hsv2rgb(float h, float s, float v) {
+	float c = v * s;
+	float h_prime = h * 6.0f;
+	float x = c * (1.0f - fabs(fmod(h_prime, 2.0f) - 1.0f));
+	glm::vec3 rgb;
+	
+	if (h_prime < 1.0f)
+		rgb = glm::vec3(c, x, 0.0f);
+	else if (h_prime < 2.0f)
+		rgb = glm::vec3(x, c, 0.0f);
+	else if (h_prime < 3.0f)
+		rgb = glm::vec3(0.0f, c, x);
+	else if (h_prime < 4.0f)
+		rgb = glm::vec3(0.0f, x, c);
+	else if (h_prime < 5.0f)
+		rgb = glm::vec3(x, 0.0f, c);
+	else
+		rgb = glm::vec3(c, 0.0f, x);
+	
+	float m = v - c;
+	glm::vec3 res = rgb + glm::vec3(m);
+	return res;
+}
+
+

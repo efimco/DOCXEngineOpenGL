@@ -50,7 +50,6 @@ void Primitive::draw(Camera& camera, int32_t width, int32_t height, uint32_t dep
 	}
 	shader.use();
 	shader.setVec3("viewPos", camera.position);
-	shader.setVec3("objectIDColor", setPickColor(vao));
 	shader.setFloat("gamma", gamma);
 	glBindTextureUnit(5, depthMap);
 	glBindTextureUnit(4, cubemapID);
@@ -93,39 +92,4 @@ void Primitive::draw(Camera& camera, int32_t width, int32_t height, uint32_t dep
 	}
 	
 	glBindVertexArray(0);
-}
-
-glm::vec3 Primitive::setPickColor(unsigned int id)
-{
-	float golden_ratio_conjugate = 0.618033988749895f;
-	float h = glm::fract(id * golden_ratio_conjugate);
-	float s = 0.7f; // moderately saturated
-	float v = 1.0f; // bright
-
-	glm::vec3 idColor = hsv2rgb(h,s,v);
-	return idColor;
-}
-
-glm::vec3 Primitive::hsv2rgb(float h, float s, float v) {
-	float c = v * s;
-	float h_prime = h * 6.0f;
-	float x = c * (1.0f - fabs(fmod(h_prime, 2.0f) - 1.0f));
-	glm::vec3 rgb;
-	
-	if (h_prime < 1.0f)
-		rgb = glm::vec3(c, x, 0.0f);
-	else if (h_prime < 2.0f)
-		rgb = glm::vec3(x, c, 0.0f);
-	else if (h_prime < 3.0f)
-		rgb = glm::vec3(0.0f, c, x);
-	else if (h_prime < 4.0f)
-		rgb = glm::vec3(0.0f, x, c);
-	else if (h_prime < 5.0f)
-		rgb = glm::vec3(x, 0.0f, c);
-	else
-		rgb = glm::vec3(c, 0.0f, x);
-	
-	float m = v - c;
-	glm::vec3 res = rgb + glm::vec3(m);
-	return res;
 }

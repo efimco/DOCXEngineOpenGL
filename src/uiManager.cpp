@@ -2,9 +2,10 @@
 #include <commdlg.h> 
 #include <iostream>
 
-#include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_glfw.h"
 #include "ImGui/imgui_impl_opengl3.h"
+#include <ImGui/imgui_internal.h>
+
 #include "glm/gtc/type_ptr.hpp"
 #include "glad/glad.h"
 
@@ -39,9 +40,27 @@ window(window)
 
 UIManager::~UIManager() 
 {
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
+	// Only shutdown if context exists
+	if (ImGui::GetCurrentContext() != nullptr)
+	{
+		// Make sure we have the correct OpenGL context
+		if (window)
+		{
+			glfwMakeContextCurrent(window);
+		}
+		// Shutdown in reverse order of initialization
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+
+		ImGui::DestroyContext();
+	}
+
+	// Clean up input manager
+	if (inputManager)
+	{
+		delete inputManager;
+		inputManager = nullptr;
+	}
 };
 
 void UIManager::draw(float deltaTime)
@@ -122,12 +141,15 @@ void UIManager::showFramebufferViewport(float deltaTime)
 		{
 			viewportSizeSetteled = false;
 		}
+		else
+		{
+			viewportSizeSetteled = true;
+		}
 
 		m_viewportHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
-
+		inputManager->mouseCallback();
 		if (m_viewportHovered)
 		{
-			inputManager->mouseCallback();
 			inputManager->scrollCallback();
 		}
 
@@ -240,7 +262,6 @@ void UIManager::showLights()
 			}
 			ImGui::ColorEdit3("Color", glm::value_ptr(SceneManager::getLights()[i].diffuse));
 			ImGui::PopID();
-			SceneManager::updateLights();
 		}
 	ImGui::End();
 }

@@ -1,5 +1,4 @@
 #version 460 core
-
 #include "light.glsl"
 #include "BRDF.glsl"
 
@@ -12,16 +11,14 @@ layout (location = 3) in VS_OUT {
 	mat3 TBN;
 } fs_in;
 
-
-uniform vec3 viewPos;
-uniform float gamma;
-
 layout (location = 1) uniform sampler2D tDiffuse;
 layout (location = 2) uniform sampler2D tSpecular;
 layout (location = 3) uniform sampler2D tNormal;
-layout (location = 4)uniform samplerCube skybox;
-layout (location = 5)uniform sampler2D shadowMap;
-uniform float shininess;
+layout (location = 4) uniform samplerCube skybox;
+layout (location = 5) uniform sampler2D shadowMap;
+
+layout (location = 6) uniform vec3 viewPos;
+layout (location = 7) uniform float gamma;
 
 layout (std140, binding = 0) buffer LightBuffer {
 	Light lights[];
@@ -45,7 +42,7 @@ vec3 calcPointLight(inout Light light)
 
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
+	float spec = pow(max(dot(normal, halfwayDir), 0.0), 32); // shininess is 32
 	vec3 specular =light.specular * spec * texture(tSpecular, fs_in.TexCoords).r;
 
 	if (texture(tSpecular, fs_in.TexCoords).r == 0)
@@ -131,7 +128,7 @@ vec3 calcSpotLight(inout Light light)
 
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
+	float spec = pow(max(dot(normal, halfwayDir), 0.0), 32); // shininess is 32
 	vec3 specular =light.specular * spec * texture(tSpecular, fs_in.TexCoords).r;
 	
 	float theta     = dot(lightDir, normalize(-vec3(light.direction[0], light.direction[1], light.direction[2])));
@@ -183,4 +180,5 @@ void main()
 
 	result = pow(result, vec3(1.0 / gamma));
 	FragColor = vec4(result, 1.0);
+	// FragColor = vec4(vec3(lights.length()), 1.0);
 }
