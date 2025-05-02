@@ -19,8 +19,7 @@ static const float fullFrameQuadVertices[] = {
 };
 
 Renderer::Renderer(GLFWwindow* window)
-	:m_camera(glm::vec3(-10.0f, 3.0f, 13.0f), glm::vec3(0.0f,1.0f,0.0f), -45.0f, 0.0f), 
-	m_uiManager(window, m_camera)
+	:m_camera(glm::vec3(-10.0f, 3.0f, 13.0f), glm::vec3(0.0f,1.0f,0.0f), -45.0f, 0.0f)
 {
 	m_view = glm::mat4(1.0f);
 	m_projection = glm::mat4(1.0f);
@@ -29,7 +28,9 @@ Renderer::Renderer(GLFWwindow* window)
 	m_lastFrameTime = 0;
 	m_shadowMap = new ShadowMap(2048, 2048);
 	m_cubemap = new Cubemap(m_camera);
-	m_pickingbuffer = PickingBuffer();
+	m_pickingbuffer = new PickingBuffer();
+	m_inputManager = new InputManager(window, m_camera);
+	m_uiManager = new UIManager(window, m_camera, m_inputManager);
 
 	initScreenQuad();
 	createOrResizeFrameBufferAndRenderTarget();
@@ -126,8 +127,8 @@ void Renderer::createOrResizeFrameBufferAndRenderTarget()
 
 	glCreateFramebuffers(1, &m_mainFbo);
 	glCreateFramebuffers(1, &m_composedFbo);
-
 	glCreateRenderbuffers(1, &m_mainRbo);
+
 	glNamedRenderbufferStorage(m_mainRbo, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 	glNamedFramebufferRenderbuffer(m_mainFbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_mainRbo);
 
@@ -176,13 +177,13 @@ void Renderer::createOrResizeFrameBufferAndRenderTarget()
 
 void Renderer::checkFrameBufeerSize()
 {
-	if (!AppConfig::isFramebufferSizeSetted || !m_uiManager.viewportSizeSetteled)
+	if (!AppConfig::isFramebufferSizeSetted || !m_uiManager->viewportSizeSetteled)
 	{
-		AppConfig::RENDER_WIDTH = (int)m_uiManager.getViewportSize().x;
-		AppConfig::RENDER_HEIGHT = (int)m_uiManager.getViewportSize().y;
+		AppConfig::RENDER_WIDTH = (int)m_uiManager->getViewportSize().x;
+		AppConfig::RENDER_HEIGHT = (int)m_uiManager->getViewportSize().y;
 		createOrResizeFrameBufferAndRenderTarget();
 
-		m_pickingbuffer.resize();
+		m_pickingbuffer->resize();
 
 		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 
@@ -316,12 +317,10 @@ void Renderer::render(GLFWwindow* window)
 		//DIRECTIONAL LIGHT SHADOW MAP PASS
 		m_shadowMap->bind();
 		m_shadowMap->draw(m_camera);
-		m_shadowMap->unbind();
 
 		//OBJECT ID PASS
-		m_pickingbuffer.bind();
-		m_pickingbuffer.draw(m_camera);
-
+		m_pickingbuffer->bind();
+		m_pickingbuffer->draw(m_camera);
 
 
 		//MAIN RENDER PASS
@@ -332,8 +331,13 @@ void Renderer::render(GLFWwindow* window)
 		composedPass();
 
 		glfwPollEvents();
-		m_uiManager.setScreenTexture(m_composedTexture);
-		m_uiManager.draw(m_deltaTime);
+		m_inputManager->setPickingBuffer(m_pickingbuffer);
+		m_inputManager->setWindowPos(m_uiManager->getWindowPos());
+		m_inputManager->processInput(m_deltaTime, m_uiManager);
+		m_uiManager->setScreenTexture(m_composedTexture);
+		m_uiManager->setPickingTexture(m_pickingbuffer->getPickingTexture());
+		m_uiManager->setShadowMapTexture(m_shadowMap->depthMap);
+		m_uiManager->draw(m_deltaTime);
 		glfwSwapBuffers(window);
 	}
 	this->~Renderer();

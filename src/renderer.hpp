@@ -28,10 +28,11 @@ private:
 	uint32_t m_lightsSSBO;
 
 	int m_nMipLevels;
-	PickingBuffer m_pickingbuffer;
+	PickingBuffer* m_pickingbuffer;
 	ShadowMap* m_shadowMap;
-	UIManager m_uiManager;
+	UIManager* m_uiManager;
 	Cubemap* m_cubemap;
+	InputManager* m_inputManager;
 
 	glm::mat4 m_view;
 	glm::mat4 m_projection;

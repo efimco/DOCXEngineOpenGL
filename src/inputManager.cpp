@@ -1,7 +1,6 @@
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
 #include "ImGui/imgui.h"
-#include "uiManager.hpp"
 #include "sceneManager.hpp"
 #include "appConfig.hpp"
 #include "inputManager.hpp"
@@ -20,11 +19,16 @@ InputManager::InputManager(GLFWwindow* window, Camera& camera) : window(window),
 	rightKeyPressed = false;
 }
 
-void InputManager::processInput(float deltaTime)
+void InputManager::processInput(float deltaTime, bool viewportHovered)
 {
 	processWireframeToggleCallback();
 	processExitCallback();
-	// processObjectPickingCallback(pickingBuffer);
+	mouseCallback();
+	if (viewportHovered)
+	{
+		scrollCallback();
+	}
+	processObjectPickingCallback();
 	processCameraMovementCallback(window, deltaTime);
 	processCameraResetCallback(window, deltaTime);
 }
@@ -37,8 +41,9 @@ void InputManager::scrollCallback()
 
 void InputManager::mouseCallback()
 {
-	float xPos = ImGui::GetIO().MousePos.x;
-	float yPos = ImGui::GetIO().MousePos.y;
+
+	float xPos = ImGui::GetIO().MousePos.x - m_windowPos.x;
+	float yPos = ImGui::GetIO().MousePos.y - m_windowPos.y;
 	if (firstMouse)
 	{	lastX = (float)xPos;
 		lastY = (float)yPos;
@@ -75,21 +80,19 @@ void InputManager::processWireframeToggleCallback()
 		wireframeKeyPressed = false;
 }
 
-void InputManager::processObjectPickingCallback(PickingBuffer& pickingBuffer)
+void InputManager::processObjectPickingCallback()
 {
 	if( AppConfig::RENDER_WIDTH != 0 && AppConfig::RENDER_HEIGHT != 0) 
 	{
-		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse)
+		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && ImGui::GetIO().WantCaptureMouse)
+		{
 			wasMouse1Pressed = true;
+		}
 		else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMouse1Pressed)
 		{
 			wasMouse1Pressed = false;
-			glm::mat4 view = glm::mat4(1.0f);
-			glm::mat4 projection = glm::mat4(1.0f);
-			projection = glm::perspective(glm::radians(camera.zoom), float(AppConfig::RENDER_WIDTH)/float(AppConfig::RENDER_HEIGHT),0.1f, 100.0f);    
-			view = camera.getViewMatrix();
-			glm::vec3 pickedColor = pickingBuffer.pickColorAt(mousePosx, mousePosy, AppConfig::RENDER_HEIGHT);
-			Primitive* primitive = pickingBuffer.getIdFromPickColor(pickedColor);
+			glm::vec3 pickedColor = m_pickingBuffer->pickColorAt(mousePosx, mousePosy);
+			Primitive* primitive = m_pickingBuffer->getIdFromPickColor(pickedColor);
 			if (primitive != nullptr)
 			{
 				if (SceneManager::getSelectedPrimitive() != primitive)
@@ -110,6 +113,16 @@ void InputManager::processObjectPickingCallback(PickingBuffer& pickingBuffer)
 			}
 		}
 	}
+}
+
+void InputManager::setPickingBuffer(PickingBuffer *pickingBuffer)
+{
+	m_pickingBuffer = pickingBuffer;
+}
+
+void InputManager::setWindowPos(ImVec2 windowPos)
+{
+	m_windowPos = windowPos;
 }
 
 void InputManager::processCameraMovementCallback(GLFWwindow *window, float deltaTime)

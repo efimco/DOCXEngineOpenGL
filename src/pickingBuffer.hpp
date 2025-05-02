@@ -7,13 +7,15 @@ class PickingBuffer
 {
 public:
 	PickingBuffer();
+	void init();
 	~PickingBuffer();
 
 	void bind();
 	void draw(Camera& camera);
 	void resize();
-	glm::vec3 pickColorAt(double mouseX, double mouseY, int32_t windowHeight);
+	glm::vec3 pickColorAt(double mouseX, double mouseY);
 	Primitive* getIdFromPickColor(const glm::vec3 &color);
+	uint32_t getPickingTexture() const;
 
 private:
 	uint32_t m_pickingFBO;

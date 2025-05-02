@@ -40,10 +40,6 @@ void ShadowMap::bind()
 	glEnable(GL_DEPTH_TEST);
 };
 
-void ShadowMap::unbind() 
-{ 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0); 
-}
 
 void ShadowMap::draw(Camera& camera) 
 {

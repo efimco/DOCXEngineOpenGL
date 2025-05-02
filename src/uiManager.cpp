@@ -15,14 +15,14 @@
 #include "uiManager.hpp"
 
 
-UIManager::UIManager(GLFWwindow* window, Camera& camera) : 
+UIManager::UIManager(GLFWwindow* window, Camera& camera, InputManager* inputManager) : 
 camera(camera),
 window(window)
 {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 
-	inputManager = new InputManager(window, camera);
+	inputManager = inputManager;
 
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
@@ -99,7 +99,6 @@ void UIManager::draw(float deltaTime)
 		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 	ImGui::End();
 	
-	inputManager->processInput(deltaTime);
 	showFramebufferViewport(deltaTime);
 	showObjectInspector();
 	showLights();
@@ -121,6 +120,11 @@ void UIManager::draw(float deltaTime)
 	{
 		ImGui_ImplOpenGL3_RenderDrawData(draw_data);
 	}
+}
+
+ImVec2 UIManager::getWindowPos()
+{
+	return m_viewportPos;
 }
 
 
@@ -146,12 +150,7 @@ void UIManager::showFramebufferViewport(float deltaTime)
 			viewportSizeSetteled = true;
 		}
 
-		m_viewportHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
-		inputManager->mouseCallback();
-		if (m_viewportHovered)
-		{
-			inputManager->scrollCallback();
-		}
+		viewportHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
 		ImGui::Image(texID, m_vpSize, uv0, uv1);
 		
@@ -163,23 +162,31 @@ void UIManager::showFramebufferViewport(float deltaTime)
 
 		//DEBUG QUAD PASS
 		// fetch parent window pos & size
-		ImVec2 winPos   = ImGui::GetWindowPos();
+		m_viewportPos   = ImGui::GetWindowPos();
 		ImVec2 winSize  = ImGui::GetWindowSize();
 		ImVec2 padding  = ImGui::GetStyle().WindowPadding;
 
 		const ImVec2 debugQuadSize(winSize.x/10, winSize.y/10);
-		ImVec2 thumbPos(winPos.x + winSize.x - debugQuadSize.x - padding.x, winPos.y + padding.y); // compute top-right corner inside the window
+		ImVec2 thumbPos(m_viewportPos.x + winSize.x - debugQuadSize.x - padding.x, m_viewportPos.y + padding.y); // compute top-right corner inside the window
 
 		ImGui::SetCursorScreenPos(thumbPos);
 
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs; // block inputs so clicks pass through
+		if (AppConfig::showObjectPicking)
+		{
+			ImGui::BeginChild("PassPreview", debugQuadSize, false, flags);
+				ImTextureID passTex = (ImTextureID)m_pickingTexture; 
+				ImGui::Image(passTex, debugQuadSize, uv0, uv1);
+			ImGui::EndChild();
+		}
+		else if (AppConfig::showShadowMap)
+		{
+			ImGui::BeginChild("PassPreview", debugQuadSize, false, flags);
+				ImTextureID passTex = (ImTextureID)m_shadowMapTexture; 
+				ImGui::Image(passTex, debugQuadSize, uv0, uv1);
+			ImGui::EndChild();
+		}
 
-		ImGui::BeginChild("PassPreview", debugQuadSize, false, flags);
-
-			ImTextureID passTex = (ImTextureID)m_screenTexture; 
-			ImGui::Image(passTex, debugQuadSize, uv0, uv1);
-
-		ImGui::EndChild();
 	ImGui::End();
 
 }
@@ -192,6 +199,16 @@ glm::vec2 UIManager::getViewportSize()
 void UIManager::setScreenTexture(uint32_t texId)
 {
 	m_screenTexture = texId;
+}
+
+void UIManager::setPickingTexture(uint32_t texId)
+{
+	m_pickingTexture = texId;
+}
+
+void UIManager::setShadowMapTexture(uint32_t texId)
+{
+	m_shadowMapTexture = texId;
 }
 
 void UIManager::showCameraTransforms()
@@ -446,5 +463,5 @@ void UIManager::showMaterialBrowser()
 bool UIManager::wantCaptureInput() const
 {
 	ImGuiIO& io = ImGui::GetIO();
-	return (io.WantCaptureMouse || io.WantCaptureKeyboard) && !m_viewportHovered;
+	return (io.WantCaptureMouse || io.WantCaptureKeyboard) && !viewportHovered;
 }
