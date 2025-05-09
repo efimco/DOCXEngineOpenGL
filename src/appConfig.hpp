@@ -13,10 +13,6 @@ namespace AppConfig
 	extern float clearColor[4];
 	extern Shader baseShader;
 	extern Shader screenShader;
-	extern Shader skyboxShader;
-	extern Shader pickingShader;
-	extern Shader depthShader;
-	extern Shader debugDrawShader;
 	extern float gamma;
 	extern float near_plane, far_plane;
 	extern GLenum polygonMode;

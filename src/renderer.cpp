@@ -27,8 +27,10 @@ Renderer::Renderer(GLFWwindow* window)
 	m_deltaTime = 0;
 	m_lastFrameTime = 0;
 	m_shadowMap = new ShadowMap(2048, 2048);
-	m_cubemap = new Cubemap(m_camera);
+	m_cubemap = new Cubemap(m_camera,std::filesystem::absolute("..\\..\\res\\skybox\\overcast_soil_puresky_4k.hdr").string());
+	SceneManager::addShader(&m_cubemap->cubemapShader);
 	m_pickingbuffer = new PickingBuffer();
+	SceneManager::addShader(&m_pickingbuffer->pickingShader);
 	m_inputManager = new InputManager(window, m_camera);
 	m_uiManager = new UIManager(window, m_camera, m_inputManager);
 
@@ -212,6 +214,7 @@ void Renderer::mainPass()
 			glBindTextureUnit(5, m_shadowMap->depthMap);
 			if (primitive.material && primitive.material->diffuse && !primitive.material->diffuse->path.empty())
 			{
+				// std::cout << "Binding diffuse texture ID: " << primitive.material->diffuse->id << std::endl;
 				primitive.shader.setInt("tDiffuse", 1);
 				glBindTextureUnit(1, primitive.material->diffuse->id);
 			}

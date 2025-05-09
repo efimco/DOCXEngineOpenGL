@@ -11,7 +11,7 @@ class Cubemap
 		uint32_t skyboxVAO, skyboxVBO, cubemapID;
 		Shader cubemapShader;
 		Camera& camera;
-		Cubemap(Camera& camera);
+		Cubemap(Camera& camera, std::string pathToCubemap);
 		~Cubemap();
 
 		void draw(glm::mat4 projection);

@@ -41,35 +41,47 @@ void Tex::SetPath(const std::string& newPath)
 uint32_t Tex::TextureFromFile(const char *path)
 	{
 		std::string filename = std::string(path);
-		unsigned int textureID;
-		glGenTextures(1, &textureID);
+		uint32_t textureID;
+		glCreateTextures(GL_TEXTURE_2D, 1, &textureID);
 
 		int width, height, nrComponents;
 		unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
 		if (data)
 		{
 			GLenum format;
+			GLenum internalFormat;
 			if (nrComponents == 1)
+			{
+				internalFormat = GL_R8;
 				format = GL_RED;
+			}
 			else if (nrComponents == 3)
+			{
+				internalFormat = GL_RGB8;
 				format = GL_RGB;
+			}
 			else if (nrComponents == 4)
+			{
+				internalFormat = GL_RGBA8;
 				format = GL_RGBA;
+			}
+				
 
-			glBindTexture(GL_TEXTURE_2D, textureID);
-			glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-			glGenerateMipmap(GL_TEXTURE_2D);
-
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+			int nMipLevels = (int)floor(log2(std::max(width, height))) + 1;
+			glTextureStorage2D(textureID, nMipLevels, internalFormat, width, height);
+			glTextureSubImage2D(textureID, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
+		
+			glTextureParameteri(textureID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTextureParameteri(textureID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTextureParameteri(textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+			glTextureParameteri(textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			
+			glGenerateTextureMipmap(textureID);
 			stbi_image_free(data);
 		}
 		else
 		{
-			// std::cout << "Texture failed to load at path: " << path << std::endl;
+			std::cout << "Texture failed to load at path: " << path << std::endl;
 			stbi_image_free(data);
 		}
 
@@ -79,22 +91,35 @@ uint32_t Tex::TextureFromFile(const char *path)
 uint32_t Tex::TextureFromGlb(tinygltf::Image& image)
 {
 	GLenum format;
+	GLenum internalFormat;
 	if (image.component == 1)
+	{
+		internalFormat = GL_R8;
 		format = GL_RED;
+	}
 	else if (image.component == 3)
+	{
+		internalFormat = GL_RGB8;
 		format = GL_RGB;
+	}
 	else if (image.component == 4)
+	{
+		internalFormat = GL_RGBA8;
 		format = GL_RGBA;
+	}
 
 	uint32_t textureID;
-	glGenTextures(1, &textureID);	
-	glBindTexture(GL_TEXTURE_2D, textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, format, image.width, image.height, 0, format, GL_UNSIGNED_BYTE, image.image.data());
-	glGenerateMipmap(GL_TEXTURE_2D);
+	glCreateTextures(GL_TEXTURE_2D, 1, &textureID);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	int nMipLevels = (int)floor(log2(std::max(image.width, image.height))) + 1;
+	glTextureStorage2D(textureID, nMipLevels, internalFormat, image.width, image.height);
+	glTextureSubImage2D(textureID, 0, 0, 0, image.width, image.height, format, GL_UNSIGNED_BYTE, image.image.data());
+
+	glTextureParameteri(textureID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(textureID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTextureParameteri(textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glGenerateTextureMipmap(textureID);
+
 	return textureID;
 }

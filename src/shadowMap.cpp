@@ -6,6 +6,7 @@
 #include "sceneManager.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include "appConfig.hpp"
+#include <filesystem>
 
 ShadowMap::ShadowMap(const int width, const int height):width(width), height(height)
 {
@@ -23,6 +24,9 @@ ShadowMap::ShadowMap(const int width, const int height):width(width), height(hei
 	glNamedFramebufferTexture(depthMapFBO, GL_DEPTH_ATTACHMENT, depthMap, 0);
 	glNamedFramebufferDrawBuffer(depthMapFBO, GL_NONE);
 	glNamedFramebufferReadBuffer(depthMapFBO, GL_NONE);
+	const std::string simpleDepthShader = std::filesystem::absolute("..\\..\\src\\shaders\\simpleDepthShader.vert").string();
+	const std::string fEmptyShader = std::filesystem::absolute("..\\..\\src\\shaders\\empty.frag").string();
+	depthShader = Shader(simpleDepthShader, fEmptyShader);
 };
 
 ShadowMap::~ShadowMap()
@@ -64,7 +68,7 @@ void ShadowMap::draw(Camera& camera)
 
 	glm::mat4 lightView = glm::lookAt(lightPos, lightDirection, glm::vec3(0.0, 1.0, 0.0));
 	glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-	SceneManager::setShader(AppConfig::depthShader);
+	SceneManager::setShader(depthShader);
 
 	for (Primitive& primitive: SceneManager::getPrimitives())
 	{

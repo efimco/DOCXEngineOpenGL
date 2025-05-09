@@ -7,7 +7,7 @@ layout (location = 3) in vec4 aTangent;
 out vec2 TexCoords;
 
 layout (location = 3) out VS_OUT {
-	vec3 FragPos;
+	vec3 FragPos;  
 	vec3 Normal;
 	vec2 TexCoords;
 	vec4 FragPosLightSpace;

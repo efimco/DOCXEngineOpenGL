@@ -8,6 +8,7 @@
 #include "sceneManager.hpp"
 #include "pickingBuffer.hpp"
 #include "appConfig.hpp"
+#include <filesystem>
 
 
 
@@ -48,6 +49,10 @@ void PickingBuffer::init()
 		std::cerr << "Error: Picking FBO is not complete!" << std::endl;
 	}
 
+	const std::string vPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.vert").string();
+	const std::string fPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.frag").string();
+
+	pickingShader = Shader(vPickingShader, fPickingShader);
 }
 
 PickingBuffer::~PickingBuffer()
@@ -71,7 +76,7 @@ void PickingBuffer::draw(Camera& camera)
 {
 
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Picking Pass");
-		SceneManager::setShader(AppConfig::pickingShader);
+		SceneManager::setShader(pickingShader);
 
 		for (auto& primitive : SceneManager::getPrimitives())
 		{
@@ -127,7 +132,7 @@ glm::vec3 PickingBuffer::pickColorAt(double mouseX, double mouseY)
 	glGetTextureParameteriv(m_pickingTexture, GL_TEXTURE_WIDTH, &texWidth);
 	glGetTextureParameteriv(m_pickingTexture, GL_TEXTURE_HEIGHT, &texHeight);
 	
-	std::cout << "Reading from texture: " << texWidth << "x" << texHeight << std::endl;
+	std::cout << "Reading from picking texture: " << texWidth << "x" << texHeight << std::endl;
 
 	int readX = static_cast<int>(mouseX);
 	int readY = static_cast<int>(abs(AppConfig::RENDER_HEIGHT-mouseY));
@@ -158,10 +163,9 @@ Primitive* PickingBuffer::getIdFromPickColor(const glm::vec3 &color)
 	const unsigned int MAX_PICKABLE_OBJECTS = 1000;  // adjust as needed
 	for (Primitive& primitive: SceneManager::getPrimitives()) 
 		{
-			float computedH = glm::fract(primitive.vao * golden_ratio_conjugate);
-			std::cout << computedH << " " << h << std::endl;
+			float computedHue = glm::fract(primitive.vao * golden_ratio_conjugate);
 			// Allow a small tolerance since floating-point imprecision can occur
-			if (glm::abs(computedH - h) < 0.01f) 
+			if (glm::abs(computedHue - h) < 0.01f) 
 			{
 				closestObject = &primitive;
 				break;

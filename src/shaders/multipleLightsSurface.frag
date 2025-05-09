@@ -1,4 +1,5 @@
 #version 460 core
+#extension GL_ARB_shading_language_include : enable
 #include "light.glsl"
 #include "BRDF.glsl"
 
@@ -26,159 +27,86 @@ layout (std140, binding = 0) buffer LightBuffer {
 
 #include "shadow.glsl"
 
-vec3 calcPointLight(inout Light light)
-{
-	vec3 normal = texture(tNormal, fs_in.TexCoords).rgb;
-	normal = normalize(normal * 2.0 - 1.0);
-	normal = normalize(fs_in.TBN * normal);  
-	if (texture(tNormal, fs_in.TexCoords).r == 0)
-	{
-		normal = fs_in.Normal;
-	}
-	vec3 lightDir = normalize(light.position - fs_in.FragPos);
-	float diff = max(dot(normal, lightDir), 0.0);
+struct Material {
+	vec3 albedo;
+	float metallic;
+	float roughness;
+	vec3 normal;
+};
 
-	vec3 diffuse =light.diffuse * diff * texture(tDiffuse, fs_in.TexCoords).rgb;
-
-	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(normal, halfwayDir), 0.0), 32); // shininess is 32
-	vec3 specular =light.specular * spec * texture(tSpecular, fs_in.TexCoords).r;
-
-	if (texture(tSpecular, fs_in.TexCoords).r == 0)
-	{
-		spec = pow(max(dot(normal, halfwayDir), 0.0), 8);
-		specular = light.specular * spec * diff * vec3(0.25);
-	}
-
-		if (texture(tDiffuse, fs_in.TexCoords).r == 0)
-	{
-			diffuse = light.diffuse * diff * vec3(1);
-	}
-
-	vec3 ambient = light.ambient * texture(tDiffuse, fs_in.TexCoords).rgb;
-
-	float dist = length(light.position - fs_in.FragPos)/1000;
-	float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * dist * dist);
-	return vec3 ((ambient + diffuse + specular ) * light.intensity * attenuation);
-
-}
-
-vec3 calcDirectionalLight(inout Light light)
-{
-	vec3 normal = texture(tNormal, fs_in.TexCoords).rgb;
-	normal = normalize(normal * 2.0 - 1.0);
-	normal = normalize(fs_in.TBN * normal); 
-	if (texture(tNormal, fs_in.TexCoords).r == 0)
-	{
-		normal = fs_in.Normal;
-	}
-
-	vec3 albedo = texture(tDiffuse, fs_in.TexCoords).rgb;
-	if (albedo.r == 0)
-	{
-		albedo = vec3(0.5);
-	}
-	float metallic = texture(tSpecular, fs_in.TexCoords).b;
-	float roughness = texture(tSpecular, fs_in.TexCoords).g;
-
-	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-	vec3 lightDir = normalize(1.0 - light.direction); 
-	vec3 halfwayDir = normalize(viewDir + lightDir);
-	vec3 radiance = light.diffuse  * light.intensity;
-
-	vec3 F0 = mix(vec3(0.04), albedo, metallic); // базовое отражение
-
-	float NDF = DistributionGGX(normal, halfwayDir, roughness);
-	float G   = GeometrySmith(normal, viewDir, lightDir, roughness);
-	vec3  F   = fresnelSchlick(max(dot(halfwayDir, viewDir), .5), F0);
-
-
-	vec3 kS = F;
-	vec3 kD = vec3(1.0) - kS;
-	kD *= 1.0 - metallic;
-	float NormaldotLightDir = max(dot(normal, lightDir), 0.0);
-
-	vec3 nominator = NDF * G * F;
-	float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * NormaldotLightDir + 0.001;
-	vec3 specular = nominator / denominator;
-
-	vec3 Lo = (kD * albedo / PI + specular) * radiance * NormaldotLightDir;
-
-	float shadow = ShadowCalculation(fs_in.FragPosLightSpace, light.position);
-	vec3 ambient = vec3(0.03) * albedo;
-	vec3 color = ambient + (1.0 - shadow) *  Lo;
-	return color;
-}
-
-vec3 calcSpotLight(inout Light light)
-{
-
-	vec3 normal = texture(tNormal, fs_in.TexCoords).rgb;
-	normal = normalize(normal * 2.0 - 1.0);
-	normal = normalize(fs_in.TBN * normal);  
-	if (texture(tNormal, fs_in.TexCoords).r == 0)
-	{
-		normal = fs_in.Normal;
-	}
-	vec3 lightDir = normalize(light.position - fs_in.FragPos);
-	float diff = max(dot(normal, lightDir), 0.0);
-
-	vec3 diffuse = light.diffuse * diff * texture(tDiffuse, fs_in.TexCoords).rgb;
-
-	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-	vec3 halfwayDir = normalize(lightDir + viewDir);
-	float spec = pow(max(dot(normal, halfwayDir), 0.0), 32); // shininess is 32
-	vec3 specular =light.specular * spec * texture(tSpecular, fs_in.TexCoords).r;
+// Function to get material properties
+Material getMaterial(vec2 texCoords, mat3 TBN, vec3 defaultNormal) {
+	Material material;
 	
-	float theta     = dot(lightDir, normalize(-vec3(light.direction[0], light.direction[1], light.direction[2])));
-	float epsilon   = light.cutOff - light.outerCutOff;
-	float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0); 
-
-	if (texture(tSpecular, fs_in.TexCoords).r == 0)
-	{
-		spec = pow(max(dot(normal, halfwayDir), 0.0), 8);
-		specular =light.specular * spec * diff * vec3(0.25);
+	// Normal mapping
+	material.normal = texture(tNormal, texCoords).rgb;
+	material.normal = normalize(material.normal * 2.0 - 1.0);
+	material.normal = normalize(TBN * material.normal);
+	if (material.normal.r == 0.0 && material.normal.g == 0.0 && material.normal.b == 0.0) {
+		material.normal = defaultNormal;
 	}
+	
+	// Albedo
+	material.albedo = texture(tDiffuse, texCoords).rgb;
 
-		if (texture(tDiffuse, fs_in.TexCoords).r == 0)
-	{
-			diffuse = light.diffuse * diff * vec3(1);
-	}
-	diffuse *= intensity;
-	specular *= intensity;
-
-	vec3 ambient = light.ambient * texture(tDiffuse, fs_in.TexCoords).rgb;
-
-	float dist = length(light.position - fs_in.FragPos)/1000;
-	float attenuation = 1.0 / (light.constant + light.linear * dist + light.quadratic * dist * dist);
-	float shadow = ShadowCalculation(fs_in.FragPosLightSpace, light.position);
-	vec3 color = texture(tDiffuse, fs_in.TexCoords).rgb;
-	if (theta > light.outerCutOff)
-	{
-		return (ambient + (1.0 - shadow) * (diffuse + specular)) * light.intensity * attenuation;
-	}
-	else
-	{
-		return ambient;
-	}
+	// PBR properties
+	material.metallic = texture(tSpecular, texCoords).b;
+	// material.metallic = 0;
+	material.roughness = texture(tSpecular, texCoords).g;
+	// material.roughness = 0;
+	return material;
 }
 
-void main() 
+// Refactored directional light calculation
+vec3 calcDirectionalLight(inout Light light, Material material) 
 {
-	vec4 texColor = texture(tDiffuse, fs_in.TexCoords);
-	if (texColor.a < 0.2) discard;
+	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
+	vec3 lightDir = normalize(1.0 - light.direction);
+	vec3 halfwayDir = normalize(viewDir + lightDir);
+	vec3 radiance = light.diffuse * light.intensity;
+
+	float minReflectance = 0.04;
+
+	vec3 F0 = mix(vec3(minReflectance), material.albedo, material.metallic);
+
+	// BRDF components
+	float NDF = DistributionGGX(material.normal, halfwayDir, material.roughness);
+	float G = GeometrySmith(material.normal, viewDir, lightDir, material.roughness);
+	vec3 F = fresnelSchlick(max(dot(halfwayDir, viewDir), 0.5), F0);
+
+	// Cook-Torrance BRDF
+
+	float NdotL = max(dot(material.normal, lightDir), 0.0);	
+
+	vec3 numerator = NDF * G * F;
+	float denominator = 4.0 * max(dot(material.normal, viewDir), 0.0) * NdotL + 0.001;
+	vec3 specular = numerator / denominator;
+
+	vec3 kS = F; //specular reflection
+	vec3 kD = (1.0 - kS) * (1.0 - material.metallic);
+
+	vec3 Lo = (kD * material.albedo / PI + specular) * radiance * NdotL;
+
+	// Shadow and ambient
+	float shadow = ShadowCalculation(fs_in.FragPosLightSpace, light.position);	
+	return (1.0 - shadow) * Lo;
+}
+
+// Main function remains mostly the same but simplified
+void main() {
+	if (texture(tDiffuse, fs_in.TexCoords).a < 0.2) discard;
+
+	Material material = getMaterial(fs_in.TexCoords, fs_in.TBN, fs_in.Normal);
+
+
 	vec3 result = vec3(0.0);
-	for(int i = 0; i < lights.length(); i++) 
-	{
-		switch(lights[i].type) {
-			// case 0: result += calcPointLight(lights[i]); break;
-			case 1: result +=  calcDirectionalLight(lights[i]); break;
-			// case 2: result += calcSpotLight(lights[i]); break;
+	for(int i = 0; i < lights.length(); i++) {
+		if(lights[i].type == 1) {
+			result += calcDirectionalLight(lights[i], material);
 		}
 	}
-
-	result = pow(result, vec3(1.0 / gamma));
+	vec3 ambient = vec3(0.03) * material.albedo;
+	result += ambient;
+	vec3 tex = texture(tDiffuse, fs_in.TexCoords).rgb;
 	FragColor = vec4(result, 1.0);
-	// FragColor = vec4(vec3(lights.length()), 1.0);
 }

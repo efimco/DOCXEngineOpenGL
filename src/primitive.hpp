@@ -19,8 +19,4 @@ public:
 	Primitive& operator=(const Primitive&) = delete;
 	Primitive(Primitive&& other) noexcept;
 	~Primitive();
-	void draw(Camera& camera, int32_t width, int32_t height, uint32_t depthMap, float gammam, uint32_t cubemapID);
-
-private:
-	glm::mat4 scaledTransform;
 };

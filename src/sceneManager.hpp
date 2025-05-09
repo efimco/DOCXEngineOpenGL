@@ -5,15 +5,14 @@
 #include "light.hpp"
 
 namespace SceneManager
-{
-	void draw(Camera& camera, int32_t width, int32_t height, uint32_t depthMap, float gamma, uint32_t cubemapID);
-	
+{	
 	void addPrimitives(std::vector<Primitive>&& Primitives);
 	std::vector<Primitive>& getPrimitives();
 	void addPrimitive(Primitive&& primitive);
 
 	Primitive* getSelectedPrimitive();
 	void setSelectedPrimitive(Primitive* primitive);
+	void addShader(Shader* shader);
 
 	std::unordered_map<uint32_t, std::shared_ptr<Mat>>& getMaterials();
 	std::shared_ptr<Mat>& getMaterial(uint32_t uid);

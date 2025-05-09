@@ -348,7 +348,6 @@ void UIManager::showTools()
 		{
 			SceneManager::reloadShaders();
 			AppConfig::screenShader.reload();
-			AppConfig::skyboxShader.reload();
 			std::cout << "Shaders reloaded successfully!" << std::endl;
 		}
 	ImGui::End();

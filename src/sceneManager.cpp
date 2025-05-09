@@ -7,17 +7,10 @@ namespace SceneManager
 	static Primitive* selectedPrimitive = nullptr;
 	static std::vector<Light> lights;
 	static std::vector<Primitive> primitives;
+	static std::vector<Shader*> shaders;
 	static std::unordered_map<uint32_t, std::shared_ptr<Mat>> materials;
 	static std::unordered_map<std::string, std::shared_ptr<Tex>> textureCache;
 	static uint32_t lightSSBO = 0;
-
-	void draw(Camera& camera, int32_t width, int32_t height, uint32_t depthMap, float gamma, uint32_t cubemapID)
-	{
-		for (auto& primitive:primitives)
-		{	
-			primitive.draw(camera, width, height, depthMap, gamma, cubemapID);
-		}
-	}
 
 	void addPrimitives(std::vector<Primitive>&& Primitives)
 	{
@@ -45,6 +38,11 @@ namespace SceneManager
 	void setSelectedPrimitive(Primitive* primitive)
 	{
 		selectedPrimitive = primitive;
+	}
+
+	void addShader(Shader* shader)
+	{
+		shaders.push_back(shader);
 	}
 
 	void addLight(Light& light)
@@ -90,6 +88,10 @@ namespace SceneManager
 		{
 			primitive.shader.reload();
 			
+		}
+		for (auto& shader: shaders)
+		{
+			shader->reload();
 		}
 	}
 

@@ -8,17 +8,7 @@ std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\multi
 std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.vert").string();
 
 std::string fScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.frag").string();
-std::string fDebugQuadShader = std::filesystem::absolute("..\\..\\src\\shaders\\frameDebug.frag").string();
 std::string vScreenShader = std::filesystem::absolute("..\\..\\src\\shaders\\frame.vert").string();
-
-std::string vSkyboxShader = std::filesystem::absolute("..\\..\\src\\shaders\\cubemap\\cubemap.vert").string();
-std::string fSkyboxShader = std::filesystem::absolute("..\\..\\src\\shaders\\\\cubemap\\cubemap.frag").string();
-
-std::string vPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.vert").string();
-std::string fPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.frag").string();
-
-std::string simpleDepthShader = std::filesystem::absolute("..\\..\\src\\shaders\\simpleDepthShader.vert").string();
-std::string fEmptyShader = std::filesystem::absolute("..\\..\\src\\shaders\\empty.frag").string();
 
 namespace AppConfig
 {
@@ -30,9 +20,6 @@ namespace AppConfig
 	Shader baseShader{};
 	Shader screenShader{};
 	Shader debugDrawShader{};
-	Shader skyboxShader{};
-	Shader pickingShader{};
-	Shader depthShader{};
 	float gamma = 1;
 	float near_plane = -2.01f;
 	float far_plane = 2.0f;
@@ -45,13 +32,8 @@ namespace AppConfig
 
 	void initShaders()
 	{
-		// Initialize shaders after OpenGL context is created
 		baseShader = Shader(vShaderPath, fShaderPath);
 		screenShader = Shader(vScreenShader, fScreenShader);
-		skyboxShader = Shader(vSkyboxShader, fSkyboxShader);
-		pickingShader = Shader(vPickingShader, fPickingShader);
-		depthShader = Shader(simpleDepthShader, fEmptyShader);
-		debugDrawShader = Shader(vScreenShader,fDebugQuadShader);
 	}
 
 }
