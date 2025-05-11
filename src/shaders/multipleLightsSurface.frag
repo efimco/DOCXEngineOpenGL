@@ -15,11 +15,21 @@ layout (location = 3) in VS_OUT {
 layout (location = 1) uniform sampler2D tDiffuse;
 layout (location = 2) uniform sampler2D tSpecular;
 layout (location = 3) uniform sampler2D tNormal;
-layout (location = 4) uniform samplerCube skybox;
+layout (location = 4) uniform samplerCube irradianceMap;
 layout (location = 5) uniform sampler2D shadowMap;
 
 layout (location = 6) uniform vec3 viewPos;
-layout (location = 7) uniform float gamma;
+layout (location = 7) uniform float irradianceMapRotationY;
+layout (location = 8) uniform float irradianceMapIntensity;
+
+
+const float yaw = 3.1415f / 180.0f;
+mat3 irradianceMapYawRotation = mat3(
+	cos(irradianceMapRotationY * yaw), 0.0, -sin(irradianceMapRotationY * yaw),
+	0.0, 1.0, 0.0,
+	sin(irradianceMapRotationY * yaw), 0.0, cos(irradianceMapRotationY * yaw)
+);
+
 
 layout (std140, binding = 0) buffer LightBuffer {
 	Light lights[];
@@ -56,6 +66,17 @@ Material getMaterial(vec2 texCoords, mat3 TBN, vec3 defaultNormal) {
 	// material.roughness = 0;
 	return material;
 }
+
+
+	const vec2 invAtan = vec2(0.1591, 0.3183); // 1 / (2 * PI), 1 / PI
+vec2 SampleSphericalCoords(vec3 v)
+{
+	vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+	uv *= invAtan;
+	uv += 0.5;
+	return uv;
+}
+
 
 // Refactored directional light calculation
 vec3 calcDirectionalLight(inout Light light, Material material) 
@@ -105,8 +126,25 @@ void main() {
 			result += calcDirectionalLight(lights[i], material);
 		}
 	}
-	vec3 ambient = vec3(0.03) * material.albedo;
+	// Calculate IBL ambient lighting
+
+	vec3 normal = fs_in.Normal;
+	// float yaw = PI / 180; // 90 degrees rotation, adjust as needed
+	// mat3 rotMat = mat3(
+	// 	cos(yaw), 0.0, -sin(yaw),
+	// 	0.0, 1.0, 0.0,
+	// 	sin(yaw), 0.0, cos(yaw)
+	// );
+	vec3 irradiance = texture(irradianceMap, normal * irradianceMapYawRotation).rgb;
+	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
+	vec3 kS = fresnelSchlick(max(dot(material.normal, viewDir), 0.5), 
+							mix(vec3(0.04), material.albedo, material.metallic));
+	vec3 kD = (1.0 - kS) * (1.0 - material.metallic);
+	
+	// Add image-based ambient lighting
+	vec3 diffuse = material.albedo * irradiance * irradianceMapIntensity;
+	vec3 ambient = kD * diffuse;
 	result += ambient;
-	vec3 tex = texture(tDiffuse, fs_in.TexCoords).rgb;
+
 	FragColor = vec4(result, 1.0);
 }

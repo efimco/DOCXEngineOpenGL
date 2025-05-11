@@ -331,6 +331,8 @@ void UIManager::showTools()
 		ImGui::SliderFloat("Near plane", &AppConfig::near_plane,-10.0f,10.f, "%.6f");
 		ImGui::SliderFloat("Far plane", &AppConfig::far_plane,-10.0f,10.f);
 		ImGui::Checkbox("Wireframe Mode", &AppConfig::isWireframe);
+		ImGui::SliderFloat("CubeMap intensity", &AppConfig::irradianceMapIntensity, 0.0f, 3.0f);
+		ImGui::SliderFloat("CubeMap Rotatation Y", &AppConfig::irradianceMapRotationY, -180.0f, 180.0f);
 		ImGui::Checkbox("ObjectID Debug", &AppConfig::showObjectPicking);
 		ImGui::Checkbox("ShadowMap Debug", &AppConfig::showShadowMap);
 		if (ImGui::Button("Import Model"))

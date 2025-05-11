@@ -78,13 +78,13 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 
 			size_t indexSize = indexBuffer.size() * sizeof(uint32_t);
 
-			std::cout << "Pos buffer size: " << posSize << std::endl;
-			std::cout << "Tex buffer size: " << texSize << std::endl;
-			std::cout << "Norm buffer size: " << normalSize << std::endl;
-			std::cout << "TangNorm buffer size: " << tangentNormalSize << std::endl;
-			std::cout << "Index buffer size: " << indexSize << std::endl;
-			std::cout << "Final buffer size: " << bufferSize << std::endl;
-			std::cout << std::endl;
+			// std::cout << "Pos buffer size: " << posSize << std::endl;
+			// std::cout << "Tex buffer size: " << texSize << std::endl;
+			// std::cout << "Norm buffer size: " << normalSize << std::endl;
+			// std::cout << "TangNorm buffer size: " << tangentNormalSize << std::endl;
+			// std::cout << "Index buffer size: " << indexSize << std::endl;
+			// std::cout << "Final buffer size: " << bufferSize << std::endl;
+			// std::cout << std::endl;
 
 
 			glCreateBuffers(1, &ebo);

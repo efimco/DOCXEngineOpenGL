@@ -28,7 +28,8 @@ Renderer::Renderer(GLFWwindow* window)
 	m_lastFrameTime = 0;
 	m_shadowMap = new ShadowMap(2048, 2048);
 	m_cubemap = new Cubemap(m_camera,std::filesystem::absolute("..\\..\\res\\skybox\\overcast_soil_puresky_4k.hdr").string());
-	SceneManager::addShader(&m_cubemap->cubemapShader);
+	SceneManager::addShader(&m_cubemap->backgroundShader);
+	SceneManager::addShader(&m_cubemap->equirectangularToCubemapShader);
 	m_pickingbuffer = new PickingBuffer();
 	SceneManager::addShader(&m_pickingbuffer->pickingShader);
 	m_inputManager = new InputManager(window, m_camera);
@@ -58,6 +59,7 @@ Renderer::Renderer(GLFWwindow* window)
 	addLight(directionalLight);
 	updateLights();
 	checkLightBuffer();
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); 
 }
 
 Renderer::~Renderer()
@@ -151,8 +153,6 @@ void Renderer::createOrResizeFrameBufferAndRenderTarget()
 	glGetTextureParameteriv(m_screenTexture, GL_TEXTURE_MAX_LEVEL, &maxLevels);
 	glGetTextureLevelParameteriv(m_screenTexture, maxLevels, GL_TEXTURE_WIDTH, &width);
 	glGetTextureLevelParameteriv(m_screenTexture, maxLevels, GL_TEXTURE_HEIGHT, &height);
-	std::cout << "Created texture: " << width << "x" << height 
-			<< " with " << mipLevels << " mip levels " << maxLevels << " max levels" << std::endl;
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_composedTexture);
 	glTextureStorage2D(m_composedTexture, m_nMipLevels, GL_RGBA32F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
@@ -164,17 +164,6 @@ void Renderer::createOrResizeFrameBufferAndRenderTarget()
 
 	GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
 	glNamedFramebufferDrawBuffers(m_mainFbo, 1, drawBuffers);
-
-	if (glCheckNamedFramebufferStatus(m_mainFbo, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		std::cerr << "FBO incomplete after create/resize\n";
-	}
-	else
-	{
-		std::cout << "FBO complete after create/resize\n";
-	}
-	
-
 }
 
 void Renderer::checkFrameBufeerSize()
@@ -201,18 +190,28 @@ void Renderer::mainPass()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glPolygonMode(GL_FRONT_AND_BACK, AppConfig::polygonMode);
 		SceneManager::setShader(AppConfig::baseShader);
-		for (auto& primitive: SceneManager::getPrimitives())
+		for (const auto& primitive: SceneManager::getPrimitives())
 		{
 			glm::mat4 projection = glm::mat4(1.0f);
 			if( AppConfig::RENDER_WIDTH != 0 && AppConfig::RENDER_HEIGHT != 0) 
 			{
 				projection = glm::perspective(glm::radians(m_camera.zoom), float(AppConfig::RENDER_WIDTH)/float(AppConfig::RENDER_HEIGHT),0.1f, 100.0f);	
 			}
+
+			const bool hasDiffuse = primitive.material && primitive.material->diffuse && 
+									!primitive.material->diffuse->path.empty();
+									
+			const bool hasSpecular = primitive.material && primitive.material->specular && 
+									!primitive.material->specular->path.empty();
+
+			const bool hasNormal = primitive.material && primitive.material->normal && 
+									!primitive.material->normal->path.empty();
+
 			primitive.shader.use();
 			primitive.shader.setVec3("viewPos", m_camera.position);
 			primitive.shader.setFloat("gamma", AppConfig::gamma);
 			glBindTextureUnit(5, m_shadowMap->depthMap);
-			if (primitive.material && primitive.material->diffuse && !primitive.material->diffuse->path.empty())
+			if (hasDiffuse)
 			{
 				// std::cout << "Binding diffuse texture ID: " << primitive.material->diffuse->id << std::endl;
 				primitive.shader.setInt("tDiffuse", 1);
@@ -221,14 +220,14 @@ void Renderer::mainPass()
 			else
 				glBindTextureUnit(1, 0);
 			
-			if (primitive.material && primitive.material->specular && !primitive.material->specular->path.empty())
+			if (hasSpecular)
 			{
 				primitive.shader.setInt("tSpecular", 2);
 				primitive.shader.setFloat("shininess", 32);
 				glBindTextureUnit(2, primitive.material->specular->id);
 			}else glBindTextureUnit(2, 0);
 			
-			if (primitive.material && primitive.material->normal && !primitive.material->normal->path.empty())
+			if (hasNormal)
 			{
 				primitive.shader.setInt("tNormal", 3);
 				glBindTextureUnit(3, primitive.material->normal->id);
@@ -241,7 +240,7 @@ void Renderer::mainPass()
 			glBindVertexArray(primitive.vao);
 			int eboSize = 0;
 			glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
-			int indexSize = eboSize / sizeof(int);
+			const int indexSize = eboSize / sizeof(int);
 
 			
 			glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
@@ -250,7 +249,12 @@ void Renderer::mainPass()
 			{
 				std::cerr << "drawing outline of: "  << primitive.vao << std::endl;
 			}
-			
+			primitive.shader.setInt("irradianceMap", 4);
+			glBindTextureUnit(4, m_cubemap->irradianceMap);
+
+			primitive.shader.setFloat("irradianceMapRotationY", AppConfig::irradianceMapRotationY);
+			primitive.shader.setFloat("irradianceMapIntensity", AppConfig::irradianceMapIntensity);
+
 			glBindVertexArray(0);
 			}
 			//CUBEMAP RENDER PASS
@@ -261,11 +265,10 @@ void Renderer::mainPass()
 			glGetTextureImage(m_screenTexture, m_nMipLevels-1, GL_RGBA, GL_FLOAT, sizeof(avgLum), avgLum);
 
 			// compute luminance (e.g. Rec. 709)
-			float sceneLum = 0.2126f*avgLum[0] + 0.7152f*avgLum[1] + 0.0722f*avgLum[2];
+			const float sceneLum = 0.2126f*avgLum[0] + 0.7152f*avgLum[1] + 0.0722f*avgLum[2];
 			const float key = 0.18f;
 			const float eps = 1e-2f;
-			sceneLum = glm::max(sceneLum, eps);
-			float newExposure = key / (sceneLum + eps);
+			float newExposure = key / (std::max(sceneLum, eps) + eps);
 			const float tau = 0.4f;  
 			float alpha = 1.0f - glm::exp(-m_deltaTime / tau);
 			if (!std::isfinite(newExposure)) newExposure = 1.0f;
@@ -282,6 +285,7 @@ void Renderer::composedPass()
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Composed Pass");
 
 	//SCREEN QUAD RENDER PASS
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_composedFbo);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
@@ -305,7 +309,7 @@ void Renderer::render(GLFWwindow* window)
 	while(!glfwWindowShouldClose(window))
 	{
 		
-		float time = (float)glfwGetTime();
+		const float time = (float)glfwGetTime();
 		m_deltaTime = time - m_lastFrameTime;
 		m_lastFrameTime = time;
 
@@ -324,7 +328,6 @@ void Renderer::render(GLFWwindow* window)
 		//OBJECT ID PASS
 		m_pickingbuffer->bind();
 		m_pickingbuffer->draw(m_camera);
-
 
 		//MAIN RENDER PASS
 		updateLights();

@@ -23,7 +23,11 @@ Tex::Tex(tinygltf::Image& image):path(path)
 	this->path = image.name;
 };
 
-Tex::~Tex(){};
+Tex::~Tex()
+{
+	glDeleteTextures(1, &id);
+	this->id = -1;
+};
 
 void Tex::SetPath(const std::string& newPath)
 {

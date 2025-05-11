@@ -15,6 +15,15 @@ Mat::Mat(std::string Name, std::shared_ptr<Tex> diffuse, std::shared_ptr<Tex> Sp
 	roughnessStrength(1)
 {}
 
+Mat::~Mat()
+{
+	diffuse.reset();
+	specular.reset();
+	metallic.reset();
+	roughness.reset();
+	normal.reset();
+}
+
 Mat::Mat() :
 	diffuse(std::make_shared<Tex>("")),
 	normal(std::make_shared<Tex>("")),

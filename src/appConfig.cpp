@@ -29,6 +29,8 @@ namespace AppConfig
 	bool showShadowMap = false;
 	bool isFramebufferSizeSetted = true;
 	float exposure = 0.1;
+	float irradianceMapIntensity = 1;
+	float irradianceMapRotationY = 0;
 
 	void initShaders()
 	{

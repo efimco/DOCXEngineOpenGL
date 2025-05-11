@@ -21,5 +21,7 @@ public:
 
 	Mat(std::string Name, std::shared_ptr<Tex> diffuse, std::shared_ptr<Tex> Specular);
 
+	~Mat();
+
 	Mat();
 };

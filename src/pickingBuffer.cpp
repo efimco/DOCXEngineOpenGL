@@ -39,9 +39,7 @@ void PickingBuffer::init()
 
 	int32_t width, height;
 	glGetTextureLevelParameteriv(m_pickingTexture, 0, GL_TEXTURE_WIDTH, &width);
-	glGetTextureLevelParameteriv(m_pickingTexture, 0, GL_TEXTURE_HEIGHT, &height);
-	std::cout << "Picking texture size: " << width << "x" << height << std::endl;
-	
+	glGetTextureLevelParameteriv(m_pickingTexture, 0, GL_TEXTURE_HEIGHT, &height);	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	if (glCheckNamedFramebufferStatus(m_pickingFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -132,7 +130,7 @@ glm::vec3 PickingBuffer::pickColorAt(double mouseX, double mouseY)
 	glGetTextureParameteriv(m_pickingTexture, GL_TEXTURE_WIDTH, &texWidth);
 	glGetTextureParameteriv(m_pickingTexture, GL_TEXTURE_HEIGHT, &texHeight);
 	
-	std::cout << "Reading from picking texture: " << texWidth << "x" << texHeight << std::endl;
+	// std::cout << "Reading from picking texture: " << texWidth << "x" << texHeight << std::endl;
 
 	int readX = static_cast<int>(mouseX);
 	int readY = static_cast<int>(abs(AppConfig::RENDER_HEIGHT-mouseY));
@@ -143,13 +141,12 @@ glm::vec3 PickingBuffer::pickColorAt(double mouseX, double mouseY)
 	glReadPixels(readX, readY, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
 	// Add error checking
 	GLenum err = glGetError();
+	glm::vec3 color = glm::vec3( pixel[0] / 255.0f, pixel[1] / 255.0f, pixel[2]/ 255.0f);
 	if (err != GL_NO_ERROR) {
-		std::cerr << "Error reading pixels: " << err << std::endl;
+		std::cerr << "Error reading pixels: " << err << " at pixel " << color.r << " " << color.g << ' ' <<color.b << std::endl;
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glm::vec3 color = glm::vec3( pixel[0] / 255.0f, pixel[1] / 255.0f, pixel[2]/ 255.0f);
 
-	std::cout << "Pixel: " << color.r << " " << color.g << " " << color.b << std::endl;
 	return color;
 
 }
