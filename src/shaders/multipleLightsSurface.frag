@@ -18,9 +18,12 @@ layout (location = 3) uniform sampler2D tNormal;
 layout (location = 4) uniform samplerCube irradianceMap;
 layout (location = 5) uniform sampler2D shadowMap;
 
-layout (location = 6) uniform vec3 viewPos;
-layout (location = 7) uniform float irradianceMapRotationY;
-layout (location = 8) uniform float irradianceMapIntensity;
+uniform float ufRoughness;
+uniform float ufMetallic;
+
+uniform vec3 viewPos;
+uniform float irradianceMapRotationY;
+uniform float irradianceMapIntensity;
 
 
 const float yaw = 3.1415f / 180.0f;
@@ -47,7 +50,7 @@ struct Material {
 // Function to get material properties
 Material getMaterial(vec2 texCoords, mat3 TBN, vec3 defaultNormal) {
 	Material material;
-	
+
 	// Normal mapping
 	material.normal = texture(tNormal, texCoords).rgb;
 	material.normal = normalize(material.normal * 2.0 - 1.0);
@@ -55,18 +58,28 @@ Material getMaterial(vec2 texCoords, mat3 TBN, vec3 defaultNormal) {
 	if (material.normal.r == 0.0 && material.normal.g == 0.0 && material.normal.b == 0.0) {
 		material.normal = defaultNormal;
 	}
-	
-	// Albedo
+
+
 	material.albedo = texture(tDiffuse, texCoords).rgb;
 
-	// PBR properties
-	material.metallic = texture(tSpecular, texCoords).b;
-	// material.metallic = 0;
-	material.roughness = texture(tSpecular, texCoords).g;
-	// material.roughness = 0;
+	material.metallic = texture(tSpecular, texCoords).b  ;
+	material.roughness = texture(tSpecular, texCoords).g ;
+
+	ivec2 specTexSize = textureSize(tSpecular,0);
+	if (length(specTexSize) <= length(ivec2(1,1)))
+	{
+		material.metallic = ufMetallic;
+		material.roughness = ufRoughness;
+	}
+
+	ivec2 diffuseTexSize = textureSize(tDiffuse,0);
+		if (length(specTexSize) <= length(ivec2(1,1)))
+	{
+		material.albedo = vec3(1,0,1);
+	}
+
 	return material;
 }
-
 
 	const vec2 invAtan = vec2(0.1591, 0.3183); // 1 / (2 * PI), 1 / PI
 vec2 SampleSphericalCoords(vec3 v)
@@ -77,8 +90,6 @@ vec2 SampleSphericalCoords(vec3 v)
 	return uv;
 }
 
-
-// Refactored directional light calculation
 vec3 calcDirectionalLight(inout Light light, Material material) 
 {
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
@@ -119,7 +130,6 @@ void main() {
 
 	Material material = getMaterial(fs_in.TexCoords, fs_in.TBN, fs_in.Normal);
 
-
 	vec3 result = vec3(0.0);
 	for(int i = 0; i < lights.length(); i++) {
 		if(lights[i].type == 1) {
@@ -129,12 +139,7 @@ void main() {
 	// Calculate IBL ambient lighting
 
 	vec3 normal = fs_in.Normal;
-	// float yaw = PI / 180; // 90 degrees rotation, adjust as needed
-	// mat3 rotMat = mat3(
-	// 	cos(yaw), 0.0, -sin(yaw),
-	// 	0.0, 1.0, 0.0,
-	// 	sin(yaw), 0.0, cos(yaw)
-	// );
+
 	vec3 irradiance = texture(irradianceMap, normal * irradianceMapYawRotation).rgb;
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 kS = fresnelSchlick(max(dot(material.normal, viewDir), 0.5), 

@@ -10,12 +10,9 @@ public:
 	std::string name;
 	std::shared_ptr<Tex> diffuse;
 	std::shared_ptr<Tex> specular;
-	uint32_t specularStrength;
 
-	std::shared_ptr<Tex> metallic;
-	uint32_t metallicStrength;
-	std::shared_ptr<Tex> roughness;
-	uint32_t roughnessStrength;
+	float metallic;
+	float roughness;
 
 	std::shared_ptr<Tex> normal;
 

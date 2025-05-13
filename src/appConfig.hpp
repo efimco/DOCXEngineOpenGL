@@ -23,6 +23,8 @@ namespace AppConfig
 	extern bool showShadowMap;
 	extern bool isFramebufferSizeSetted;
 	extern float exposure;
+	extern std::string cubeMapPath;
+	extern bool reloadCubeMap;
 
 	void initShaders();
 

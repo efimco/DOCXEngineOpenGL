@@ -209,7 +209,6 @@ void Renderer::mainPass()
 
 			primitive.shader.use();
 			primitive.shader.setVec3("viewPos", m_camera.position);
-			primitive.shader.setFloat("gamma", AppConfig::gamma);
 			glBindTextureUnit(5, m_shadowMap->depthMap);
 			if (hasDiffuse)
 			{
@@ -254,6 +253,8 @@ void Renderer::mainPass()
 
 			primitive.shader.setFloat("irradianceMapRotationY", AppConfig::irradianceMapRotationY);
 			primitive.shader.setFloat("irradianceMapIntensity", AppConfig::irradianceMapIntensity);
+				primitive.shader.setFloat("ufRoughness", primitive.material->roughness);
+				primitive.shader.setFloat("ufMetallic", primitive.material->metallic);
 
 			glBindVertexArray(0);
 			}

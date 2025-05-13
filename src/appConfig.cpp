@@ -31,6 +31,8 @@ namespace AppConfig
 	float exposure = 0.1;
 	float irradianceMapIntensity = 1;
 	float irradianceMapRotationY = 0;
+	std::string cubeMapPath = "";
+	bool reloadCubeMap = false;
 
 	void initShaders()
 	{

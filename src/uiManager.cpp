@@ -335,14 +335,22 @@ void UIManager::showTools()
 		ImGui::SliderFloat("CubeMap Rotatation Y", &AppConfig::irradianceMapRotationY, -180.0f, 180.0f);
 		ImGui::Checkbox("ObjectID Debug", &AppConfig::showObjectPicking);
 		ImGui::Checkbox("ShadowMap Debug", &AppConfig::showShadowMap);
+		if (ImGui::Button("Load CubeMap"))
+		{
+			std::string filePath = OpenFileDialog();
+			if (!filePath.empty())
+			{
+				// Signal that a new cubemap needs to be loaded
+				AppConfig::cubeMapPath = filePath;
+				AppConfig::reloadCubeMap = true;
+			}
+		}
 		if (ImGui::Button("Import Model"))
 		{	
 			std::string filePath = OpenFileDialog();
 			if(!filePath.empty())
 			{
 				GLTFModel model(filePath, AppConfig::baseShader);
-				model.setTransform(glm::translate(glm::mat4(1),glm::vec3(0,1,0)));
-				SceneManager::addPrimitives(std::move(model.primitives));
 			}
 		}
 		AppConfig::polygonMode = AppConfig::isWireframe ? GL_LINE : GL_FILL;
@@ -430,6 +438,7 @@ void UIManager::showMaterialBrowser()
 						if (ImGui::IsItemHovered())
 							ImGui::SetTooltip("Specular");
 					}
+
 					if (ImGui::Button("Diffuse", ImVec2(imageSize, 0)))
 					{
 						std::string filePath = OpenFileDialog();
@@ -449,6 +458,10 @@ void UIManager::showMaterialBrowser()
 							glActiveTexture(GL_TEXTURE0);
 						}
 					}
+
+					ImGui::SliderFloat("Roughness", &mat->roughness,0.04f,1.0f);
+					ImGui::SliderFloat("Metallic", &mat->metallic,0.0f,1.0f);
+
 					ImGui::PopID();
 				}
 				ImGui::EndGroup();
