@@ -3,6 +3,7 @@
 .vscode
 build/
 out/
+WORK/
 *.ini
 
 # Compiled Object files

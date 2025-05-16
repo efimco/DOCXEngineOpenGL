@@ -19,7 +19,7 @@ vec3 ACESFilm(vec3 x) {
 
 void main()
 {
-	float exposure = .8;
+	float exposure = .7;
 	vec3 hdrColor = texture(screenTexture, TexCoords).rgb;
 	vec3 tonemapped = ACESFilm(hdrColor * exposure);
 	vec3 srgb = pow(tonemapped, vec3(1.0/2.2));

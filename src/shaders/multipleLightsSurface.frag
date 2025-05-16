@@ -92,7 +92,7 @@ Material getMaterial(vec2 texCoords, vec3 defaultNormal) {
 	ivec2 diffuseTexSize = textureSize(tDiffuse, 0);
 		if (length(specTexSize) <= length(ivec2(1,1)))
 	{
-		material.albedo = vec3(1,0.5,1);
+		material.albedo = vec3(1.0, 0.0, 1.0);
 	}
 	
 	return material;
@@ -165,7 +165,7 @@ void main() {
 	
 	// Add image-based ambient lighting
 	vec3 diffuse = material.albedo * irradiance * irradianceMapIntensity;
-	const float MAX_REFLECTION_LOD = 4.0;
+	const float MAX_REFLECTION_LOD = 5.0;
 	vec3 R = reflect(-viewDir, material.normal);
 	vec3 prefilteredColor = textureLod(specularMap, R * irradianceMapYawRotation,  material.roughness * MAX_REFLECTION_LOD).rgb;    
 	vec2 brdf  = texture(brdfLUT, vec2(max(dot(material.normal, viewDir), 0.0), material.roughness)).rg;

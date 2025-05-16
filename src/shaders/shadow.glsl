@@ -47,7 +47,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 lightPos)
 	float shadow = 0.0;
 
 	vec2 texelSize = 1.0 / textureSize(shadowMap,0);
-	int samples = 32;
+	int samples = 16;
 
 	for(int i = 0; i < samples; ++i) 
 	{

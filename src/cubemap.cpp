@@ -92,7 +92,7 @@ void Cubemap::loadHDR(std::string pathToCubemap)
 	stbi_set_flip_vertically_on_load(false);
 }
 
-const int cubemapSize = 512;  // or 1024, etc.
+const int cubemapSize = 1024;  // or 1024, etc.
 
 void Cubemap::createCubemap()
 {
@@ -105,11 +105,11 @@ void Cubemap::createCubemap()
 	glTextureParameteri(envCubemap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(envCubemap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(envCubemap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(envCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTextureParameteri(envCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTextureParameteri(envCubemap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-const int convolutedMapSize = 64;
+const int convolutedMapSize = 512;
 
 void Cubemap::createIrradianceMap()
 {
@@ -335,7 +335,7 @@ void Cubemap::draw(glm::mat4 projection)
 		backgroundShader.use();
 		backgroundShader.setMat4("projection", projection);
 		backgroundShader.setMat4("view", skyView);
-		glBindTextureUnit(0, envCubemap);
+		glBindTextureUnit(0, specularMap);
 		backgroundShader.setInt("environmentMap", 0);
 		backgroundShader.setFloat("rotationY", AppConfig::irradianceMapRotationY);
 		backgroundShader.setFloat("intensity", AppConfig::irradianceMapIntensity);

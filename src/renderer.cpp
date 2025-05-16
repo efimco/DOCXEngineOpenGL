@@ -40,7 +40,7 @@ Renderer::Renderer(GLFWwindow* window)
 
 	AppConfig::initShaders();
 	//import
-	GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Face_1.glb").string(), AppConfig::baseShader);
+	GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Knight.glb").string(), AppConfig::baseShader);
 
 	createLightsSSBO();
 
