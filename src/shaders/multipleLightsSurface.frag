@@ -9,14 +9,19 @@ layout (location = 3) in VS_OUT {
 	vec3 Normal;
 	vec2 TexCoords;
 	vec4 FragPosLightSpace; 
-	mat3 TBN;
 } fs_in;
 
-layout (location = 1) uniform sampler2D tDiffuse;
-layout (location = 2) uniform sampler2D tSpecular;
-layout (location = 3) uniform sampler2D tNormal;
-layout (location = 4) uniform samplerCube irradianceMap;
-layout (location = 5) uniform sampler2D shadowMap;
+layout (std140, binding = 0) buffer LightBuffer {
+	Light lights[];
+};
+
+layout (binding = 1) uniform sampler2D tDiffuse;
+layout (binding = 2) uniform sampler2D tSpecular;
+layout (binding = 3) uniform sampler2D tNormal;
+layout (binding = 4) uniform samplerCube irradianceMap;
+layout (binding = 5) uniform sampler2D shadowMap;
+layout (binding = 6) uniform sampler2D brdfLUT;
+layout (binding = 7) uniform samplerCube specularMap; 
 
 uniform float ufRoughness;
 uniform float ufMetallic;
@@ -33,11 +38,6 @@ mat3 irradianceMapYawRotation = mat3(
 	sin(irradianceMapRotationY * yaw), 0.0, cos(irradianceMapRotationY * yaw)
 );
 
-
-layout (std140, binding = 0) buffer LightBuffer {
-	Light lights[];
-};
-
 #include "shadow.glsl"
 
 struct Material {
@@ -47,37 +47,54 @@ struct Material {
 	vec3 normal;
 };
 
+vec3 getNormalFromMap()
+{
+	vec3 tangentNormal = texture(tNormal, fs_in.TexCoords).xyz * 2.0 - 1.0;
+
+	vec3 Q1  = dFdx(fs_in.FragPos);
+	vec3 Q2  = dFdy(fs_in.FragPos);
+	vec2 st1 = dFdx(fs_in.TexCoords);
+	vec2 st2 = dFdy(fs_in.TexCoords);
+
+	vec3 N   = normalize(fs_in.Normal);
+	vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+	vec3 B  = -normalize(cross(N, T));
+	mat3 TBN = mat3(T, B, N);
+
+	return normalize(TBN * tangentNormal);
+}
+
 // Function to get material properties
-Material getMaterial(vec2 texCoords, mat3 TBN, vec3 defaultNormal) {
+Material getMaterial(vec2 texCoords, vec3 defaultNormal) {
 	Material material;
 
 	// Normal mapping
-	material.normal = texture(tNormal, texCoords).rgb;
-	material.normal = normalize(material.normal * 2.0 - 1.0);
-	material.normal = normalize(TBN * material.normal);
+
+	material.normal = getNormalFromMap();
 	if (material.normal.r == 0.0 && material.normal.g == 0.0 && material.normal.b == 0.0) {
 		material.normal = defaultNormal;
 	}
 
-
 	material.albedo = texture(tDiffuse, texCoords).rgb;
+	material.albedo = pow(material.albedo, vec3(2.2));
 
 	material.metallic = texture(tSpecular, texCoords).b  ;
 	material.roughness = texture(tSpecular, texCoords).g ;
 
-	ivec2 specTexSize = textureSize(tSpecular,0);
+	ivec2 specTexSize = textureSize(tSpecular, 0);
 	if (length(specTexSize) <= length(ivec2(1,1)))
 	{
 		material.metallic = ufMetallic;
 		material.roughness = ufRoughness;
+		
 	}
-
-	ivec2 diffuseTexSize = textureSize(tDiffuse,0);
+	
+	ivec2 diffuseTexSize = textureSize(tDiffuse, 0);
 		if (length(specTexSize) <= length(ivec2(1,1)))
 	{
-		material.albedo = vec3(1,0,1);
+		material.albedo = vec3(1,0.5,1);
 	}
-
+	
 	return material;
 }
 
@@ -90,21 +107,17 @@ vec2 SampleSphericalCoords(vec3 v)
 	return uv;
 }
 
-vec3 calcDirectionalLight(inout Light light, Material material) 
+vec3 calcDirectionalLight(inout Light light, Material material, vec3 F0) 
 {
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 lightDir = normalize(1.0 - light.direction);
 	vec3 halfwayDir = normalize(viewDir + lightDir);
 	vec3 radiance = light.diffuse * light.intensity;
 
-	float minReflectance = 0.04;
-
-	vec3 F0 = mix(vec3(minReflectance), material.albedo, material.metallic);
-
 	// BRDF components
 	float NDF = DistributionGGX(material.normal, halfwayDir, material.roughness);
 	float G = GeometrySmith(material.normal, viewDir, lightDir, material.roughness);
-	vec3 F = fresnelSchlick(max(dot(halfwayDir, viewDir), 0.5), F0);
+	vec3 F = fresnelSchlick(max(dot(halfwayDir, viewDir), 0.0), F0);
 
 	// Cook-Torrance BRDF
 
@@ -115,8 +128,8 @@ vec3 calcDirectionalLight(inout Light light, Material material)
 	vec3 specular = numerator / denominator;
 
 	vec3 kS = F; //specular reflection
-	vec3 kD = (1.0 - kS) * (1.0 - material.metallic);
-
+	vec3 kD = (1.0 - kS);
+	kD*= 1.0 - material.metallic;
 	vec3 Lo = (kD * material.albedo / PI + specular) * radiance * NdotL;
 
 	// Shadow and ambient
@@ -128,28 +141,39 @@ vec3 calcDirectionalLight(inout Light light, Material material)
 void main() {
 	if (texture(tDiffuse, fs_in.TexCoords).a < 0.2) discard;
 
-	Material material = getMaterial(fs_in.TexCoords, fs_in.TBN, fs_in.Normal);
+	Material material = getMaterial(fs_in.TexCoords, fs_in.Normal);
+	
 
+	float minReflectance = 0.04;
+	vec3 F0 = mix(vec3(minReflectance), material.albedo, material.metallic);
+	// vec3 F0 = vec3(1);
 	vec3 result = vec3(0.0);
 	for(int i = 0; i < lights.length(); i++) {
 		if(lights[i].type == 1) {
-			result += calcDirectionalLight(lights[i], material);
+			result += calcDirectionalLight(lights[i], material, F0);
 		}
 	}
 	// Calculate IBL ambient lighting
 
-	vec3 normal = fs_in.Normal;
 
-	vec3 irradiance = texture(irradianceMap, normal * irradianceMapYawRotation).rgb;
+	vec3 irradiance = texture(irradianceMap, material.normal * irradianceMapYawRotation).rgb;
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-	vec3 kS = fresnelSchlick(max(dot(material.normal, viewDir), 0.5), 
-							mix(vec3(0.04), material.albedo, material.metallic));
-	vec3 kD = (1.0 - kS) * (1.0 - material.metallic);
+	vec3 F = fresnelSchlickRoughness(max(dot(material.normal, viewDir), 0.0), F0, material.roughness);
+	vec3 kS = F;
+	vec3 kD = (1.0 - kS);
+	kD *= 1.0 -  material.metallic;
 	
 	// Add image-based ambient lighting
 	vec3 diffuse = material.albedo * irradiance * irradianceMapIntensity;
-	vec3 ambient = kD * diffuse;
+	const float MAX_REFLECTION_LOD = 4.0;
+	vec3 R = reflect(-viewDir, material.normal);
+	vec3 prefilteredColor = textureLod(specularMap, R * irradianceMapYawRotation,  material.roughness * MAX_REFLECTION_LOD).rgb;    
+	vec2 brdf  = texture(brdfLUT, vec2(max(dot(material.normal, viewDir), 0.0), material.roughness)).rg;
+	vec3 specular = prefilteredColor * (F * brdf.x + brdf.y) * irradianceMapIntensity;
+	
+	vec3 ambient = kD * diffuse + specular;
 	result += ambient;
-
+	result = result / (result + vec3(1.0));
+	// result = pow(result, vec3(1.0/2.2)); 
 	FragColor = vec4(result, 1.0);
 }

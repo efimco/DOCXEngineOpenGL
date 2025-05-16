@@ -2,9 +2,9 @@
 out vec4 FragColor;
 in vec3 WorldPos;
 
-layout (location = 0) uniform samplerCube environmentMap;
-layout (location = 1) uniform float rotationY;
-layout (location = 2) uniform float intensity;
+layout (binding = 0) uniform samplerCube environmentMap;
+uniform float rotationY;
+uniform float intensity;
 
 const float yaw = 3.1415f / 180.0f;
 mat3 rotationMat = mat3(
@@ -14,6 +14,8 @@ mat3 rotationMat = mat3(
 );
 void main()
 {		
-	vec4 envColor = texture(environmentMap, rotationMat *  WorldPos);
+	vec3 envColor = texture(environmentMap, WorldPos, 1.2).rgb; 
+	// vec3 envColor = textureLod(environmentMap, WorldPos, 5).rgb;
 	FragColor = vec4(envColor.rgb * intensity, 1.0);
+	// FragColor = vec4(vec3(1),1);
 }

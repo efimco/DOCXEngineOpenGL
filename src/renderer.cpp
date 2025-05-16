@@ -27,7 +27,7 @@ Renderer::Renderer(GLFWwindow* window)
 	m_deltaTime = 0;
 	m_lastFrameTime = 0;
 	m_shadowMap = new ShadowMap(2048, 2048);
-	m_cubemap = new Cubemap(m_camera,std::filesystem::absolute("..\\..\\res\\skybox\\overcast_soil_puresky_4k.hdr").string());
+	m_cubemap = new Cubemap(m_camera,std::filesystem::absolute("..\\..\\res\\skybox\\river_walk_1_2k.hdr").string());
 	SceneManager::addShader(&m_cubemap->backgroundShader);
 	SceneManager::addShader(&m_cubemap->equirectangularToCubemapShader);
 	m_pickingbuffer = new PickingBuffer();
@@ -59,7 +59,6 @@ Renderer::Renderer(GLFWwindow* window)
 	addLight(directionalLight);
 	updateLights();
 	checkLightBuffer();
-	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); 
 }
 
 Renderer::~Renderer()
@@ -209,11 +208,8 @@ void Renderer::mainPass()
 
 			primitive.shader.use();
 			primitive.shader.setVec3("viewPos", m_camera.position);
-			glBindTextureUnit(5, m_shadowMap->depthMap);
 			if (hasDiffuse)
 			{
-				// std::cout << "Binding diffuse texture ID: " << primitive.material->diffuse->id << std::endl;
-				primitive.shader.setInt("tDiffuse", 1);
 				glBindTextureUnit(1, primitive.material->diffuse->id);
 			}
 			else
@@ -221,14 +217,11 @@ void Renderer::mainPass()
 			
 			if (hasSpecular)
 			{
-				primitive.shader.setInt("tSpecular", 2);
-				primitive.shader.setFloat("shininess", 32);
 				glBindTextureUnit(2, primitive.material->specular->id);
 			}else glBindTextureUnit(2, 0);
 			
 			if (hasNormal)
 			{
-				primitive.shader.setInt("tNormal", 3);
 				glBindTextureUnit(3, primitive.material->normal->id);
 			}else glBindTextureUnit(3, 0);
 
@@ -248,8 +241,10 @@ void Renderer::mainPass()
 			{
 				std::cerr << "drawing outline of: "  << primitive.vao << std::endl;
 			}
-			primitive.shader.setInt("irradianceMap", 4);
 			glBindTextureUnit(4, m_cubemap->irradianceMap);
+			glBindTextureUnit(5, m_shadowMap->depthMap);
+			glBindTextureUnit(6, m_cubemap->brdfLUTTexture);
+			glBindTextureUnit(7, m_cubemap->specularMap);
 
 			primitive.shader.setFloat("irradianceMapRotationY", AppConfig::irradianceMapRotationY);
 			primitive.shader.setFloat("irradianceMapIntensity", AppConfig::irradianceMapIntensity);

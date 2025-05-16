@@ -4,14 +4,11 @@ layout (location = 1) in vec2 aTexCoords;
 layout (location = 2) in vec3 aNormal;
 layout (location = 3) in vec4 aTangent;
 
-out vec2 TexCoords;
-
 layout (location = 3) out VS_OUT {
 	vec3 FragPos;  
 	vec3 Normal;
 	vec2 TexCoords;
 	vec4 FragPosLightSpace;
-	mat3 TBN;
 } vs_out;
 
 uniform mat4 projection;
@@ -21,10 +18,6 @@ uniform mat4 lightSpaceMatrix;
 
 void main()
 {
-	vec3 T = normalize(vec3(model * vec4(aTangent.xyz,   0.0)));
-	vec3 N = normalize(vec3(model * vec4(aNormal,    0.0)));
-	vec3 B = cross(N, T);
-	vs_out.TBN = mat3(T, B, N);
 	vs_out.FragPos = vec3(model * vec4(aPos, 1.0));
 	vs_out.Normal = transpose(inverse(mat3(model))) * aNormal;
 	vs_out.TexCoords = aTexCoords;

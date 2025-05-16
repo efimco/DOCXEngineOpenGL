@@ -147,7 +147,7 @@ std::string Shader::readShaderFromFile(std::string filePath)
 	
 	std::string processedShader;
 	std::string line;
-	std::filesystem::path parentPath = std::filesystem::path(filePath).parent_path();
+	std::filesystem::path parentPath = std::filesystem::absolute("..\\..\\src\\shaders").string();
 	while (std::getline(shaderStream, line))
 	{
 		std::regex includeRegex(R"(^\s*#include\s+[\"<](.+)[\">])");
