@@ -317,6 +317,10 @@ void UIManager::showObjectInspector()
 
 			}
 		}
+
+		ImGui::SliderFloat("Roughness", &SceneManager::getSelectedPrimitive()->material->roughness,0.04f,1.0f);
+		ImGui::SliderFloat("Metallic", &SceneManager::getSelectedPrimitive()->material->metallic,0.0f,1.0f);
+
 		ImGui::End();
 	}
 }
@@ -333,6 +337,7 @@ void UIManager::showTools()
 		ImGui::Checkbox("Wireframe Mode", &AppConfig::isWireframe);
 		ImGui::SliderFloat("CubeMap intensity", &AppConfig::irradianceMapIntensity, 0.0f, 3.0f);
 		ImGui::SliderFloat("CubeMap Rotatation Y", &AppConfig::irradianceMapRotationY, -180.0f, 180.0f);
+		ImGui::SliderFloat("Backgorund Blur", &AppConfig::backgroundBlur, 0.0f, 1.0f);
 		ImGui::Checkbox("ObjectID Debug", &AppConfig::showObjectPicking);
 		ImGui::Checkbox("ShadowMap Debug", &AppConfig::showShadowMap);
 		if (ImGui::Button("Load CubeMap"))

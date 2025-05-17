@@ -99,7 +99,7 @@ void Cubemap::createCubemap()
 	glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &envCubemap);
 	
 	// Allocate storage for all mip levels at once
-	glTextureStorage2D(envCubemap, 1, GL_RGB16F, cubemapSize, cubemapSize);
+	glTextureStorage2D(envCubemap, 10, GL_RGB16F, cubemapSize, cubemapSize);
 	
 	// Set texture parameters
 	glTextureParameteri(envCubemap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -193,6 +193,7 @@ void Cubemap::renderEquirectToCubemap()
 		renderCube();
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glGenerateTextureMipmap(envCubemap);
 	glPopDebugGroup();
 }
 
@@ -339,6 +340,7 @@ void Cubemap::draw(glm::mat4 projection)
 		backgroundShader.setInt("environmentMap", 0);
 		backgroundShader.setFloat("rotationY", AppConfig::irradianceMapRotationY);
 		backgroundShader.setFloat("intensity", AppConfig::irradianceMapIntensity);
+		backgroundShader.setFloat("blur",  AppConfig::backgroundBlur);
 		renderCube();
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LESS);

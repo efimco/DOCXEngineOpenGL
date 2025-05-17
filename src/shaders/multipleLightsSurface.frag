@@ -86,7 +86,6 @@ Material getMaterial(vec2 texCoords, vec3 defaultNormal) {
 	{
 		material.metallic = ufMetallic;
 		material.roughness = ufRoughness;
-		
 	}
 	
 	ivec2 diffuseTexSize = textureSize(tDiffuse, 0);
@@ -98,7 +97,7 @@ Material getMaterial(vec2 texCoords, vec3 defaultNormal) {
 	return material;
 }
 
-	const vec2 invAtan = vec2(0.1591, 0.3183); // 1 / (2 * PI), 1 / PI
+const vec2 invAtan = vec2(0.1591, 0.3183); // 1 / (2 * PI), 1 / PI
 vec2 SampleSphericalCoords(vec3 v)
 {
 	vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
@@ -117,7 +116,7 @@ vec3 calcDirectionalLight(inout Light light, Material material, vec3 F0)
 	// BRDF components
 	float NDF = DistributionGGX(material.normal, halfwayDir, material.roughness);
 	float G = GeometrySmith(material.normal, viewDir, lightDir, material.roughness);
-	vec3 F = fresnelSchlick(max(dot(halfwayDir, viewDir), 0.0), F0);
+	vec3 F = fresnelSchlickRoughness(max(dot(material.normal, viewDir), 0.0), F0, material.roughness);
 
 	// Cook-Torrance BRDF
 
@@ -129,7 +128,7 @@ vec3 calcDirectionalLight(inout Light light, Material material, vec3 F0)
 
 	vec3 kS = F; //specular reflection
 	vec3 kD = (1.0 - kS);
-	kD*= 1.0 - material.metallic;
+	kD *= 1.0 - material.metallic;
 	vec3 Lo = (kD * material.albedo / PI + specular) * radiance * NdotL;
 
 	// Shadow and ambient
@@ -146,16 +145,14 @@ void main() {
 
 	float minReflectance = 0.04;
 	vec3 F0 = mix(vec3(minReflectance), material.albedo, material.metallic);
-	// vec3 F0 = vec3(1);
 	vec3 result = vec3(0.0);
 	for(int i = 0; i < lights.length(); i++) {
 		if(lights[i].type == 1) {
 			result += calcDirectionalLight(lights[i], material, F0);
 		}
 	}
+
 	// Calculate IBL ambient lighting
-
-
 	vec3 irradiance = texture(irradianceMap, material.normal * irradianceMapYawRotation).rgb;
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 F = fresnelSchlickRoughness(max(dot(material.normal, viewDir), 0.0), F0, material.roughness);
@@ -165,6 +162,7 @@ void main() {
 	
 	// Add image-based ambient lighting
 	vec3 diffuse = material.albedo * irradiance * irradianceMapIntensity;
+	
 	const float MAX_REFLECTION_LOD = 5.0;
 	vec3 R = reflect(-viewDir, material.normal);
 	vec3 prefilteredColor = textureLod(specularMap, R * irradianceMapYawRotation,  material.roughness * MAX_REFLECTION_LOD).rgb;    

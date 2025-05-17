@@ -12,6 +12,7 @@ namespace AppConfig
 	extern int RENDER_HEIGHT;
 	extern float irradianceMapIntensity;
 	extern float irradianceMapRotationY;
+	extern float backgroundBlur;
 	extern float clearColor[4];
 	extern Shader baseShader;
 	extern Shader screenShader;
