@@ -15,14 +15,13 @@
 #include "uiManager.hpp"
 
 
-UIManager::UIManager(GLFWwindow* window, Camera& camera, InputManager* inputManager) : 
+UIManager::UIManager(GLFWwindow* window, Camera& camera) : 
 camera(camera),
 window(window)
 {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 
-	inputManager = inputManager;
 
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
@@ -36,6 +35,8 @@ window(window)
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init("#version 460");
+
+	m_viewportState.mouseWheel = 0;
 }
 
 UIManager::~UIManager() 
@@ -53,13 +54,6 @@ UIManager::~UIManager()
 		ImGui_ImplGlfw_Shutdown();
 
 		ImGui::DestroyContext();
-	}
-
-	// Clean up input manager
-	if (inputManager)
-	{
-		delete inputManager;
-		inputManager = nullptr;
 	}
 };
 
@@ -99,12 +93,14 @@ void UIManager::draw(float deltaTime)
 		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 	ImGui::End();
 	
-	showFramebufferViewport(deltaTime);
+	showFramebufferToViewport(deltaTime);
 	showObjectInspector();
 	showLights();
 	showTools();
 	showMaterialBrowser();
+	// showCameraTransforms();
 
+	getScroll();
 
 	ImGui::Render();
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -122,15 +118,27 @@ void UIManager::draw(float deltaTime)
 	}
 }
 
+
+void UIManager::getScroll()
+{
+	float yOffset = ImGui::GetIO().MouseWheel;
+	m_viewportState.mouseWheel = yOffset;
+
+}
+
 ImVec2 UIManager::getWindowPos()
 {
 	return m_viewportPos;
 }
 
-
-void UIManager::showFramebufferViewport(float deltaTime)
+ViewportState UIManager::getViewportState()
 {
-	ImGui::Begin("Viewport",nullptr,ImGuiWindowFlags_NoScrollbar);
+	return m_viewportState;
+}
+
+void UIManager::showFramebufferToViewport(float deltaTime)
+{
+	ImGui::Begin("Viewport", nullptr,ImGuiWindowFlags_NoScrollbar);
 
 		ImTextureID texID = (ImTextureID)m_screenTexture;
 
@@ -479,8 +487,3 @@ void UIManager::showMaterialBrowser()
 		ImGui::End();
 }
 
-bool UIManager::wantCaptureInput() const
-{
-	ImGuiIO& io = ImGui::GetIO();
-	return (io.WantCaptureMouse || io.WantCaptureKeyboard) && !viewportHovered;
-}

@@ -16,13 +16,14 @@ public:
 	glm::vec3 pickColorAt(double mouseX, double mouseY);
 	Primitive* getIdFromPickColor(const glm::vec3 &color);
 	uint32_t getPickingTexture() const;
-	Shader pickingShader;
+	
 
 private:
+	Shader m_pickingShader;
 	uint32_t m_pickingFBO;
 	uint32_t m_pickingRBO;
 	uint32_t m_pickingTexture;
-
+	void initShaders();
 	glm::vec3 setPickColor(unsigned int id);
 };
 

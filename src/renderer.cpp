@@ -28,12 +28,9 @@ Renderer::Renderer(GLFWwindow* window)
 	m_lastFrameTime = 0;
 	m_shadowMap = new ShadowMap(2048, 2048);
 	m_cubemap = new Cubemap(m_camera,std::filesystem::absolute("..\\..\\res\\skybox\\river_walk_1_2k.hdr").string());
-	SceneManager::addShader(&m_cubemap->backgroundShader);
-	SceneManager::addShader(&m_cubemap->equirectangularToCubemapShader);
 	m_pickingbuffer = new PickingBuffer();
-	SceneManager::addShader(&m_pickingbuffer->pickingShader);
 	m_inputManager = new InputManager(window, m_camera);
-	m_uiManager = new UIManager(window, m_camera, m_inputManager);
+	m_uiManager = new UIManager(window, m_camera);
 
 	initScreenQuad();
 	createOrResizeFrameBufferAndRenderTarget();
@@ -333,13 +330,13 @@ void Renderer::render(GLFWwindow* window)
 		composedPass();
 
 		glfwPollEvents();
-		m_inputManager->setPickingBuffer(m_pickingbuffer);
-		m_inputManager->setWindowPos(m_uiManager->getWindowPos());
-		m_inputManager->processInput(m_deltaTime, m_uiManager);
+		ViewportState viewportState = m_uiManager->getViewportState();
 		m_uiManager->setScreenTexture(m_composedTexture);
 		m_uiManager->setPickingTexture(m_pickingbuffer->getPickingTexture());
 		m_uiManager->setShadowMapTexture(m_shadowMap->depthMap);
 		m_uiManager->draw(m_deltaTime);
+
+		m_inputManager->processInput(m_deltaTime, viewportState);
 		glfwSwapBuffers(window);
 	}
 	this->~Renderer();

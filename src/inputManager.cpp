@@ -1,10 +1,11 @@
 #include <iostream>
 #include <glm/gtc/matrix_transform.hpp>
 #include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_glfw.h"
+
 #include "sceneManager.hpp"
 #include "appConfig.hpp"
 #include "inputManager.hpp"
-#include "ImGui/imgui_impl_glfw.h"
 
 
 InputManager::InputManager(GLFWwindow* window, Camera& camera) : window(window), camera(camera) 
@@ -14,34 +15,61 @@ InputManager::InputManager(GLFWwindow* window, Camera& camera) : window(window),
 	firstMouse = true;
 	mousePosx = 0;
 	mousePosy = 0;
-	wasMouse1Pressed = false;
-	wireframeKeyPressed = true;
-	rightKeyPressed = false;
 }
 
-void InputManager::processInput(float deltaTime, bool viewportHovered)
+void InputManager::processInput(float deltaTime, ViewportState viewportState)
 {
-	processWireframeToggleCallback();
-	processExitCallback();
-	mouseCallback();
-	if (viewportHovered)
+	wireframeToggleCallback();
+	cameraMovementCallback(window, deltaTime);
+	cameraResetCallback(window, deltaTime);
+	scrollCallback(viewportState);
+	exitCallback();
+}
+
+void InputManager::scrollCallback(ViewportState viewportState)
+{
+	if (viewportState.mouseWheel != 0.0f)
 	{
-		scrollCallback();
+		std::cout << "Scroll yOffset: " << viewportState.mouseWheel << std::endl;
+		camera.processMouseScroll(viewportState.mouseWheel);
 	}
-	processObjectPickingCallback();
-	processCameraMovementCallback(window, deltaTime);
-	processCameraResetCallback(window, deltaTime);
 }
 
-void InputManager::scrollCallback()
+void InputManager::exitCallback()
 {
-	float yOffset = ImGui::GetIO().MouseWheel;
-	camera.processMouseScroll(yOffset);	
+	if(ImGui::IsKeyPressed(ImGuiKey_Escape))
+	{
+	glfwSetWindowShouldClose(window,true);
+	}
 }
 
-void InputManager::mouseCallback()
+void InputManager::wireframeToggleCallback()
 {
+	if(ImGui::IsKeyPressed(ImGuiKey_LeftCtrl, false))
+	{
+		AppConfig::isWireframe = !AppConfig::isWireframe;
+	}
+}
 
+void InputManager::cameraMovementCallback(GLFWwindow *window, float deltaTime)
+{
+	if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
+	{
+		camera.cameraReseted = true;
+
+		if(ImGui::IsKeyDown(ImGuiKey_W)) camera.processKeyboard(FORWARD, deltaTime);
+		if(ImGui::IsKeyDown(ImGuiKey_S)) camera.processKeyboard(BACKWARD, deltaTime);
+		if(ImGui::IsKeyDown(ImGuiKey_A)) camera.processKeyboard(LEFT, deltaTime);
+		if(ImGui::IsKeyDown(ImGuiKey_D)) camera.processKeyboard(RIGHT, deltaTime);
+		if(ImGui::IsKeyDown(ImGuiKey_Q)) camera.processKeyboard(DOWN, deltaTime);
+		if(ImGui::IsKeyDown(ImGuiKey_E)) camera.processKeyboard(UP, deltaTime);
+	}
+
+	if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
+		camera.speed = camera.increasedSpeed;
+	else 
+		camera.speed = camera.defaultSpeed;
+	
 	float xPos = ImGui::GetIO().MousePos.x - m_windowPos.x;
 	float yPos = ImGui::GetIO().MousePos.y - m_windowPos.y;
 	if (firstMouse)
@@ -54,124 +82,32 @@ void InputManager::mouseCallback()
 	
 	float xOffset = (float)xPos - (float)lastX;
 	float yOffset = lastY - (float)yPos ;
+	
 	lastX = (float)xPos;
 	lastY = (float)yPos;
-	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
-		camera.processMouseMovement(xOffset,yOffset);
-
-}
-
-void InputManager::processExitCallback()
-{
-	if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window,true);
-
-}
-
-void InputManager::processWireframeToggleCallback()
-{
-	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS && !wireframeKeyPressed)
+	if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
 	{
-		wireframeKeyPressed = true;
-		AppConfig::isWireframe = !AppConfig::isWireframe;
+		camera.processMouseMovement(xOffset, yOffset);
 	}
 
-	if(glfwGetKey(window,GLFW_KEY_LEFT_CONTROL) == GLFW_RELEASE)
-		wireframeKeyPressed = false;
-}
-
-void InputManager::processObjectPickingCallback()
-{
-	if( AppConfig::RENDER_WIDTH != 0 && AppConfig::RENDER_HEIGHT != 0) 
+	if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsMouseDown(ImGuiMouseButton_Middle))
 	{
-		if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_PRESS && ImGui::GetIO().WantCaptureMouse)
-		{
-			wasMouse1Pressed = true;
-		}
-		else if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1) == GLFW_RELEASE && wasMouse1Pressed)
-		{
-			wasMouse1Pressed = false;
-			glm::vec3 pickedColor = m_pickingBuffer->pickColorAt(mousePosx, mousePosy);
-			Primitive* primitive = m_pickingBuffer->getIdFromPickColor(pickedColor);
-			if (primitive != nullptr)
-			{
-				if (SceneManager::getSelectedPrimitive() != primitive)
-				{
-					if (SceneManager::getSelectedPrimitive() != nullptr) SceneManager::getSelectedPrimitive()->selected = false;
-					primitive->selected = true;
-					SceneManager::setSelectedPrimitive(primitive);
-				}
-				std::cout << "VAO: " << primitive->vao << std::endl;
-			}
-			else
-			{
-				if (SceneManager::getSelectedPrimitive() != nullptr)
-				{
-					SceneManager::getSelectedPrimitive()->selected = false;
-					SceneManager::setSelectedPrimitive(nullptr);
-				}
-			}
-		}
+		camera.processPanning(xOffset, yOffset);
 	}
-}
 
-void InputManager::setPickingBuffer(PickingBuffer *pickingBuffer)
-{
-	m_pickingBuffer = pickingBuffer;
-}
-
-void InputManager::setWindowPos(ImVec2 windowPos)
-{
-	m_windowPos = windowPos;
-}
-
-void InputManager::processCameraMovementCallback(GLFWwindow *window, float deltaTime)
-{
-	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+	if (ImGui::IsMouseDown(ImGuiMouseButton_Middle) && !ImGui::IsKeyDown(ImGuiKey_LeftShift))
 	{
-		if (!rightKeyPressed)
-		{
-			rightKeyPressed = true;
-			glfwSetInputMode(window,GLFW_CURSOR,GLFW_CURSOR_DISABLED);
-		}
-		camera.cameraReseted = true;
-
-		if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			camera.processKeyboard(FORWARD, deltaTime);
-
-		if(glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			camera.processKeyboard(BACKWARD, deltaTime);
-
-
-		if(glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			camera.processKeyboard(LEFT, deltaTime);
-
-		if(glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-			camera.processKeyboard(RIGHT, deltaTime);
-
-		if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-			camera.processKeyboard(DOWN, deltaTime);
-
-		if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-			camera.processKeyboard(UP, deltaTime);
+		camera.processOrbit(xOffset, yOffset);
 	}
-	else
+
+	if (ImGui::IsKeyPressed(ImGuiKey_F, false))
 	{
-		if (rightKeyPressed) 
-			glfwSetInputMode(window, GLFW_CURSOR,GLFW_CURSOR_NORMAL);
-		rightKeyPressed = false;
-	} 
-
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-		camera.speed = camera.increasedSpeed;
-	else 
-		camera.speed = camera.defaultSpeed;
-
-	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
 		camera.cameraReseted = false;
+	}
+
 }
 
-void InputManager::processCameraResetCallback(GLFWwindow *window, float deltaTime)
+void InputManager::cameraResetCallback(GLFWwindow *window, float deltaTime)
 {
 	if(!camera.cameraReseted && (glm::length(camera.position - camera.defaultCameraMatrix[0]) > .05 ||
 								glm::length(camera.front - camera.defaultCameraMatrix[1]) > .05 ||
@@ -188,3 +124,4 @@ void InputManager::processCameraResetCallback(GLFWwindow *window, float deltaTim
 	}
 	else camera.cameraReseted = true; 
 }
+

@@ -16,6 +16,7 @@
 PickingBuffer::PickingBuffer()
 	{
 		init();
+		initShaders();
 	}
 
 
@@ -46,11 +47,15 @@ void PickingBuffer::init()
 	{
 		std::cerr << "Error: Picking FBO is not complete!" << std::endl;
 	}
+}
 
+void PickingBuffer::initShaders()
+{
 	const std::string vPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.vert").string();
 	const std::string fPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.frag").string();
 
-	pickingShader = Shader(vPickingShader, fPickingShader);
+	m_pickingShader = Shader(vPickingShader, fPickingShader);
+	SceneManager::addShader(&m_pickingShader);
 }
 
 PickingBuffer::~PickingBuffer()
@@ -74,7 +79,7 @@ void PickingBuffer::draw(Camera& camera)
 {
 
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Picking Pass");
-		SceneManager::setShader(pickingShader);
+		SceneManager::setShader(m_pickingShader);
 
 		for (auto& primitive : SceneManager::getPrimitives())
 		{

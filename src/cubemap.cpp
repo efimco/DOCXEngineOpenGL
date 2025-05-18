@@ -4,7 +4,7 @@
 #include "cubemap.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include "appConfig.hpp"
-
+#include "sceneManager.hpp"
 
 Cubemap::Cubemap(Camera& camera, std::string pathToCubemap):
 	camera(camera),
@@ -63,6 +63,8 @@ void Cubemap::initShaders()
 	irradianceShader = Shader(vIrradianceConvolutionShader, fIrradianceConvolutionShader);
 	specularShader = Shader(vSpecularConvolutionShader, fSpecularConvolutionShader);
 	brdfLutShader = Shader(vBrdfLutShader, fBrdfLutShader);
+	SceneManager::addShader(&backgroundShader);
+	SceneManager::addShader(&equirectangularToCubemapShader);
 	
 }
 

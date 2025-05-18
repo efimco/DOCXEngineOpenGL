@@ -1,6 +1,15 @@
-#include "camera.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
+
+#include "camera.hpp"
+
+
+const float YAW 			= -90.0f;
+const float PITCH 			= 0.0f;
+const float SENSITIVITY		= 0.3f;
+const float ZOOM  			= 45.f;
+const float SPEED 			= 1.0f;
 
 
 Camera::Camera(glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 upv = glm::vec3(0.0f,1.0f,0.0f), float yaw = YAW, float pitch = PITCH) :
@@ -13,35 +22,16 @@ sensitivity(SENSITIVITY)
 	worldUp = upv;
 	this -> yaw = yaw;
 	this -> pitch = pitch;
-	updateCameraVecotrs();
 	defaultCameraMatrix = {position, front, up};
 	defaultCameraRotation[0] = pitch;
 	defaultCameraRotation[1] = yaw;
 	cameraReseted = true;
 	defaultSpeed = speed;
 	increasedSpeed = defaultSpeed *3;
-
-}
-
-Camera::Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw = YAW, float pitch = PITCH) :
-front(glm::vec3(0.0f,0.0f,-1.0f)),
-speed(SPEED),
-zoom(ZOOM),
-sensitivity(SENSITIVITY)
-{
-	position = glm::vec3(posX,posY,posZ);
-	worldUp = glm::vec3(upX,upY,upZ);
-	this -> yaw = yaw;
-	this -> pitch = pitch;
+	orbitPivot = glm::vec3(0.0f); // point to orbit around
+	distanceToOrbitPivot = glm::length(position - orbitPivot);
 	updateCameraVecotrs();
-	defaultCameraMatrix = {position, front, up};
-	defaultCameraRotation[0] = pitch;
-	defaultCameraRotation[1] = yaw;
-	cameraReseted = true;
-	defaultSpeed = speed;
-	increasedSpeed = defaultSpeed *3;
 }
-
 
 glm::mat4 Camera::getViewMatrix()
 {
@@ -57,10 +47,12 @@ void Camera::processKeyboard(CameraMovement direction, float deltaTime)
 	if (direction == RIGHT) position += right * velocity;
 	if (direction == UP) position += up * velocity;
 	if (direction == DOWN) position -= up * velocity;
+	return;
 }
 
 void Camera::processMouseMovement(float xOffset, float yOffset, bool constrainPitch)
 {	
+	return;
 		xOffset *= sensitivity;
 		yOffset *= sensitivity;
 
@@ -77,19 +69,40 @@ void Camera::processMouseMovement(float xOffset, float yOffset, bool constrainPi
 
 void Camera::processMouseScroll(float yOffset)
 {
-	zoom -= yOffset;
+	std::cout << "Y offset: " << yOffset << std::endl;
+	position += front * yOffset * sensitivity;
+	distanceToOrbitPivot = glm::length(position - orbitPivot);
+}
 
-	if (zoom < 1.0f) zoom = 1.0f;
-	if (zoom > 100.0f) zoom = 100.0f;
+void Camera::processPanning(float xOffset, float yOffset)
+{
+	glm::vec3 rightMove = right * -xOffset * sensitivity * 0.01f;
+	glm::vec3 upMove    = up * -yOffset * sensitivity * 0.01f;
+
+	orbitPivot += rightMove + upMove;
+	updateCameraVecotrs();
 }
 
 void Camera::updateCameraVecotrs()
 {
-	glm::vec3 direction;
-	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	direction.y = sin(glm::radians(pitch));
-	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front = glm::normalize(direction);
+	glm::vec3 offset;
+	offset.x = distanceToOrbitPivot * cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+	offset.y = distanceToOrbitPivot * -sin(glm::radians(pitch));
+	offset.z = distanceToOrbitPivot * cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+
+	position = orbitPivot + offset;
+	front = glm::normalize(orbitPivot - position);
 	right = glm::normalize(glm::cross(front, worldUp));
-	up = glm::normalize(glm::cross(right,front));
+	up    = glm::normalize(glm::cross(right, front));
+}
+
+void Camera::processOrbit(float deltaX, float deltaY)
+{
+	yaw   += deltaX * sensitivity;
+	pitch += deltaY * sensitivity;
+
+	if (pitch > 89.0f)  pitch = 89.0f;
+	if (pitch < -89.0f) pitch = -89.0f;
+
+	updateCameraVecotrs();
 }
