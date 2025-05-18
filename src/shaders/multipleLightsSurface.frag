@@ -50,7 +50,6 @@ struct Material {
 vec3 getNormalFromMap()
 {
 	vec3 tangentNormal = texture(tNormal, fs_in.TexCoords).xyz * 2.0 - 1.0;
-
 	vec3 Q1  = dFdx(fs_in.FragPos);
 	vec3 Q2  = dFdy(fs_in.FragPos);
 	vec2 st1 = dFdx(fs_in.TexCoords);
@@ -58,9 +57,9 @@ vec3 getNormalFromMap()
 
 	vec3 N   = normalize(fs_in.Normal);
 	vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+	T.y = -T.y;
 	vec3 B  = -normalize(cross(N, T));
 	mat3 TBN = mat3(T, B, N);
-
 	return normalize(TBN * tangentNormal);
 }
 
@@ -74,7 +73,7 @@ Material getMaterial(vec2 texCoords, vec3 defaultNormal) {
 	if (material.normal.r == 0.0 && material.normal.g == 0.0 && material.normal.b == 0.0) {
 		material.normal = defaultNormal;
 	}
-
+	// material.normal.y = -material.normal.y;
 	material.albedo = texture(tDiffuse, texCoords).rgb;
 	material.albedo = pow(material.albedo, vec3(2.2));
 
@@ -108,32 +107,32 @@ vec2 SampleSphericalCoords(vec3 v)
 
 vec3 calcDirectionalLight(inout Light light, Material material, vec3 F0) 
 {
-	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-	vec3 lightDir = normalize(1.0 - light.direction);
-	vec3 halfwayDir = normalize(viewDir + lightDir);
-	vec3 radiance = light.diffuse * light.intensity;
+	// vec3 viewDir = normalize(viewPos - fs_in.FragPos);
+	// vec3 lightDir = normalize(1.0 - light.direction);
+	// vec3 halfwayDir = normalize(viewDir + lightDir);
+	// vec3 radiance = light.diffuse * light.intensity;
 
-	// BRDF components
-	float NDF = DistributionGGX(material.normal, halfwayDir, material.roughness);
-	float G = GeometrySmith(material.normal, viewDir, lightDir, material.roughness);
-	vec3 F = fresnelSchlickRoughness(max(dot(material.normal, viewDir), 0.0), F0, material.roughness);
+	// // BRDF components
+	// float NDF = DistributionGGX(material.normal, halfwayDir, material.roughness);
+	// float G = GeometrySmith(material.normal, viewDir, lightDir, material.roughness);
+	// vec3 F = fresnelSchlickRoughness(max(dot(material.normal, viewDir), 0.0), F0, material.roughness);
 
-	// Cook-Torrance BRDF
+	// // Cook-Torrance BRDF
 
-	float NdotL = max(dot(material.normal, lightDir), 0.0);	
+	// float NdotL = max(dot(material.normal, lightDir), 0.0);	
 
-	vec3 numerator = NDF * G * F;
-	float denominator = 4.0 * max(dot(material.normal, viewDir), 0.0) * NdotL + 0.001;
-	vec3 specular = numerator / denominator;
+	// vec3 numerator = NDF * G * F;
+	// float denominator = 4.0 * max(dot(material.normal, viewDir), 0.0) * NdotL + 0.001;
+	// vec3 specular = numerator / denominator;
 
-	vec3 kS = F; //specular reflection
-	vec3 kD = (1.0 - kS);
-	kD *= 1.0 - material.metallic;
-	vec3 Lo = (kD * material.albedo / PI + specular) * radiance * NdotL;
+	// vec3 kS = F; //specular reflection
+	// vec3 kD = (1.0 - kS);
+	// kD *= 1.0 - material.metallic;
+	// vec3 Lo = (kD * material.albedo / PI + specular) * radiance * NdotL;
 
-	// Shadow and ambient
-	float shadow = ShadowCalculation(fs_in.FragPosLightSpace, light.position);	
-	return (1.0 - shadow) * Lo;
+	// // Shadow and ambient
+	// float shadow = ShadowCalculation(fs_in.FragPosLightSpace, light.position);	
+	return vec3(0);
 }
 
 // Main function remains mostly the same but simplified
@@ -146,11 +145,11 @@ void main() {
 	float minReflectance = 0.04;
 	vec3 F0 = mix(vec3(minReflectance), material.albedo, material.metallic);
 	vec3 result = vec3(0.0);
-	for(int i = 0; i < lights.length(); i++) {
-		if(lights[i].type == 1) {
-			result += calcDirectionalLight(lights[i], material, F0);
-		}
-	}
+	// for(int i = 0; i < lights.length(); i++) {
+	// 	if(lights[i].type == 1) {
+	// 		result += calcDirectionalLight(lights[i], material, F0);
+	// 	}
+	// }
 
 	// Calculate IBL ambient lighting
 	vec3 irradiance = texture(irradianceMap, material.normal * irradianceMapYawRotation).rgb;
@@ -167,11 +166,10 @@ void main() {
 	vec3 R = reflect(-viewDir, material.normal);
 	vec3 prefilteredColor = textureLod(specularMap, R * irradianceMapYawRotation,  material.roughness * MAX_REFLECTION_LOD).rgb;    
 	vec2 brdf  = texture(brdfLUT, vec2(max(dot(material.normal, viewDir), 0.0), material.roughness)).rg;
-	vec3 specular = prefilteredColor * (F * brdf.x + brdf.y) * irradianceMapIntensity;
+	vec3 specular = prefilteredColor * (F * brdf.x + brdf.y) * irradianceMapIntensity * 1;
 	
 	vec3 ambient = kD * diffuse + specular;
 	result += ambient;
 	result = result / (result + vec3(1.0));
-	// result = pow(result, vec3(1.0/2.2)); 
 	FragColor = vec4(result, 1.0);
 }
