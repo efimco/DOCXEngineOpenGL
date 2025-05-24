@@ -3,7 +3,6 @@
 #include "ImGui/imgui.h"
 
 #include "camera.hpp"
-#include "pickingBuffer.hpp"
 #include "viewportState.hpp"
 
 class InputManager
@@ -19,7 +18,6 @@ public:
 private:
 	GLFWwindow* window;
 	Camera& camera; 
-	PickingBuffer* m_pickingBuffer;
 	ImVec2 m_windowPos;
 
 	float lastX;

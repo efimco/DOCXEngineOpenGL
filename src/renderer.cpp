@@ -28,7 +28,6 @@ Renderer::Renderer(GLFWwindow* window)
 	m_lastFrameTime = 0;
 	m_shadowMap = new ShadowMap(2048, 2048);
 	m_cubemap = new Cubemap(m_camera,std::filesystem::absolute("..\\..\\res\\skybox\\river_walk_1_2k.hdr").string());
-	m_pickingbuffer = new PickingBuffer();
 	m_inputManager = new InputManager(window, m_camera);
 	m_uiManager = new UIManager(window, m_camera);
 
@@ -170,8 +169,6 @@ void Renderer::checkFrameBufeerSize()
 		AppConfig::RENDER_HEIGHT = (int)m_uiManager->getViewportSize().y;
 		createOrResizeFrameBufferAndRenderTarget();
 
-		m_pickingbuffer->resize();
-
 		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 
 		AppConfig::isFramebufferSizeSetted = true;
@@ -184,6 +181,7 @@ void Renderer::mainPass()
 		glBindFramebuffer(GL_FRAMEBUFFER, m_mainFbo);
 		glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], AppConfig::clearColor[2], AppConfig::clearColor[3]); 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 		glPolygonMode(GL_FRONT_AND_BACK, AppConfig::polygonMode);
 		SceneManager::setShader(AppConfig::baseShader);
 		for (const auto& primitive: SceneManager::getPrimitives())
@@ -318,10 +316,6 @@ void Renderer::render(GLFWwindow* window)
 		m_shadowMap->bind();
 		m_shadowMap->draw(m_camera);
 
-		//OBJECT ID PASS
-		m_pickingbuffer->bind();
-		m_pickingbuffer->draw(m_camera);
-
 		//MAIN RENDER PASS
 		updateLights();
 		mainPass();
@@ -332,7 +326,6 @@ void Renderer::render(GLFWwindow* window)
 		glfwPollEvents();
 		ViewportState viewportState = m_uiManager->getViewportState();
 		m_uiManager->setScreenTexture(m_composedTexture);
-		m_uiManager->setPickingTexture(m_pickingbuffer->getPickingTexture());
 		m_uiManager->setShadowMapTexture(m_shadowMap->depthMap);
 		m_uiManager->draw(m_deltaTime);
 

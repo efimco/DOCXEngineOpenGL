@@ -2,8 +2,6 @@
 #include <iostream>
 #include <iterator>
 #include "glad/glad.h"
-#include "shader.hpp"
-#include "tiny_gltf.h"
 #include "sceneManager.hpp"
 #include "gltfImporter.hpp"
 

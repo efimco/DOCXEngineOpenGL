@@ -3,6 +3,8 @@
 #include <string>
 #include <map>
 #include "shader.hpp"
+#include "tiny_gltf.h"
+#include "primitive.hpp"
 
 class GLTFModel
 {

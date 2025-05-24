@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <GLFW/glfw3.h>
 
-#include "pickingBuffer.hpp"
 #include "shadowMap.hpp"
 #include "uiManager.hpp"
 #include "cubemap.hpp"
@@ -28,7 +27,6 @@ private:
 	uint32_t m_lightsSSBO;
 
 	int m_nMipLevels;
-	PickingBuffer* m_pickingbuffer;
 	ShadowMap* m_shadowMap;
 	UIManager* m_uiManager;
 	Cubemap* m_cubemap;

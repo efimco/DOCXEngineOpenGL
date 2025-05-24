@@ -28,7 +28,6 @@ add_executable(OpenGLLearn
 	src/stb_image_impl.cpp
 	src/tiny_gltf_impl.cpp
 	src/shadowMap.cpp
-	src/pickingBuffer.cpp
 	src/cubemap.cpp
 	src/uiManager.cpp
 	src/sceneManager.cpp

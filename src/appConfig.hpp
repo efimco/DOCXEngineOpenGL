@@ -1,6 +1,5 @@
 #pragma once
 #include "shader.hpp"
-#include "pickingBuffer.hpp"
 
 
 typedef unsigned int GLenum;
