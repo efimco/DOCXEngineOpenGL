@@ -7,6 +7,7 @@
 #include "cubemap.hpp"
 #include "camera.hpp"
 #include "light.hpp"
+#include "pickingPass.hpp"
 class Renderer
 {
 public:
@@ -31,6 +32,7 @@ private:
 	UIManager* m_uiManager;
 	Cubemap* m_cubemap;
 	InputManager* m_inputManager;
+	PickingPass* m_pickingPass;
 
 	glm::mat4 m_view;
 	glm::mat4 m_projection;

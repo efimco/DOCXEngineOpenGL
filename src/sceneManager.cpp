@@ -86,7 +86,7 @@ namespace SceneManager
 	{
 		for (auto& primitive: primitives)
 		{
-			primitive.shader.reload();
+			primitive.shader->reload();
 			
 		}
 		for (auto& shader: shaders)
@@ -125,7 +125,7 @@ namespace SceneManager
 		textureCache[name] = texture;
 	}
 
-	void setShader(Shader &shader)
+	void setShader(Shader* shader)
 	{
 		for (auto& primitive: primitives)
 		{

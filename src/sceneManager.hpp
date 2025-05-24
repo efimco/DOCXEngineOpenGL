@@ -30,5 +30,5 @@ namespace SceneManager
 	void checkLightBuffer();
 
 	void reloadShaders();
-	void setShader(Shader& shader);
+	void setShader(Shader* shader);
 	};

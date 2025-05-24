@@ -107,31 +107,6 @@ vec2 SampleSphericalCoords(vec3 v)
 
 vec3 calcDirectionalLight(inout Light light, Material material, vec3 F0) 
 {
-	// vec3 viewDir = normalize(viewPos - fs_in.FragPos);
-	// vec3 lightDir = normalize(1.0 - light.direction);
-	// vec3 halfwayDir = normalize(viewDir + lightDir);
-	// vec3 radiance = light.diffuse * light.intensity;
-
-	// // BRDF components
-	// float NDF = DistributionGGX(material.normal, halfwayDir, material.roughness);
-	// float G = GeometrySmith(material.normal, viewDir, lightDir, material.roughness);
-	// vec3 F = fresnelSchlickRoughness(max(dot(material.normal, viewDir), 0.0), F0, material.roughness);
-
-	// // Cook-Torrance BRDF
-
-	// float NdotL = max(dot(material.normal, lightDir), 0.0);	
-
-	// vec3 numerator = NDF * G * F;
-	// float denominator = 4.0 * max(dot(material.normal, viewDir), 0.0) * NdotL + 0.001;
-	// vec3 specular = numerator / denominator;
-
-	// vec3 kS = F; //specular reflection
-	// vec3 kD = (1.0 - kS);
-	// kD *= 1.0 - material.metallic;
-	// vec3 Lo = (kD * material.albedo / PI + specular) * radiance * NdotL;
-
-	// // Shadow and ambient
-	// float shadow = ShadowCalculation(fs_in.FragPosLightSpace, light.position);	
 	return vec3(0);
 }
 

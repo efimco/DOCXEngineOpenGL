@@ -1,8 +1,8 @@
 #version 460 core
-uniform vec3 objectIDColor;  // Unique color for each object
-out vec4 FragColor;
+uniform int objectID; 
+layout(location = 0) out int FragColor;
 
 void main() 
 {
-	FragColor = vec4(objectIDColor, 0.1);
+	FragColor = objectID;
 }

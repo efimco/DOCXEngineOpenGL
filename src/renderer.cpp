@@ -30,7 +30,7 @@ Renderer::Renderer(GLFWwindow* window)
 	m_cubemap = new Cubemap(m_camera,std::filesystem::absolute("..\\..\\res\\skybox\\river_walk_1_2k.hdr").string());
 	m_inputManager = new InputManager(window, m_camera);
 	m_uiManager = new UIManager(window, m_camera);
-
+	m_pickingPass = new PickingPass();
 	initScreenQuad();
 	createOrResizeFrameBufferAndRenderTarget();
 
@@ -168,7 +168,7 @@ void Renderer::checkFrameBufeerSize()
 		AppConfig::RENDER_WIDTH = (int)m_uiManager->getViewportSize().x;
 		AppConfig::RENDER_HEIGHT = (int)m_uiManager->getViewportSize().y;
 		createOrResizeFrameBufferAndRenderTarget();
-
+		m_pickingPass->createOrResize();
 		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 
 		AppConfig::isFramebufferSizeSetted = true;
@@ -184,14 +184,8 @@ void Renderer::mainPass()
 		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 		glPolygonMode(GL_FRONT_AND_BACK, AppConfig::polygonMode);
 		SceneManager::setShader(AppConfig::baseShader);
-		for (const auto& primitive: SceneManager::getPrimitives())
+		for (auto& primitive: SceneManager::getPrimitives())
 		{
-			glm::mat4 projection = glm::mat4(1.0f);
-			if( AppConfig::RENDER_WIDTH != 0 && AppConfig::RENDER_HEIGHT != 0) 
-			{
-				projection = glm::perspective(glm::radians(m_camera.zoom), float(AppConfig::RENDER_WIDTH)/float(AppConfig::RENDER_HEIGHT),0.1f, 100.0f);	
-			}
-
 			const bool hasDiffuse = primitive.material && primitive.material->diffuse && 
 									!primitive.material->diffuse->path.empty();
 									
@@ -201,8 +195,8 @@ void Renderer::mainPass()
 			const bool hasNormal = primitive.material && primitive.material->normal && 
 									!primitive.material->normal->path.empty();
 
-			primitive.shader.use();
-			primitive.shader.setVec3("viewPos", m_camera.position);
+			AppConfig::baseShader->use();
+			AppConfig::baseShader->setVec3("viewPos", m_camera.position);
 			if (hasDiffuse)
 			{
 				glBindTextureUnit(1, primitive.material->diffuse->id);
@@ -220,9 +214,9 @@ void Renderer::mainPass()
 				glBindTextureUnit(3, primitive.material->normal->id);
 			}else glBindTextureUnit(3, 0);
 
-			primitive.shader.setMat4("projection", projection);
-			primitive.shader.setMat4("view", m_camera.getViewMatrix());
-			primitive.shader.setMat4("model", primitive.transform);
+			AppConfig::baseShader->setMat4("projection", m_projection);
+			AppConfig::baseShader->setMat4("view", m_view);
+			AppConfig::baseShader->setMat4("model", primitive.transform);
 			
 			glBindVertexArray(primitive.vao);
 			int eboSize = 0;
@@ -241,10 +235,10 @@ void Renderer::mainPass()
 			glBindTextureUnit(6, m_cubemap->brdfLUTTexture);
 			glBindTextureUnit(7, m_cubemap->specularMap);
 
-			primitive.shader.setFloat("irradianceMapRotationY", AppConfig::irradianceMapRotationY);
-			primitive.shader.setFloat("irradianceMapIntensity", AppConfig::irradianceMapIntensity);
-				primitive.shader.setFloat("ufRoughness", primitive.material->roughness);
-				primitive.shader.setFloat("ufMetallic", primitive.material->metallic);
+			AppConfig::baseShader->setFloat("irradianceMapRotationY", AppConfig::irradianceMapRotationY);
+			AppConfig::baseShader->setFloat("irradianceMapIntensity", AppConfig::irradianceMapIntensity);
+			AppConfig::baseShader->setFloat("ufRoughness", primitive.material->roughness);
+			AppConfig::baseShader->setFloat("ufMetallic", primitive.material->metallic);
 
 			glBindVertexArray(0);
 			}
@@ -283,10 +277,10 @@ void Renderer::composedPass()
 	glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], AppConfig::clearColor[2], AppConfig::clearColor[3]); 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	AppConfig::screenShader.use();  
-	AppConfig::screenShader.setFloat("near_plane", AppConfig::near_plane);
-	AppConfig::screenShader.setFloat("far_plane", AppConfig::far_plane);
-	AppConfig::screenShader.setFloat("exposure", AppConfig::exposure);
+	AppConfig::screenShader->use();  
+	AppConfig::screenShader->setFloat("near_plane", AppConfig::near_plane);
+	AppConfig::screenShader->setFloat("far_plane", AppConfig::far_plane);
+	AppConfig::screenShader->setFloat("exposure", AppConfig::exposure);
 	glBindVertexArray(m_fullFrameQuadVAO);
 	glBindTextureUnit(0, m_screenTexture);
 	glDrawArrays(GL_TRIANGLES, 0, 6);  
@@ -313,12 +307,13 @@ void Renderer::render(GLFWwindow* window)
 		}
 
 		//DIRECTIONAL LIGHT SHADOW MAP PASS
-		m_shadowMap->bind();
 		m_shadowMap->draw(m_camera);
+		m_pickingPass->draw(m_projection, m_view);
 
 		//MAIN RENDER PASS
 		updateLights();
 		mainPass();
+
 
 		//SCREEN QUAD RENDER PASS
 		composedPass();

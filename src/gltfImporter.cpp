@@ -6,7 +6,7 @@
 #include "gltfImporter.hpp"
 
 
-GLTFModel::GLTFModel(std::string path, const Shader& shader) : path(path), shader(shader)
+GLTFModel::GLTFModel(std::string path, Shader* shader) : path(path), shader(shader)
 {
 	auto model = readGlb(path);
 	processTextures(model);

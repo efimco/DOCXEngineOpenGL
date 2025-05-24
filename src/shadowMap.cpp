@@ -26,7 +26,8 @@ ShadowMap::ShadowMap(const int width, const int height):width(width), height(hei
 	glNamedFramebufferReadBuffer(depthMapFBO, GL_NONE);
 	const std::string simpleDepthShader = std::filesystem::absolute("..\\..\\src\\shaders\\simpleDepthShader.vert").string();
 	const std::string fEmptyShader = std::filesystem::absolute("..\\..\\src\\shaders\\empty.frag").string();
-	depthShader = Shader(simpleDepthShader, fEmptyShader);
+	depthShader = new Shader(simpleDepthShader, fEmptyShader);
+	SceneManager::addShader(depthShader);
 };
 
 ShadowMap::~ShadowMap()
@@ -35,20 +36,15 @@ ShadowMap::~ShadowMap()
 	glDeleteFramebuffers(1, &depthMapFBO);
 };
 
-void ShadowMap::bind() 
+
+void ShadowMap::draw(Camera& camera) 
 {
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Shadow Map Pass");
 	glViewport(0, 0, width, height);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
-};
-
-
-void ShadowMap::draw(Camera& camera) 
-{
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Shadow Map Pass");
-
 	glm::vec3 sceneCenter = glm::vec3(0.0f); 
 	float distance = 10000.0f;
 
@@ -77,14 +73,14 @@ void ShadowMap::draw(Camera& camera)
 		{
 			projection = glm::perspective(glm::radians(camera.zoom), float(width)/float(height),0.1f, 100.0f);	
 		}
-		primitive.shader.use();
-		primitive.shader.setVec3("viewPos", camera.position);
-		primitive.shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		primitive.shader->use();
+		primitive.shader->setVec3("viewPos", camera.position);
+		primitive.shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
 
 	
-		primitive.shader.setMat4("projection",projection);
-		primitive.shader.setMat4("view",camera.getViewMatrix());
-		primitive.shader.setMat4("model",primitive.transform);
+		primitive.shader->setMat4("projection",projection);
+		primitive.shader->setMat4("view",camera.getViewMatrix());
+		primitive.shader->setMat4("model",primitive.transform);
 		
 		glBindVertexArray(primitive.vao);
 		int eboSize = 0;

@@ -17,9 +17,8 @@ namespace AppConfig
 	int RENDER_WIDTH = 0;
 	int RENDER_HEIGHT = 0;
 	float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
-	Shader baseShader{};
-	Shader screenShader{};
-	Shader debugDrawShader{};
+	Shader* baseShader;
+	Shader* screenShader;
 	float gamma = 1;
 	float near_plane = -2.01f;
 	float far_plane = 2.0f;
@@ -37,8 +36,8 @@ namespace AppConfig
 
 	void initShaders()
 	{
-		baseShader = Shader(vShaderPath, fShaderPath);
-		screenShader = Shader(vScreenShader, fScreenShader);
+		baseShader = new Shader(vShaderPath, fShaderPath);
+		screenShader = new Shader(vScreenShader, fScreenShader);
 	}
 
 }

@@ -34,6 +34,7 @@ add_executable(OpenGLLearn
 	src/appConfig.cpp
 	src/inputManager.cpp
 	src/renderer.cpp
+	src/pickingPass.cpp
 	${IMGUI_SRC}
 )
 
