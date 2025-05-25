@@ -1,7 +1,7 @@
 #include "sceneManager.hpp"
 #include <glad/gl.h>
 #include <iostream>
-
+#include <utility>
 namespace SceneManager
 {
 	static Primitive* selectedPrimitive = nullptr;
@@ -36,6 +36,14 @@ namespace SceneManager
 			if (primitive.vao == vao)
 			{
 				selectedPrimitive = &primitive;
+				
+				std::cout << "Selected primitive bounds: min(" 
+					<< selectedPrimitive->boundingBox.first.x << ", "
+					<< selectedPrimitive->boundingBox.first.y << ", "
+					<< selectedPrimitive->boundingBox.first.z << ") max("
+					<< selectedPrimitive->boundingBox.second.x << ", "
+					<< selectedPrimitive->boundingBox.second.y << ", "
+					<< selectedPrimitive->boundingBox.second.z << ")\n";
 			}
 		}
 	}
@@ -43,6 +51,17 @@ namespace SceneManager
 	Primitive *getSelectedPrimitive()
 	{
 		return selectedPrimitive;
+	}
+
+	void deletePrimitive(uint32_t vao)
+	{
+		auto it = std::remove_if(primitives.begin(), primitives.end(), 
+			[vao](const Primitive& p) { return p.vao == vao; });
+		primitives.erase(it, primitives.end());
+		if(selectedPrimitive && selectedPrimitive->vao == vao)
+		{
+			selectedPrimitive = nullptr;
+		}
 	}
 
 	void addShader(Shader* shader)

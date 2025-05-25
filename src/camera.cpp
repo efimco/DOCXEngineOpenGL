@@ -40,7 +40,6 @@ glm::mat4 Camera::getViewMatrix()
 
 void Camera::processMouseScroll(float yOffset)
 {
-	std::cout << "Y offset: " << yOffset << std::endl;
 	position += front * yOffset * sensitivity;
 	distanceToOrbitPivot = glm::length(position - orbitPivot);
 }

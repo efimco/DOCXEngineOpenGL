@@ -21,6 +21,7 @@ public:
 	void processGLTFModel(tinygltf::Model &model);
 	void processTextures(tinygltf::Model &model);
 	void processMaterials(tinygltf::Model &model);
+	const std::pair<glm::vec3, glm::vec3> computeBoundingBox(const tinygltf::Primitive& primitive, const tinygltf::Model& model);
 	const std::vector<float> processPosAttrib(const tinygltf::Primitive& primitive, const tinygltf::Mesh& mesh, const tinygltf::Model& model);
 	const std::vector<float> processTexCoordAttrib(const tinygltf::Primitive& primitive, const tinygltf::Mesh& mesh, const tinygltf::Model& model);
 	const std::vector<float> processNormalAttrib(const tinygltf::Primitive& primitive, const tinygltf::Mesh& mesh, const tinygltf::Model& model);

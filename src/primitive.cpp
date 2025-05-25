@@ -9,11 +9,13 @@
 #include <glad/gl.h>
 #include "primitive.hpp"
 
-Primitive::Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, size_t indexCount, glm::mat4 transform, std::shared_ptr<Mat> material)
+Primitive::Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo,
+	size_t indexCount, glm::mat4 transform, std::pair<glm::vec3, glm::vec3> boundingBox, std::shared_ptr<Mat> material)
 : vao(vao),
 	vbo(vbo),
 	ebo(ebo),
 	indexCount(indexCount),
+	boundingBox(),
 	transform(transform),
 	material(material){};
 
@@ -23,11 +25,33 @@ Primitive::Primitive(Primitive&& other) noexcept
 	ebo(other.ebo),
 	indexCount(other.indexCount),
 	transform(other.transform),
+	boundingBox(other.boundingBox),
 	material(std::move(other.material))
 	{
 		other.vao = 0;
 		other.vbo = 0;
 		other.ebo = 0;
+		other.indexCount = 0;
+	}
+
+	Primitive &Primitive::operator=(Primitive&& other) noexcept
+	{
+		if (this == &other) return *this;
+
+		vao = other.vao;
+		vbo = other.vbo;
+		ebo = other.ebo;
+		indexCount = other.indexCount;
+		transform = other.transform;
+		boundingBox = other.boundingBox;
+		material = std::move(other.material);
+
+		other.vao = 0;
+		other.vbo = 0;
+		other.ebo = 0;
+		other.indexCount = 0;
+
+		return *this;
 	}
 
 Primitive::~Primitive()

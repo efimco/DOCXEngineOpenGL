@@ -50,6 +50,7 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 			std::vector<float> texBuffer = processTexCoordAttrib(primitive, mesh, model);
 			std::vector<float> normalBuffer = processNormalAttrib(primitive, mesh, model);
 			std::vector<float> tangentNormalBuffer = processTangentNormalAttrib(primitive, mesh, model);
+			std::pair<glm::vec3, glm::vec3> boundingBox = computeBoundingBox(primitive, model);
 			std::vector<uint32_t>indexBuffer = processIndexAttrib(primitive, mesh, model);
 			if (posBuffer.empty() || texBuffer.empty() || normalBuffer.empty() || tangentNormalBuffer.empty())
 			{
@@ -126,6 +127,7 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 			Primitive prim(vao, vbo, ebo,
 				indexCount,
 				translation,
+				boundingBox,
 				materialsIndex[primitive.material]);
 			primitives.push_back(std::move(prim));
 		}
@@ -210,7 +212,21 @@ const std::vector<float> GLTFModel::processPosAttrib(const tinygltf::Primitive& 
 			posData.push_back(pPosData[i * components + j]);
 		}
 	}
+
 	return posData;
+
+}
+
+const std::pair<glm::vec3, glm::vec3> GLTFModel::computeBoundingBox(const tinygltf::Primitive& primitive, const tinygltf::Model& model)
+{
+	const tinygltf::Accessor& posAccessor = model.accessors[primitive.attributes.at("POSITION")];
+	if (posAccessor.maxValues.size() >= 3 && posAccessor.minValues.size() >= 3) 
+	{
+		glm::vec3 min(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
+		glm::vec3 max(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
+		const std::pair<glm::vec3, glm::vec3> boundingBox = std::make_pair(min, max);
+		return boundingBox;
+	}
 
 }
 

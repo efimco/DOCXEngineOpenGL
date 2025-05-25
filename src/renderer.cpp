@@ -218,11 +218,6 @@ void Renderer::mainPass()
 			AppConfig::baseShader->setMat4("view", m_view);
 			AppConfig::baseShader->setMat4("model", primitive.transform);
 
-			if (SceneManager::getSelectedPrimitive() != nullptr)
-			{
-				std::cerr << "drawing outline of: "  << SceneManager::getSelectedPrimitive()->vao << std::endl;
-			}
-
 			glBindTextureUnit(4, m_cubemap->irradianceMap);
 			glBindTextureUnit(5, m_shadowMap->depthMap);
 			glBindTextureUnit(6, m_cubemap->brdfLUTTexture);

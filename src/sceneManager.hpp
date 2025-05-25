@@ -10,6 +10,7 @@ namespace SceneManager
 	std::vector<Primitive>& getPrimitives();
 	void selectPrimitive(uint32_t vao);
 	Primitive* getSelectedPrimitive();
+	void deletePrimitive(uint32_t );
 	
 	void addShader(Shader* shader);
 

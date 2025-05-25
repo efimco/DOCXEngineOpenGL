@@ -161,7 +161,6 @@ void UIManager::showViewport(float deltaTime)
 
 		viewportHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 		m_viewportState.isHovered = viewportHovered;
-		std::cout << "isHovered: " << viewportHovered << std::endl;
 
 		ImGui::Image(texID, m_vpSize, uv0, uv1);
 		
@@ -327,6 +326,12 @@ void UIManager::showObjectInspector()
 				glActiveTexture(GL_TEXTURE0);
 
 			}
+		}
+		if (ImGui::Button("DELETE"))
+		{
+			SceneManager::deletePrimitive(SceneManager::getSelectedPrimitive()->vao);
+			ImGui::End();
+			return;
 		}
 
 		ImGui::SliderFloat("Roughness", &SceneManager::getSelectedPrimitive()->material->roughness,0.04f,1.0f);
