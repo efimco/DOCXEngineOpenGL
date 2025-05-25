@@ -6,7 +6,7 @@
 #include "gltfImporter.hpp"
 
 
-GLTFModel::GLTFModel(std::string path, Shader* shader) : path(path), shader(shader)
+GLTFModel::GLTFModel(std::string path) : path(path)
 {
 	auto model = readGlb(path);
 	processTextures(model);
@@ -124,7 +124,7 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 				assert(indexBuffer.size() == model.accessors[primitive.indices].count);
 			size_t indexCount = indexBuffer.size();
 			Primitive prim(vao, vbo, ebo,
-				shader, indexCount,
+				indexCount,
 				translation,
 				materialsIndex[primitive.material]);
 			primitives.push_back(std::move(prim));

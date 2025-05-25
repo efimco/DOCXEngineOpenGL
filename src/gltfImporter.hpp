@@ -9,13 +9,12 @@
 class GLTFModel
 {
 public:
-	Shader* shader;
 	std::vector<Primitive> primitives;
 	std::string path;
 	std::map<uint32_t, std::shared_ptr<Tex>> texturesIndex;
 	std::map<uint32_t, std::shared_ptr<Mat>> materialsIndex;
 
-	GLTFModel(std::string path, Shader* shader);
+	GLTFModel(std::string path);
 	~GLTFModel();
 
 	tinygltf::Model readGlb(const std::string &path);

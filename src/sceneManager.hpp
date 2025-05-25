@@ -8,9 +8,9 @@ namespace SceneManager
 {	
 	void addPrimitives(std::vector<Primitive>&& Primitives);
 	std::vector<Primitive>& getPrimitives();
-	void addPrimitive(Primitive&& primitive);
-
+	void selectPrimitive(uint32_t vao);
 	Primitive* getSelectedPrimitive();
+	
 	void addShader(Shader* shader);
 
 	std::unordered_map<uint32_t, std::shared_ptr<Mat>>& getMaterials();

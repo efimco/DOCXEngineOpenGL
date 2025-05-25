@@ -25,7 +25,7 @@ private:
 	double mousePosy;
 
 	void scrollCallback(ViewportState viewportState);
-	void pixelReadBack(ViewportState viewportState, uint32_t pickingTexture);
+	void pickObjectCallback(ViewportState viewportState, uint32_t pickingTexture);
 	void exitCallback();
 	void wireframeToggleCallback();
 };

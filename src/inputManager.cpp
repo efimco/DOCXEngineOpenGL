@@ -25,7 +25,7 @@ void InputManager::processInput(float deltaTime, ViewportState viewportState, ui
 	cameraResetCallback(window, deltaTime);
 	scrollCallback(viewportState);
 	exitCallback();
-	pixelReadBack(viewportState, pickingTexture);
+	pickObjectCallback(viewportState, pickingTexture);
 }
 
 void InputManager::scrollCallback(ViewportState viewportState)
@@ -37,16 +37,19 @@ void InputManager::scrollCallback(ViewportState viewportState)
 	}
 }
 
-void InputManager::pixelReadBack(ViewportState viewportState, uint32_t pickingTexture)
+void InputManager::pickObjectCallback(ViewportState viewportState, uint32_t pickingTexture)
 {
-	ImVec2 mousePos = ImGui::GetIO().MousePos;
-	ImVec2 viewportPos = viewportState.position;
-	int readX =  static_cast<int> (mousePos.x - viewportPos.x);
-	// need to flip y axis cuz imgui makes it top left, but opengl uses bottom left
-	int readY =  static_cast<int> (AppConfig::RENDER_HEIGHT - (mousePos.y - viewportPos.y)); 
-	int pixel = 0;
-	glGetTextureSubImage(pickingTexture, 0, readX, readY, 0, 1, 1, 1, GL_RED_INTEGER, GL_INT, sizeof(pixel), &pixel);
-	std::cout << "MousePosX: " << readX << " MousePosY: " << readY << " Pixel: " << pixel << std::endl;
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left, false) && viewportState.isHovered)
+	{
+		ImVec2 mousePos = ImGui::GetIO().MousePos;
+		ImVec2 viewportPos = viewportState.position;
+		int readX =  static_cast<int> (mousePos.x - viewportPos.x);
+		// need to flip y axis cuz imgui makes it top left, but opengl uses bottom left
+		int readY =  static_cast<int> (AppConfig::RENDER_HEIGHT - (mousePos.y - viewportPos.y)); 
+		int pixel = 0;
+		glGetTextureSubImage(pickingTexture, 0, readX, readY, 0, 1, 1, 1, GL_RED_INTEGER, GL_INT, sizeof(pixel), &pixel); // pixel == vao id
+		SceneManager::selectPrimitive(pixel);	
+	}
 }
 
 void InputManager::exitCallback()

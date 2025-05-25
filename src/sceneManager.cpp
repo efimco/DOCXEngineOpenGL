@@ -5,6 +5,7 @@
 namespace SceneManager
 {
 	static Primitive* selectedPrimitive = nullptr;
+	static std::vector<Primitive*> selectedPrimitives;
 	static std::vector<Light> lights;
 	static std::vector<Primitive> primitives;
 	static std::vector<Shader*> shaders;
@@ -20,14 +21,23 @@ namespace SceneManager
 		}
 	}
 
-	void addPrimitive(Primitive&& primitive)
-	{
-		SceneManager::primitives.push_back(std::move(primitive)); 
-	}
-
 	std::vector<Primitive>& getPrimitives()
 	{
 		return primitives;
+	}
+	void selectPrimitive(uint32_t vao)
+	{
+		if (vao == 0)
+		{
+			selectedPrimitive = nullptr;
+		} 
+		for (auto& primitive : primitives)
+		{
+			if (primitive.vao == vao)
+			{
+				selectedPrimitive = &primitive;
+			}
+		}
 	}
 
 	Primitive *getSelectedPrimitive()
@@ -52,11 +62,6 @@ namespace SceneManager
 
 	void reloadShaders()
 	{
-		for (auto& primitive: primitives)
-		{
-			primitive.shader->reload();
-			
-		}
 		for (auto& shader: shaders)
 		{
 			shader->reload();

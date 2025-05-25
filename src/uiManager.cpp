@@ -160,6 +160,8 @@ void UIManager::showViewport(float deltaTime)
 		}
 
 		viewportHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+		m_viewportState.isHovered = viewportHovered;
+		std::cout << "isHovered: " << viewportHovered << std::endl;
 
 		ImGui::Image(texID, m_vpSize, uv0, uv1);
 		
@@ -364,7 +366,7 @@ void UIManager::showTools()
 			std::string filePath = OpenFileDialog();
 			if(!filePath.empty())
 			{
-				GLTFModel model(filePath, AppConfig::baseShader);
+				GLTFModel model(filePath);
 			}
 		}
 		AppConfig::polygonMode = AppConfig::isWireframe ? GL_LINE : GL_FILL;

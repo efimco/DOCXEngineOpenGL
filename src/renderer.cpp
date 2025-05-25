@@ -36,7 +36,7 @@ Renderer::Renderer(GLFWwindow* window)
 
 	AppConfig::initShaders();
 	//import
-	GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Knight.glb").string(), AppConfig::baseShader);
+	GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Knight.glb").string());
 
 	createLightsSSBO();
 
@@ -218,9 +218,9 @@ void Renderer::mainPass()
 			AppConfig::baseShader->setMat4("view", m_view);
 			AppConfig::baseShader->setMat4("model", primitive.transform);
 
-			if (primitive.selected == true)
+			if (SceneManager::getSelectedPrimitive() != nullptr)
 			{
-				std::cerr << "drawing outline of: "  << primitive.vao << std::endl;
+				std::cerr << "drawing outline of: "  << SceneManager::getSelectedPrimitive()->vao << std::endl;
 			}
 
 			glBindTextureUnit(4, m_cubemap->irradianceMap);

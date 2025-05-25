@@ -9,12 +9,10 @@ public:
 	uint32_t vao;
 	uint32_t vbo;
 	uint32_t ebo;
-	Shader* shader;
 	size_t indexCount;
 	glm::mat4 transform;
-	bool selected;
 	std::shared_ptr<Mat> material;
-	Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader* shader, size_t indexCount, glm::mat4 transform, std::shared_ptr<Mat> material);
+	Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, size_t indexCount, glm::mat4 transform, std::shared_ptr<Mat> material);
 	Primitive(Primitive&) = delete;
 	Primitive& operator=(Primitive&) = delete;
 	Primitive(Primitive&& other) noexcept;

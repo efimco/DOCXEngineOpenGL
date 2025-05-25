@@ -9,25 +9,21 @@
 #include <glad/gl.h>
 #include "primitive.hpp"
 
-Primitive::Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader* shader, size_t indexCount, glm::mat4 transform, std::shared_ptr<Mat> material)
+Primitive::Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, size_t indexCount, glm::mat4 transform, std::shared_ptr<Mat> material)
 : vao(vao),
 	vbo(vbo),
 	ebo(ebo),
-	shader(shader),
 	indexCount(indexCount),
 	transform(transform),
-	selected(false), 
 	material(material){};
 
 Primitive::Primitive(Primitive&& other) noexcept
 	:vao(other.vao),
 	vbo(other.vbo),
 	ebo(other.ebo),
-	shader(std::move(other.shader)),
 	indexCount(other.indexCount),
 	transform(other.transform),
-	material(std::move(other.material)),
-					selected(false) 
+	material(std::move(other.material))
 	{
 		other.vao = 0;
 		other.vbo = 0;
