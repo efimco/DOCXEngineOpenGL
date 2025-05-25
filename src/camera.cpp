@@ -16,17 +16,17 @@ Camera::Camera(glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 upv = glm:
 front(glm::vec3(0.0f,0.0f,-1.0f)),
 speed(SPEED),
 zoom(ZOOM),
-sensitivity(SENSITIVITY)
+sensitivity(SENSITIVITY),
+position(pos),
+worldUp(upv),
+cameraReseted(true),
+defaultSpeed(speed)
 {
-	position = pos;
-	worldUp = upv;
 	this -> yaw = yaw;
 	this -> pitch = pitch;
 	defaultCameraMatrix = {position, front, up};
 	defaultCameraRotation[0] = pitch;
 	defaultCameraRotation[1] = yaw;
-	cameraReseted = true;
-	defaultSpeed = speed;
 	increasedSpeed = defaultSpeed *3;
 	orbitPivot = glm::vec3(0.0f); // point to orbit around
 	distanceToOrbitPivot = glm::length(position - orbitPivot);
@@ -36,35 +36,6 @@ sensitivity(SENSITIVITY)
 glm::mat4 Camera::getViewMatrix()
 {
 	return glm::lookAt(position, position + front, up);
-}
-
-void Camera::processKeyboard(CameraMovement direction, float deltaTime)
-{
-	float velocity = speed * deltaTime;
-	if (direction == FORWARD) position += front * velocity;
-	if (direction == BACKWARD) position -= front * velocity;
-	if (direction == LEFT) position -= right * velocity;
-	if (direction == RIGHT) position += right * velocity;
-	if (direction == UP) position += up * velocity;
-	if (direction == DOWN) position -= up * velocity;
-	return;
-}
-
-void Camera::processMouseMovement(float xOffset, float yOffset, bool constrainPitch)
-{	
-	return;
-		xOffset *= sensitivity;
-		yOffset *= sensitivity;
-
-		yaw += xOffset;
-		pitch += yOffset;
-
-		if(constrainPitch)
-		{
-			if (pitch > 89.0f) pitch = 89.0f;
-			if (pitch < -89.0f) pitch = -89.0f;
-		}
-		updateCameraVecotrs();
 }
 
 void Camera::processMouseScroll(float yOffset)

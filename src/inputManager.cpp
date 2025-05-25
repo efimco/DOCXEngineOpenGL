@@ -70,18 +70,6 @@ void InputManager::wireframeToggleCallback()
 
 void InputManager::cameraMovementCallback(GLFWwindow *window, float deltaTime, ViewportState viewportState)
 {
-	if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
-	{
-		camera.cameraReseted = true;
-
-		if(ImGui::IsKeyDown(ImGuiKey_W)) camera.processKeyboard(FORWARD, deltaTime);
-		if(ImGui::IsKeyDown(ImGuiKey_S)) camera.processKeyboard(BACKWARD, deltaTime);
-		if(ImGui::IsKeyDown(ImGuiKey_A)) camera.processKeyboard(LEFT, deltaTime);
-		if(ImGui::IsKeyDown(ImGuiKey_D)) camera.processKeyboard(RIGHT, deltaTime);
-		if(ImGui::IsKeyDown(ImGuiKey_Q)) camera.processKeyboard(DOWN, deltaTime);
-		if(ImGui::IsKeyDown(ImGuiKey_E)) camera.processKeyboard(UP, deltaTime);
-	}
-
 	if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
 		camera.speed = camera.increasedSpeed;
 	else 

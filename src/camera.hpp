@@ -34,11 +34,8 @@ public:
 	float distanceToOrbitPivot;
 
 	Camera(glm::vec3 pos, glm::vec3 upv, float yaw , float pitch);
-	Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch);
 
 	glm::mat4 getViewMatrix();
-	void processKeyboard(CameraMovement direction,float deltaTime);
-	void processMouseMovement(float xOffset, float yOffset, bool constrainPitch = true);
 	void processMouseScroll(float yOffset);
 	void processPanning(float xOffset, float yOffset);
 	void processOrbit(float deltaX, float deltaY);

@@ -9,6 +9,7 @@ public:
 	uint32_t vao;
 	uint32_t vbo;
 	uint32_t ebo;
+	glm::vec2 boundingBox; // minimum and maximum value
 	size_t indexCount;
 	glm::mat4 transform;
 	std::shared_ptr<Mat> material;
