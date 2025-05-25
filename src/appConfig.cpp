@@ -1,5 +1,5 @@
 #include "shader.hpp"
-#include "glad/glad.h"
+#include "glad/gl.h"
 #include <string>
 #include <filesystem>
 #include "appConfig.hpp"

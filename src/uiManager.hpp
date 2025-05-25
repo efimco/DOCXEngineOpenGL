@@ -20,7 +20,6 @@ public:
 	bool viewportSizeSetteled;
 
 	ViewportState getViewportState();
-	ImVec2 getWindowPos();
 	glm::vec2 getViewportSize();
 
 	void setScreenTexture(uint32_t texId);
@@ -32,6 +31,7 @@ public:
 private:
 	ViewportState m_viewportState;
 	ImVec2 m_viewportPos;
+
 	uint32_t m_screenTexture;
 	uint32_t m_pickingTexture;
 	uint32_t m_shadowMapTexture;
@@ -45,6 +45,7 @@ private:
 	void showTools();
 	void showMaterialBrowser();
 	void getScroll();
-	void showFramebufferToViewport(float deltaTime);
+	void getViewportPos();
+	void showViewport(float deltaTime);
 	
 };

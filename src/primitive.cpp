@@ -6,7 +6,7 @@
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include "primitive.hpp"
 
 Primitive::Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, Shader* shader, size_t indexCount, glm::mat4 transform, std::shared_ptr<Mat> material)

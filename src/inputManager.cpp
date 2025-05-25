@@ -2,10 +2,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_glfw.h"
-
+#include <glad/gl.h>
 #include "sceneManager.hpp"
 #include "appConfig.hpp"
 #include "inputManager.hpp"
+
 
 
 InputManager::InputManager(GLFWwindow* window, Camera& camera) : window(window), camera(camera) 
@@ -17,13 +18,14 @@ InputManager::InputManager(GLFWwindow* window, Camera& camera) : window(window),
 	mousePosy = 0;
 }
 
-void InputManager::processInput(float deltaTime, ViewportState viewportState)
+void InputManager::processInput(float deltaTime, ViewportState viewportState, uint32_t pickingTexture)
 {
 	wireframeToggleCallback();
-	cameraMovementCallback(window, deltaTime);
+	cameraMovementCallback(window, deltaTime, viewportState);
 	cameraResetCallback(window, deltaTime);
 	scrollCallback(viewportState);
 	exitCallback();
+	pixelReadBack(viewportState, pickingTexture);
 }
 
 void InputManager::scrollCallback(ViewportState viewportState)
@@ -33,6 +35,18 @@ void InputManager::scrollCallback(ViewportState viewportState)
 		std::cout << "Scroll yOffset: " << viewportState.mouseWheel << std::endl;
 		camera.processMouseScroll(viewportState.mouseWheel);
 	}
+}
+
+void InputManager::pixelReadBack(ViewportState viewportState, uint32_t pickingTexture)
+{
+	ImVec2 mousePos = ImGui::GetIO().MousePos;
+	ImVec2 viewportPos = viewportState.position;
+	int readX =  static_cast<int> (mousePos.x - viewportPos.x);
+	// need to flip y axis cuz imgui makes it top left, but opengl uses bottom left
+	int readY =  static_cast<int> (AppConfig::RENDER_HEIGHT - (mousePos.y - viewportPos.y)); 
+	int pixel = 0;
+	glGetTextureSubImage(pickingTexture, 0, readX, readY, 0, 1, 1, 1, GL_RED_INTEGER, GL_INT, sizeof(pixel), &pixel);
+	std::cout << "MousePosX: " << readX << " MousePosY: " << readY << " Pixel: " << pixel << std::endl;
 }
 
 void InputManager::exitCallback()
@@ -51,7 +65,7 @@ void InputManager::wireframeToggleCallback()
 	}
 }
 
-void InputManager::cameraMovementCallback(GLFWwindow *window, float deltaTime)
+void InputManager::cameraMovementCallback(GLFWwindow *window, float deltaTime, ViewportState viewportState)
 {
 	if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
 	{
@@ -70,8 +84,8 @@ void InputManager::cameraMovementCallback(GLFWwindow *window, float deltaTime)
 	else 
 		camera.speed = camera.defaultSpeed;
 	
-	float xPos = ImGui::GetIO().MousePos.x - m_windowPos.x;
-	float yPos = ImGui::GetIO().MousePos.y - m_windowPos.y;
+	float xPos = ImGui::GetIO().MousePos.x - viewportState.position.x;
+	float yPos = ImGui::GetIO().MousePos.y - viewportState.position.y;
 	if (firstMouse)
 	{	lastX = (float)xPos;
 		lastY = (float)yPos;
@@ -85,10 +99,6 @@ void InputManager::cameraMovementCallback(GLFWwindow *window, float deltaTime)
 	
 	lastX = (float)xPos;
 	lastY = (float)yPos;
-	if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
-	{
-		camera.processMouseMovement(xOffset, yOffset);
-	}
 
 	if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsMouseDown(ImGuiMouseButton_Middle))
 	{

@@ -11,7 +11,6 @@ namespace SceneManager
 	void addPrimitive(Primitive&& primitive);
 
 	Primitive* getSelectedPrimitive();
-	void setSelectedPrimitive(Primitive* primitive);
 	void addShader(Shader* shader);
 
 	std::unordered_map<uint32_t, std::shared_ptr<Mat>>& getMaterials();
@@ -23,11 +22,6 @@ namespace SceneManager
 	void addTexture(const std::string& name, std::shared_ptr<Tex> texture);
 
 	void addLight(Light& light);
-	void updateLights();
 	std::vector<Light>& getLights();
-	void createLightsSSBO();
-	uint32_t& getLightsSSBO();
-	void checkLightBuffer();
-
 	void reloadShaders();
 	};

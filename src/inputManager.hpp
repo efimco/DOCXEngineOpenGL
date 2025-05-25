@@ -1,7 +1,6 @@
 #pragma once
 #include <GLFW/glfw3.h>
 #include "ImGui/imgui.h"
-
 #include "camera.hpp"
 #include "viewportState.hpp"
 
@@ -11,14 +10,13 @@ public:
 	InputManager(GLFWwindow* window, Camera& camera);
 	~InputManager() = default;
 
-	void processInput(float deltaTime, ViewportState viewportState);
-	void cameraMovementCallback(GLFWwindow* window, float deltaTime);
+	void processInput(float deltaTime, ViewportState viewportState, uint32_t pickingTexture);
+	void cameraMovementCallback(GLFWwindow* window, float deltaTime, ViewportState viewportState);
 	void cameraResetCallback(GLFWwindow* window, float deltaTime);
 
 private:
 	GLFWwindow* window;
 	Camera& camera; 
-	ImVec2 m_windowPos;
 
 	float lastX;
 	float lastY;
@@ -27,6 +25,7 @@ private:
 	double mousePosy;
 
 	void scrollCallback(ViewportState viewportState);
+	void pixelReadBack(ViewportState viewportState, uint32_t pickingTexture);
 	void exitCallback();
 	void wireframeToggleCallback();
 };

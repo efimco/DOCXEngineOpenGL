@@ -1,6 +1,6 @@
 #include <iostream>
 #include "stb_image.h"
-#include "glad/glad.h"
+#include "glad/gl.h"
 #include "cubemap.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 #include "appConfig.hpp"

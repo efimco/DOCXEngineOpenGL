@@ -1,5 +1,5 @@
 #include <iostream>
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include "glm/gtc/matrix_transform.hpp"
 #include "appConfig.hpp"
 #include "gltfImporter.hpp"
@@ -53,8 +53,6 @@ Renderer::Renderer(GLFWwindow* window)
 	directionalLight.quadratic = 0.032f;
 
 	addLight(directionalLight);
-	updateLights();
-	checkLightBuffer();
 }
 
 Renderer::~Renderer()
@@ -89,6 +87,8 @@ void Renderer::addLight(Light& light)
 {
 	SceneManager::addLight(light);
 	glNamedBufferData(m_lightsSSBO, SceneManager::getLights().size() * sizeof(Light), nullptr, GL_DYNAMIC_DRAW);
+	updateLights();
+	checkLightBuffer();
 }
 
 void Renderer::updateLights()
@@ -317,7 +317,7 @@ void Renderer::render(GLFWwindow* window)
 		m_uiManager->setShadowMapTexture(m_shadowMap->depthMap);
 		m_uiManager->draw(m_deltaTime);
 
-		m_inputManager->processInput(m_deltaTime, viewportState);
+		m_inputManager->processInput(m_deltaTime, viewportState, m_pickingPass->pickingTexture);
 		glfwSwapBuffers(window);
 	}
 	this->~Renderer();

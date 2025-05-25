@@ -1,5 +1,5 @@
 #include <iostream>
-#include "glad/glad.h"
+#include "glad/gl.h"
 #include "stb_image.h"
 #include "texture.hpp"
 #include "sceneManager.hpp"

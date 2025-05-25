@@ -7,7 +7,7 @@
 #include <ImGui/imgui_internal.h>
 
 #include "glm/gtc/type_ptr.hpp"
-#include "glad/glad.h"
+#include "glad/gl.h"
 
 #include "sceneManager.hpp"
 #include "gltfImporter.hpp"
@@ -84,16 +84,15 @@ void UIManager::draw(float deltaTime)
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
 	ImGui::Begin("InvisibleDockSpaceWindow", nullptr, window_flags);
-		ImGui::PopStyleVar(3);
+	ImGui::PopStyleVar(3);
 
 		// 3) DockSpace call — this is where other windows will dock
 		ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 	ImGui::End();
 	
-	showFramebufferToViewport(deltaTime);
+	showViewport(deltaTime);
 	showObjectInspector();
 	showLights();
 	showTools();
@@ -101,6 +100,7 @@ void UIManager::draw(float deltaTime)
 	// showCameraTransforms();
 
 	getScroll();
+	getViewportPos();
 
 	ImGui::Render();
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -123,12 +123,11 @@ void UIManager::getScroll()
 {
 	float yOffset = ImGui::GetIO().MouseWheel;
 	m_viewportState.mouseWheel = yOffset;
-
 }
 
-ImVec2 UIManager::getWindowPos()
+void UIManager::getViewportPos()
 {
-	return m_viewportPos;
+	m_viewportState.position = m_viewportPos;
 }
 
 ViewportState UIManager::getViewportState()
@@ -136,9 +135,11 @@ ViewportState UIManager::getViewportState()
 	return m_viewportState;
 }
 
-void UIManager::showFramebufferToViewport(float deltaTime)
+void UIManager::showViewport(float deltaTime)
 {
-	ImGui::Begin("Viewport", nullptr,ImGuiWindowFlags_NoScrollbar);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoScrollbar);
+	ImGui::PopStyleVar();
 
 		ImTextureID texID = (ImTextureID)m_screenTexture;
 
