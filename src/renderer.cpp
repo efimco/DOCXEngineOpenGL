@@ -183,7 +183,7 @@ void Renderer::mainPass()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 		glPolygonMode(GL_FRONT_AND_BACK, AppConfig::polygonMode);
-		SceneManager::setShader(AppConfig::baseShader);
+		glActiveTexture(GL_TEXTURE0);
 		for (auto& primitive: SceneManager::getPrimitives())
 		{
 			const bool hasDiffuse = primitive.material && primitive.material->diffuse && 
@@ -217,19 +217,12 @@ void Renderer::mainPass()
 			AppConfig::baseShader->setMat4("projection", m_projection);
 			AppConfig::baseShader->setMat4("view", m_view);
 			AppConfig::baseShader->setMat4("model", primitive.transform);
-			
-			glBindVertexArray(primitive.vao);
-			int eboSize = 0;
-			glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
-			const int indexSize = eboSize / sizeof(int);
 
-			
-			glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
-			glActiveTexture(GL_TEXTURE0);
 			if (primitive.selected == true)
 			{
 				std::cerr << "drawing outline of: "  << primitive.vao << std::endl;
 			}
+
 			glBindTextureUnit(4, m_cubemap->irradianceMap);
 			glBindTextureUnit(5, m_shadowMap->depthMap);
 			glBindTextureUnit(6, m_cubemap->brdfLUTTexture);
@@ -240,8 +233,8 @@ void Renderer::mainPass()
 			AppConfig::baseShader->setFloat("ufRoughness", primitive.material->roughness);
 			AppConfig::baseShader->setFloat("ufMetallic", primitive.material->metallic);
 
-			glBindVertexArray(0);
-			}
+			primitive.draw();
+		}
 			//CUBEMAP RENDER PASS
 			m_cubemap->draw(m_projection);
 

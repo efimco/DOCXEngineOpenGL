@@ -58,7 +58,6 @@ void PickingPass::draw(glm::mat4 projection, glm::mat4 view )
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		SceneManager::setShader(pickingShader);
 		for (auto& primitive: SceneManager::getPrimitives())
 		{	pickingShader->use();
 			pickingShader->setMat4("projection", projection);

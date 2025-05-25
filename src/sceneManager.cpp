@@ -124,12 +124,4 @@ namespace SceneManager
 	{
 		textureCache[name] = texture;
 	}
-
-	void setShader(Shader* shader)
-	{
-		for (auto& primitive: primitives)
-		{
-			primitive.shader = shader;
-		}
-	}
 };
