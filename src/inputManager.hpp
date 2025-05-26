@@ -7,16 +7,16 @@
 class InputManager
 {
 public:
-	InputManager(GLFWwindow* window, Camera& camera);
+	InputManager(GLFWwindow *window, Camera &camera);
 	~InputManager() = default;
 
 	void processInput(float deltaTime, ViewportState viewportState, uint32_t pickingTexture);
-	void cameraMovementCallback(GLFWwindow* window, float deltaTime, ViewportState viewportState);
-	void cameraResetCallback(GLFWwindow* window, float deltaTime);
+	void cameraMovementCallback(GLFWwindow *window, float deltaTime, ViewportState viewportState);
+	void cameraResetCallback(GLFWwindow *window, float deltaTime);
 
 private:
-	GLFWwindow* window;
-	Camera& camera; 
+	GLFWwindow *window;
+	Camera &camera;
 
 	float lastX;
 	float lastY;

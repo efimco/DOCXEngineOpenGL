@@ -3,8 +3,7 @@
 #include "texture.hpp"
 #include <memory>
 
-
-class Mat 
+class Mat
 {
 public:
 	std::string name;

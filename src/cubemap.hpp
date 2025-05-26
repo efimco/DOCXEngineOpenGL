@@ -15,8 +15,8 @@ public:
 	Shader specularShader;
 	Shader brdfLutShader;
 	uint32_t irradianceMap, envCubemap, specularMap, brdfLUTTexture;
-	Camera& camera;
-	Cubemap(Camera& camera, std::string pathToCubemap);
+	Camera &camera;
+	Cubemap(Camera &camera, std::string pathToCubemap);
 	~Cubemap();
 
 	void draw(glm::mat4 projection);
@@ -42,76 +42,72 @@ private:
 	void createSpecularMap();
 	void createBRDFLUTTexture();
 
-	const float m_quadCoords[8] = 
-	{
-		// texture Coords
-		0.0f, 1.0f,
-		0.0f, 0.0f,
-		1.0f, 1.0f,
-		1.0f, 0.0f
-	};
-	const float m_quadPositions[12] = 
-	{
-		// positions
-		-1.0f,  1.0f, 0.0f,
-		-1.0f, -1.0f, 0.0f,
-		1.0f,  1.0f, 0.0f, 
-		1.0f, -1.0f, 0.0f
-	};
+	const float m_quadCoords[8] =
+		{
+			// texture Coords
+			0.0f, 1.0f,
+			0.0f, 0.0f,
+			1.0f, 1.0f,
+			1.0f, 0.0f};
+	const float m_quadPositions[12] =
+		{
+			// positions
+			-1.0f, 1.0f, 0.0f,
+			-1.0f, -1.0f, 0.0f,
+			1.0f, 1.0f, 0.0f,
+			1.0f, -1.0f, 0.0f};
 
-	const float m_cubemapVertices[108] = 
-	{
-		// positions
-		-1.0f, 1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, 1.0f, -1.0f,
-		-1.0f, 1.0f, -1.0f,
+	const float m_cubemapVertices[108] =
+		{
+			// positions
+			-1.0f, 1.0f, -1.0f,
+			-1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f, -1.0f,
+			1.0f, 1.0f, -1.0f,
+			-1.0f, 1.0f, -1.0f,
 
-		-1.0f, -1.0f, 1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, 1.0f, -1.0f,
-		-1.0f, 1.0f, -1.0f,
-		-1.0f, 1.0f, 1.0f,
-		-1.0f, -1.0f, 1.0f,
+			-1.0f, -1.0f, 1.0f,
+			-1.0f, -1.0f, -1.0f,
+			-1.0f, 1.0f, -1.0f,
+			-1.0f, 1.0f, -1.0f,
+			-1.0f, 1.0f, 1.0f,
+			-1.0f, -1.0f, 1.0f,
 
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f, 1.0f,
+			1.0f, 1.0f, 1.0f,
+			1.0f, 1.0f, 1.0f,
+			1.0f, 1.0f, -1.0f,
+			1.0f, -1.0f, -1.0f,
 
-		-1.0f, -1.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, -1.0f, 1.0f,
-		-1.0f, -1.0f, 1.0f,
+			-1.0f, -1.0f, 1.0f,
+			-1.0f, 1.0f, 1.0f,
+			1.0f, 1.0f, 1.0f,
+			1.0f, 1.0f, 1.0f,
+			1.0f, -1.0f, 1.0f,
+			-1.0f, -1.0f, 1.0f,
 
-		-1.0f, 1.0f, -1.0f,
-		1.0f, 1.0f, -1.0f,
-		1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f, -1.0f,
+			-1.0f, 1.0f, -1.0f,
+			1.0f, 1.0f, -1.0f,
+			1.0f, 1.0f, 1.0f,
+			1.0f, 1.0f, 1.0f,
+			-1.0f, 1.0f, 1.0f,
+			-1.0f, 1.0f, -1.0f,
 
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f, 1.0f,
-		1.0f, -1.0f, -1.0f,
-		1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f, 1.0f,
-		1.0f, -1.0f, 1.0f
-	};
+			-1.0f, -1.0f, -1.0f,
+			-1.0f, -1.0f, 1.0f,
+			1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f, -1.0f,
+			-1.0f, -1.0f, 1.0f,
+			1.0f, -1.0f, 1.0f};
 	const glm::mat4 m_captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-	const glm::mat4 m_captureViews[6] = 
-	{
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
-	};
+	const glm::mat4 m_captureViews[6] =
+		{
+			glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+			glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+			glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+			glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+			glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+			glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))};
 };

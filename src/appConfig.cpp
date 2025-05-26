@@ -16,9 +16,9 @@ namespace AppConfig
 	int WINDOW_HEIGHT = 1024;
 	int RENDER_WIDTH = 0;
 	int RENDER_HEIGHT = 0;
-	float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
-	Shader* baseShader;
-	Shader* screenShader;
+	float clearColor[4] = {0.133f, 0.192f, 0.265f, 1.0f};
+	Shader *baseShader;
+	Shader *screenShader;
 	float gamma = 1;
 	float near_plane = -2.01f;
 	float far_plane = 2.0f;

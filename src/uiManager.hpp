@@ -7,14 +7,14 @@
 #include "camera.hpp"
 #include "inputManager.hpp"
 
-class UIManager 
+class UIManager
 {
 public:
-	UIManager(GLFWwindow* window, Camera& camera);
+	UIManager(GLFWwindow *window, Camera &camera);
 	~UIManager();
 
-	Camera& camera;
-	GLFWwindow* window;
+	Camera &camera;
+	GLFWwindow *window;
 
 	bool viewportHovered;
 	bool viewportSizeSetteled;
@@ -26,7 +26,6 @@ public:
 	void setPickingTexture(uint32_t texId);
 	void setShadowMapTexture(uint32_t texId);
 	void draw(float deltaTime);
-
 
 private:
 	ViewportState m_viewportState;
@@ -47,5 +46,4 @@ private:
 	void getScroll();
 	void getViewportPos();
 	void showViewport(float deltaTime);
-	
 };

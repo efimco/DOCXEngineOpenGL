@@ -11,12 +11,12 @@
 class Renderer
 {
 public:
-	Renderer(GLFWwindow* window);
+	Renderer(GLFWwindow *window);
 	~Renderer();
 
 	float deltaTime;
 
-	void render(GLFWwindow* window);
+	void render(GLFWwindow *window);
 
 private:
 	float m_deltaTime, m_lastFrameTime;
@@ -28,11 +28,11 @@ private:
 	uint32_t m_lightsSSBO;
 
 	int m_nMipLevels;
-	ShadowMap* m_shadowMap;
-	UIManager* m_uiManager;
-	Cubemap* m_cubemap;
-	InputManager* m_inputManager;
-	PickingPass* m_pickingPass;
+	ShadowMap *m_shadowMap;
+	UIManager *m_uiManager;
+	Cubemap *m_cubemap;
+	InputManager *m_inputManager;
+	PickingPass *m_pickingPass;
 
 	glm::mat4 m_view;
 	glm::mat4 m_projection;
@@ -44,7 +44,6 @@ private:
 	void composedPass();
 	void createLightsSSBO();
 	void checkLightBuffer();
-	void addLight(Light& light);
+	void addLight(Light &light);
 	void updateLights();
 };
-

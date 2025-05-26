@@ -7,12 +7,10 @@
 #include "appConfig.hpp"
 #include "inputManager.hpp"
 
-
-
-InputManager::InputManager(GLFWwindow* window, Camera& camera) : window(window), camera(camera) 
+InputManager::InputManager(GLFWwindow *window, Camera &camera) : window(window), camera(camera)
 {
 	lastX = (float)(AppConfig::RENDER_WIDTH / 2);
-	lastY = (float) (AppConfig::RENDER_HEIGHT / 2);
+	lastY = (float)(AppConfig::RENDER_HEIGHT / 2);
 	firstMouse = true;
 	mousePosx = 0;
 	mousePosy = 0;
@@ -32,7 +30,6 @@ void InputManager::scrollCallback(ViewportState viewportState)
 {
 	if (viewportState.mouseWheel != 0.0f)
 	{
-		std::cout << "Scroll yOffset: " << viewportState.mouseWheel << std::endl;
 		camera.processMouseScroll(viewportState.mouseWheel);
 	}
 }
@@ -43,26 +40,26 @@ void InputManager::pickObjectCallback(ViewportState viewportState, uint32_t pick
 	{
 		ImVec2 mousePos = ImGui::GetIO().MousePos;
 		ImVec2 viewportPos = viewportState.position;
-		int readX =  static_cast<int> (mousePos.x - viewportPos.x);
+		int readX = static_cast<int>(mousePos.x - viewportPos.x);
 		// need to flip y axis cuz imgui makes it top left, but opengl uses bottom left
-		int readY =  static_cast<int> (AppConfig::RENDER_HEIGHT - (mousePos.y - viewportPos.y)); 
+		int readY = static_cast<int>(AppConfig::RENDER_HEIGHT - (mousePos.y - viewportPos.y));
 		int pixel = 0;
 		glGetTextureSubImage(pickingTexture, 0, readX, readY, 0, 1, 1, 1, GL_RED_INTEGER, GL_INT, sizeof(pixel), &pixel); // pixel == vao id
-		SceneManager::selectPrimitive(pixel);	
+		SceneManager::selectPrimitive(pixel);
 	}
 }
 
 void InputManager::exitCallback()
 {
-	if(ImGui::IsKeyPressed(ImGuiKey_Escape))
+	if (ImGui::IsKeyPressed(ImGuiKey_Escape))
 	{
-	glfwSetWindowShouldClose(window,true);
+		glfwSetWindowShouldClose(window, true);
 	}
 }
 
 void InputManager::wireframeToggleCallback()
 {
-	if(ImGui::IsKeyPressed(ImGuiKey_LeftCtrl, false))
+	if (ImGui::IsKeyPressed(ImGuiKey_LeftCtrl, false))
 	{
 		AppConfig::isWireframe = !AppConfig::isWireframe;
 	}
@@ -72,22 +69,23 @@ void InputManager::cameraMovementCallback(GLFWwindow *window, float deltaTime, V
 {
 	if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
 		camera.speed = camera.increasedSpeed;
-	else 
+	else
 		camera.speed = camera.defaultSpeed;
-	
+
 	float xPos = ImGui::GetIO().MousePos.x - viewportState.position.x;
 	float yPos = ImGui::GetIO().MousePos.y - viewportState.position.y;
 	if (firstMouse)
-	{	lastX = (float)xPos;
+	{
+		lastX = (float)xPos;
 		lastY = (float)yPos;
 		firstMouse = false;
 	}
 	mousePosx = xPos;
 	mousePosy = yPos;
-	
+
 	float xOffset = (float)xPos - (float)lastX;
-	float yOffset = lastY - (float)yPos ;
-	
+	float yOffset = lastY - (float)yPos;
+
 	lastX = (float)xPos;
 	lastY = (float)yPos;
 
@@ -105,17 +103,16 @@ void InputManager::cameraMovementCallback(GLFWwindow *window, float deltaTime, V
 	{
 		camera.cameraReseted = false;
 	}
-
 }
 
 void InputManager::cameraResetCallback(GLFWwindow *window, float deltaTime)
 {
-	if(!camera.cameraReseted && (glm::length(camera.position - camera.defaultCameraMatrix[0]) > .05 ||
-								glm::length(camera.front - camera.defaultCameraMatrix[1]) > .05 ||
-								glm::length(camera.up - camera.defaultCameraMatrix[2]) > .05 ||
-								glm::abs(camera.pitch - camera.defaultCameraRotation[0]) > .05 ||
-								glm::abs(camera.yaw - camera.defaultCameraRotation[1]) > .05))
-	{	
+	if (!camera.cameraReseted && (glm::length(camera.position - camera.defaultCameraMatrix[0]) > .05 ||
+								  glm::length(camera.front - camera.defaultCameraMatrix[1]) > .05 ||
+								  glm::length(camera.up - camera.defaultCameraMatrix[2]) > .05 ||
+								  glm::abs(camera.pitch - camera.defaultCameraRotation[0]) > .05 ||
+								  glm::abs(camera.yaw - camera.defaultCameraRotation[1]) > .05))
+	{
 		float speed = 10 * deltaTime;
 		camera.position = glm::mix(camera.position, camera.defaultCameraMatrix[0], speed);
 		camera.front = glm::mix(camera.front, camera.defaultCameraMatrix[1], speed);
@@ -123,6 +120,6 @@ void InputManager::cameraResetCallback(GLFWwindow *window, float deltaTime)
 		camera.pitch = glm::mix(camera.pitch, camera.defaultCameraRotation[0], speed);
 		camera.yaw = glm::mix(camera.yaw, camera.defaultCameraRotation[1], speed);
 	}
-	else camera.cameraReseted = true; 
+	else
+		camera.cameraReseted = true;
 }
-

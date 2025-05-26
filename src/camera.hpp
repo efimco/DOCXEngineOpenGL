@@ -2,7 +2,8 @@
 #include "glm/glm.hpp"
 #include <vector>
 
-enum CameraMovement {
+enum CameraMovement
+{
 	FORWARD,
 	BACKWARD,
 	LEFT,
@@ -33,7 +34,7 @@ public:
 	float sensitivity;
 	float distanceToOrbitPivot;
 
-	Camera(glm::vec3 pos, glm::vec3 upv, float yaw , float pitch);
+	Camera(glm::vec3 pos, glm::vec3 upv, float yaw, float pitch);
 
 	glm::mat4 getViewMatrix();
 	void processMouseScroll(float yOffset);
@@ -41,7 +42,5 @@ public:
 	void processOrbit(float deltaX, float deltaY);
 
 private:
-
 	void updateCameraVecotrs();
-
 };

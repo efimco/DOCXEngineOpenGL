@@ -1,7 +1,6 @@
 #pragma once
 #include "shader.hpp"
 
-
 typedef unsigned int GLenum;
 namespace AppConfig
 {
@@ -13,8 +12,8 @@ namespace AppConfig
 	extern float irradianceMapRotationY;
 	extern float backgroundBlur;
 	extern float clearColor[4];
-	extern Shader* baseShader;
-	extern Shader* screenShader;
+	extern Shader *baseShader;
+	extern Shader *screenShader;
 	extern float gamma;
 	extern float near_plane, far_plane;
 	extern GLenum polygonMode;

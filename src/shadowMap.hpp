@@ -11,11 +11,10 @@ public:
 	const int height;
 	uint32_t depthMapFBO;
 	uint32_t depthMap;
-	Shader* depthShader;
+	Shader *depthShader;
 
 	ShadowMap(const int width, const int height);
-	~ShadowMap();	
+	~ShadowMap();
 
-	void draw(Camera& camera);
-
+	void draw(Camera &camera);
 };
