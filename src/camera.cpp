@@ -1,7 +1,5 @@
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
-
 #include "camera.hpp"
 
 const float YAW = -90.0f;
@@ -62,6 +60,21 @@ void Camera::updateCameraVecotrs()
 	front = glm::normalize(orbitPivot - position);
 	right = glm::normalize(glm::cross(front, worldUp));
 	up = glm::normalize(glm::cross(right, front));
+}
+
+void Camera::focusOn(Primitive *primitive)
+{
+	glm::vec3 minPos = primitive->boundingBox.first + glm::vec3(primitive->transform[3]);
+	glm::vec3 maxPos = primitive->boundingBox.second + glm::vec3(primitive->transform[3]);
+	glm::vec3 center = (minPos + maxPos) * 0.5f;
+	float radius = glm::length(maxPos - minPos) * 0.5f;
+	orbitPivot = center;
+
+	// Position camera to see the entire bounding box
+	float distance = radius / std::tan(glm::radians(zoom * 0.5f));
+	distanceToOrbitPivot = distance;
+
+	updateCameraVecotrs();
 }
 
 void Camera::processOrbit(float deltaX, float deltaY)

@@ -1,8 +1,8 @@
 #pragma once
 #include "shader.hpp"
 #include "glm/glm.hpp"
-#include "camera.hpp"
 #include "material.hpp"
+
 class Primitive
 {
 public:

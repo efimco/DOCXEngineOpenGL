@@ -1,16 +1,7 @@
 #pragma once
 #include "glm/glm.hpp"
 #include <vector>
-
-enum CameraMovement
-{
-	FORWARD,
-	BACKWARD,
-	LEFT,
-	RIGHT,
-	UP,
-	DOWN
-};
+#include "primitive.hpp"
 
 class Camera
 {
@@ -40,6 +31,7 @@ public:
 	void processMouseScroll(float yOffset);
 	void processPanning(float xOffset, float yOffset);
 	void processOrbit(float deltaX, float deltaY);
+	void focusOn(Primitive *primitive);
 
 private:
 	void updateCameraVecotrs();

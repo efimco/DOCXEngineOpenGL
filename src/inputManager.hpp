@@ -11,8 +11,6 @@ public:
 	~InputManager() = default;
 
 	void processInput(float deltaTime, ViewportState viewportState, uint32_t pickingTexture);
-	void cameraMovementCallback(GLFWwindow *window, float deltaTime, ViewportState viewportState);
-	void cameraResetCallback(GLFWwindow *window, float deltaTime);
 
 private:
 	GLFWwindow *window;
@@ -25,7 +23,9 @@ private:
 	double mousePosy;
 
 	void scrollCallback(ViewportState viewportState);
+	void cameraFocusCallback();
 	void pickObjectCallback(ViewportState viewportState, uint32_t pickingTexture);
 	void exitCallback();
+	void cameraMovementCallback(GLFWwindow *window, float deltaTime, ViewportState viewportState);	
 	void wireframeToggleCallback();
 };

@@ -20,10 +20,21 @@ void InputManager::processInput(float deltaTime, ViewportState viewportState, ui
 {
 	wireframeToggleCallback();
 	cameraMovementCallback(window, deltaTime, viewportState);
-	cameraResetCallback(window, deltaTime);
+	cameraFocusCallback();
 	scrollCallback(viewportState);
 	exitCallback();
 	pickObjectCallback(viewportState, pickingTexture);
+}
+
+void InputManager::cameraFocusCallback()
+{
+	if (ImGui::IsKeyPressed(ImGuiKey_F, false))
+	{
+		if (SceneManager::getSelectedPrimitive() != nullptr)
+		{
+			camera.focusOn(SceneManager::getSelectedPrimitive());
+		}
+	}
 }
 
 void InputManager::scrollCallback(ViewportState viewportState)
@@ -98,28 +109,4 @@ void InputManager::cameraMovementCallback(GLFWwindow *window, float deltaTime, V
 	{
 		camera.processOrbit(xOffset, yOffset);
 	}
-
-	if (ImGui::IsKeyPressed(ImGuiKey_F, false))
-	{
-		camera.cameraReseted = false;
-	}
-}
-
-void InputManager::cameraResetCallback(GLFWwindow *window, float deltaTime)
-{
-	if (!camera.cameraReseted && (glm::length(camera.position - camera.defaultCameraMatrix[0]) > .05 ||
-								  glm::length(camera.front - camera.defaultCameraMatrix[1]) > .05 ||
-								  glm::length(camera.up - camera.defaultCameraMatrix[2]) > .05 ||
-								  glm::abs(camera.pitch - camera.defaultCameraRotation[0]) > .05 ||
-								  glm::abs(camera.yaw - camera.defaultCameraRotation[1]) > .05))
-	{
-		float speed = 10 * deltaTime;
-		camera.position = glm::mix(camera.position, camera.defaultCameraMatrix[0], speed);
-		camera.front = glm::mix(camera.front, camera.defaultCameraMatrix[1], speed);
-		camera.up = glm::mix(camera.up, camera.defaultCameraMatrix[2], speed);
-		camera.pitch = glm::mix(camera.pitch, camera.defaultCameraRotation[0], speed);
-		camera.yaw = glm::mix(camera.yaw, camera.defaultCameraRotation[1], speed);
-	}
-	else
-		camera.cameraReseted = true;
 }
