@@ -8,6 +8,7 @@
 #include "camera.hpp"
 #include "light.hpp"
 #include "pickingPass.hpp"
+#include "outlinePass.hpp"
 class Renderer
 {
 public:
@@ -33,6 +34,7 @@ private:
 	Cubemap *m_cubemap;
 	InputManager *m_inputManager;
 	PickingPass *m_pickingPass;
+	OutlinePass *m_outlinePass;
 
 	glm::mat4 m_view;
 	glm::mat4 m_projection;

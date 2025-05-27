@@ -43,8 +43,6 @@ void PickingPass::createOrResize()
 	glNamedFramebufferRenderbuffer(m_pickingFBO, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_pickingRBO);
 	glNamedRenderbufferStorage(m_pickingRBO, GL_DEPTH_COMPONENT24, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 	glNamedFramebufferTexture(m_pickingFBO, GL_COLOR_ATTACHMENT0, pickingTexture, 0);
-	GLenum drawBufs[1] = {GL_COLOR_ATTACHMENT0};
-	glNamedFramebufferDrawBuffers(m_pickingFBO, 1, drawBufs);
 }
 
 void PickingPass::draw(glm::mat4 projection, glm::mat4 view)

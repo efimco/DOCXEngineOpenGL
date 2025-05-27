@@ -9,8 +9,7 @@ public:
 	void createOrResize();
 	uint32_t pickingTexture;
 	Shader *pickingShader;
-
-private:
 	uint32_t m_pickingFBO;
+private:
 	uint32_t m_pickingRBO;
 };

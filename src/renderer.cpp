@@ -29,6 +29,7 @@ Renderer::Renderer(GLFWwindow *window)
 	m_inputManager = new InputManager(window, m_camera);
 	m_uiManager = new UIManager(window, m_camera);
 	m_pickingPass = new PickingPass();
+	m_outlinePass = new OutlinePass();
 	initScreenQuad();
 	createOrResizeFrameBufferAndRenderTarget();
 
@@ -165,6 +166,7 @@ void Renderer::checkFrameBufeerSize()
 		AppConfig::RENDER_HEIGHT = (int)m_uiManager->getViewportSize().y;
 		createOrResizeFrameBufferAndRenderTarget();
 		m_pickingPass->createOrResize();
+		m_outlinePass->createOrResize();
 		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 
 		AppConfig::isFramebufferSizeSetted = true;
@@ -299,6 +301,7 @@ void Renderer::render(GLFWwindow *window)
 		// DIRECTIONAL LIGHT SHADOW MAP PASS
 		m_shadowMap->draw(m_camera);
 		m_pickingPass->draw(m_projection, m_view);
+		m_outlinePass->draw(m_projection, m_view, m_pickingPass->m_pickingFBO);
 
 		// MAIN RENDER PASS
 		updateLights();
