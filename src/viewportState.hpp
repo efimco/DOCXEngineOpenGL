@@ -10,6 +10,7 @@ struct ViewportState
 	bool wantCaptureMouse;	  // Whether ImGui wants to capture mouse input
 	bool wantCaptureKeyboard; // Whether ImGui wants to capture keyboard input
 	float mouseWheel;
+	ImVec2 cursorPos;
 
 	bool contains(float x, float y) const
 	{

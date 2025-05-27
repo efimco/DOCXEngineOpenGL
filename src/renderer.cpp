@@ -257,7 +257,7 @@ void Renderer::mainPass()
 	glPopDebugGroup();
 }
 
-void Renderer::composedPass()
+void Renderer::composedPass(ViewportState viewportState)
 {
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Composed Pass");
 
@@ -273,8 +273,14 @@ void Renderer::composedPass()
 	AppConfig::screenShader->setFloat("near_plane", AppConfig::near_plane);
 	AppConfig::screenShader->setFloat("far_plane", AppConfig::far_plane);
 	AppConfig::screenShader->setFloat("exposure", AppConfig::exposure);
+	float aspectRatio = AppConfig::RENDER_HEIGHT/ (AppConfig::RENDER_WIDTH == 0 ? 0.001:AppConfig::RENDER_WIDTH);
+	AppConfig::screenShader->setVec2("cursorPos",
+									 viewportState.cursorPos.x / AppConfig::RENDER_WIDTH,
+									 viewportState.cursorPos.y / AppConfig::RENDER_HEIGHT);
+
 	glBindVertexArray(m_fullFrameQuadVAO);
 	glBindTextureUnit(0, m_screenTexture);
+	glBindTextureUnit(1, m_outlinePass->silhouetteTexture);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindTextureUnit(0, 0);
@@ -307,11 +313,10 @@ void Renderer::render(GLFWwindow *window)
 		updateLights();
 		mainPass();
 
-		// SCREEN QUAD RENDER PASS
-		composedPass();
-
 		glfwPollEvents();
 		ViewportState viewportState = m_uiManager->getViewportState();
+		// SCREEN QUAD RENDER PASS
+		composedPass(viewportState);
 		m_uiManager->setScreenTexture(m_composedTexture);
 		m_uiManager->setShadowMapTexture(m_shadowMap->depthMap);
 		m_uiManager->draw(m_deltaTime);

@@ -45,5 +45,6 @@ private:
 	void showMaterialBrowser();
 	void getScroll();
 	void getViewportPos();
+	void getCursorPos();
 	void showViewport(float deltaTime);
 };

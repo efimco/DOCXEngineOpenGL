@@ -4,6 +4,7 @@ layout (location = 0) out vec4 FragColor;
 in vec2 TexCoords;
 
 layout (location = 0) uniform sampler2D screenTexture;
+uniform vec2 cursorPos;
 // uniform float exposure;
 
 vec3 ACESFilm(vec3 x) {
@@ -32,6 +33,20 @@ void main()
 	// vec3 tonemapped = ACESFilm(hdrColor * exposure);
 
 	vec3 tonemapped = vec3(linear_rgb_to_srgb(hdrColor.r), linear_rgb_to_srgb(hdrColor.g), linear_rgb_to_srgb(hdrColor.b));
+	
+	vec2 aspectCorrectedCoords = TexCoords;
+	aspectCorrectedCoords.x *= textureSize(screenTexture, 0).x / float(textureSize(screenTexture, 0).y);
+	vec2 aspectCorrectedCursor = cursorPos;
+	aspectCorrectedCursor.x *= textureSize(screenTexture, 0).x / float(textureSize(screenTexture, 0).y);
+	float circleSize = 0.01;
+	float dist = distance(aspectCorrectedCoords, aspectCorrectedCursor);
+	if (dist < circleSize) 
+	{
+		FragColor = vec4(1,0,0,1);
+	}
+	else
+	{
+		FragColor = vec4(tonemapped, 1.0);
+	}
 
-	FragColor = vec4(tonemapped, 1.0);
 }

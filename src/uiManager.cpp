@@ -92,6 +92,7 @@ void UIManager::draw(float deltaTime)
 
 	getScroll();
 	getViewportPos();
+	getCursorPos();
 
 	ImGui::Render();
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -113,6 +114,17 @@ void UIManager::getScroll()
 {
 	float yOffset = ImGui::GetIO().MouseWheel;
 	m_viewportState.mouseWheel = yOffset;
+}
+
+void UIManager::getCursorPos()
+{
+	ImVec2 mousePos = ImGui::GetIO().MousePos;
+	ImVec2 viewportPos = m_viewportState.position;
+	int readX = static_cast<int>(mousePos.x - viewportPos.x);
+	// need to flip y axis cuz imgui makes it top left, but opengl uses bottom left
+	int readY = static_cast<int>(AppConfig::RENDER_HEIGHT - (mousePos.y - viewportPos.y));
+	ImVec2 cursorPos(readX, readY);
+	m_viewportState.cursorPos = cursorPos;
 }
 
 void UIManager::getViewportPos()

@@ -43,7 +43,7 @@ private:
 	void createOrResizeFrameBufferAndRenderTarget();
 	void checkFrameBufeerSize();
 	void mainPass();
-	void composedPass();
+	void composedPass(ViewportState viewportState);
 	void createLightsSSBO();
 	void checkLightBuffer();
 	void addLight(Light &light);
