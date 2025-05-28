@@ -319,6 +319,7 @@ void Renderer::render(GLFWwindow *window)
 		composedPass(viewportState);
 		m_uiManager->setScreenTexture(m_composedTexture);
 		m_uiManager->setShadowMapTexture(m_shadowMap->depthMap);
+		m_uiManager->setPickingTexture(m_outlinePass->silhouetteTexture);
 		m_uiManager->draw(m_deltaTime);
 
 		m_inputManager->processInput(m_deltaTime, viewportState, m_pickingPass->pickingTexture);

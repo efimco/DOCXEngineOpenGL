@@ -3,7 +3,8 @@ layout (location = 0) out vec4 FragColor;
 
 in vec2 TexCoords;
 
-layout (location = 0) uniform sampler2D screenTexture;
+layout (binding = 0) uniform sampler2D screenTexture;
+layout (binding = 1) uniform sampler2D silhouetteTexture;
 uniform vec2 cursorPos;
 // uniform float exposure;
 
@@ -40,13 +41,36 @@ void main()
 	aspectCorrectedCursor.x *= textureSize(screenTexture, 0).x / float(textureSize(screenTexture, 0).y);
 	float circleSize = 0.01;
 	float dist = distance(aspectCorrectedCoords, aspectCorrectedCursor);
-	if (dist < circleSize) 
+
+	vec3 silhouetteColor = texture(silhouetteTexture, TexCoords).rgb;
+	int w = 3;
+
+	// if the pixel is black (we are on the silhouette)
+	if (silhouetteColor == vec3(0.0f))
 	{
-		FragColor = vec4(1,0,0,1);
+		vec2 size = 1.0f / textureSize(silhouetteTexture, 0);
+
+		for (int i = -w; i <= +w; i++)
+		{
+			for (int j = -w; j <= +w; j++)
+			{
+				if (i == 0 && j == 0)
+				{
+					continue;
+				}
+
+				vec2 offset = vec2(i, j) * size;
+
+				// and if one of the pixel-neighbor is white (we are on the border)
+				if (texture(silhouetteTexture, TexCoords + offset).rgb == vec3(1.0f))
+				{
+					FragColor = vec4(vec3(1.0f), 1.0f);
+					return;
+				}
+			}
+		}
 	}
-	else
-	{
-		FragColor = vec4(tonemapped, 1.0);
-	}
+	FragColor = vec4(tonemapped, 1.0);
+	
 
 }
