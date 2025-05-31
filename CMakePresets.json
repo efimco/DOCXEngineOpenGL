@@ -7,7 +7,7 @@
 			"description": "Using compilers for Visual Studio 17 2022 (x64 architecture)",
 			"generator": "Visual Studio 17 2022",
 			"architecture": "x64",
-			"binaryDir": "${sourceDir}/build",  // No nested Debug directory here
+			"binaryDir": "${sourceDir}/build", 
 			"cacheVariables": {
 				"CMAKE_INSTALL_PREFIX": "${sourceDir}/build/install/${presetName}",
 				"CMAKE_C_COMPILER": "cl.exe",

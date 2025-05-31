@@ -26,6 +26,12 @@ target_link_libraries(resources
 	opengl32
 )
 
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/default_imgui.ini
+    ${CMAKE_BINARY_DIR}/Debug/resources/default_imgui.ini
+    COPYONLY
+)
+
 # Set C++ standardPRIVATE
 set_target_properties(resources PROPERTIES
     CXX_STANDARD 17

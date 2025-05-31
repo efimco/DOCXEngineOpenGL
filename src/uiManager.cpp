@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <commdlg.h>
 #include <iostream>
+#include <filesystem>
 
 #include "ImGui/imgui_impl_glfw.h"
 #include "ImGui/imgui_impl_opengl3.h"
@@ -34,6 +35,11 @@ UIManager::UIManager(GLFWwindow *window, Camera &camera) : camera(camera),
 	ImGui_ImplOpenGL3_Init("#version 460");
 
 	m_viewportState.mouseWheel = 0;
+
+	if (!std::filesystem::exists("imgui.ini"))
+	{
+		ImGui::LoadIniSettingsFromDisk("resources/default_imgui.ini");
+	}
 }
 
 UIManager::~UIManager()
