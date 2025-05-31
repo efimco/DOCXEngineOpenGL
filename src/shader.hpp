@@ -16,6 +16,7 @@ public:
 
 	void setBool(const std::string &name, bool value) const;
 	void setInt(const std::string &name, int32_t value) const;
+	void setIntArray(const std::string &name, uint32_t count, const int32_t* value) const;
 	void setFloat(const std::string &name, float value) const;
 	void setMat4(const std::string &name, glm::mat4 value) const;
 	void setVec2(const std::string &name, float x, float y) const;

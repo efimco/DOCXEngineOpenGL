@@ -56,7 +56,14 @@ void InputManager::pickObjectCallback(ViewportState viewportState, uint32_t pick
 		int readY = static_cast<int>(AppConfig::RENDER_HEIGHT - (mousePos.y - viewportPos.y));
 		int pixel = 0;
 		glGetTextureSubImage(pickingTexture, 0, readX, readY, 0, 1, 1, 1, GL_RED_INTEGER, GL_INT, sizeof(pixel), &pixel); // pixel == vao id
-		SceneManager::selectPrimitive(pixel);
+		if(ImGui::IsKeyDown(ImGuiKey_LeftShift))
+		{
+			SceneManager::selectPrimitive(pixel, true); // add to selection
+		}
+		else
+		{
+			SceneManager::selectPrimitive(pixel, false); // select new primitive
+		}
 	}
 }
 

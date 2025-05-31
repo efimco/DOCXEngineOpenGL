@@ -29,7 +29,6 @@ Renderer::Renderer(GLFWwindow *window)
 	m_inputManager = new InputManager(window, m_camera);
 	m_uiManager = new UIManager(window, m_camera);
 	m_pickingPass = new PickingPass();
-	m_outlinePass = new OutlinePass();
 	initScreenQuad();
 	createOrResizeFrameBufferAndRenderTarget();
 
@@ -166,7 +165,6 @@ void Renderer::checkFrameBufeerSize()
 		AppConfig::RENDER_HEIGHT = (int)m_uiManager->getViewportSize().y;
 		createOrResizeFrameBufferAndRenderTarget();
 		m_pickingPass->createOrResize();
-		m_outlinePass->createOrResize();
 		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 
 		AppConfig::isFramebufferSizeSetted = true;
@@ -273,14 +271,28 @@ void Renderer::composedPass(ViewportState viewportState)
 	AppConfig::screenShader->setFloat("near_plane", AppConfig::near_plane);
 	AppConfig::screenShader->setFloat("far_plane", AppConfig::far_plane);
 	AppConfig::screenShader->setFloat("exposure", AppConfig::exposure);
-	float aspectRatio = AppConfig::RENDER_HEIGHT/ (AppConfig::RENDER_WIDTH == 0 ? 0.001:AppConfig::RENDER_WIDTH);
+	float aspectRatio = float(AppConfig::RENDER_HEIGHT / (AppConfig::RENDER_WIDTH == 0 ? 0.001 : AppConfig::RENDER_WIDTH));
 	AppConfig::screenShader->setVec2("cursorPos",
 									 viewportState.cursorPos.x / AppConfig::RENDER_WIDTH,
 									 viewportState.cursorPos.y / AppConfig::RENDER_HEIGHT);
+	GLuint pickingSSBO;
+	glGenBuffers(1, &pickingSSBO);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, pickingSSBO);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, SceneManager::getSelectedPrimitives().size() * sizeof(uint32_t), SceneManager::getSelectedPrimitives().data(), GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pickingSSBO); // 1 matches binding in shader
+
 
 	glBindVertexArray(m_fullFrameQuadVAO);
 	glBindTextureUnit(0, m_screenTexture);
-	glBindTextureUnit(1, m_outlinePass->silhouetteTexture);
+	glBindTextureUnit(1, m_pickingPass->pickingTexture);
+
+	if (SceneManager::getSelectedPrimitives().size() > 0)
+	{
+		AppConfig::screenShader->setIntArray("selectedPrimitives",
+											 static_cast<uint32_t>(SceneManager::getSelectedPrimitives().size()),
+											 reinterpret_cast<const int32_t*>(SceneManager::getSelectedPrimitives().data()));
+	}
+
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindTextureUnit(0, 0);
@@ -307,7 +319,6 @@ void Renderer::render(GLFWwindow *window)
 		// DIRECTIONAL LIGHT SHADOW MAP PASS
 		m_shadowMap->draw(m_camera);
 		m_pickingPass->draw(m_projection, m_view);
-		m_outlinePass->draw(m_projection, m_view, m_pickingPass->m_pickingFBO);
 
 		// MAIN RENDER PASS
 		updateLights();
@@ -319,7 +330,7 @@ void Renderer::render(GLFWwindow *window)
 		composedPass(viewportState);
 		m_uiManager->setScreenTexture(m_composedTexture);
 		m_uiManager->setShadowMapTexture(m_shadowMap->depthMap);
-		m_uiManager->setPickingTexture(m_outlinePass->silhouetteTexture);
+		m_uiManager->setPickingTexture(m_pickingPass->pickingTexture);
 		m_uiManager->draw(m_deltaTime);
 
 		m_inputManager->processInput(m_deltaTime, viewportState, m_pickingPass->pickingTexture);

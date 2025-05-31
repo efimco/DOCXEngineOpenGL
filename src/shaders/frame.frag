@@ -4,9 +4,28 @@ layout (location = 0) out vec4 FragColor;
 in vec2 TexCoords;
 
 layout (binding = 0) uniform sampler2D screenTexture;
-layout (binding = 1) uniform sampler2D silhouetteTexture;
+layout (binding = 1) uniform isampler2D pickingTexture;
 uniform vec2 cursorPos;
-// uniform float exposure;
+
+layout(std430, binding = 1) buffer selectedPrimitivesBuffer {
+    int selectedPrimitives[];
+};
+
+// Add this function to help visualize array contents
+vec3 debugArrayValue(int index, vec2 uv) {
+	float cellSize = 1.0 / 16.0; // Show 16x16 grid
+	int row = index / 16;
+	int col = index % 16;
+	
+	vec2 cellPos = vec2(col, row) * cellSize;
+	vec2 innerCell = (uv - cellPos) / cellSize;
+	
+	if (uv.x >= cellPos.x && uv.x < cellPos.x + cellSize &&
+		uv.y >= cellPos.y && uv.y < cellPos.y + cellSize) {
+		return selectedPrimitives[index] > 0 ? vec3(1.0, 0.0, 0.0) : vec3(0.0);
+	}
+	return vec3(0.0);
+}
 
 vec3 ACESFilm(vec3 x) {
 	// an approximation to the RRT+ODT fit from ACES
@@ -29,12 +48,11 @@ return 1.055f * pow(color, 1.0f / 2.4f) - 0.055f;
 
 void main()
 {
-	float exposure = .7;
 	vec3 hdrColor = texture(screenTexture, TexCoords).rgb;
-	// vec3 tonemapped = ACESFilm(hdrColor * exposure);
+	int pickingColor = texture(pickingTexture, TexCoords).r;
 
 	vec3 tonemapped = vec3(linear_rgb_to_srgb(hdrColor.r), linear_rgb_to_srgb(hdrColor.g), linear_rgb_to_srgb(hdrColor.b));
-	
+
 	vec2 aspectCorrectedCoords = TexCoords;
 	aspectCorrectedCoords.x *= textureSize(screenTexture, 0).x / float(textureSize(screenTexture, 0).y);
 	vec2 aspectCorrectedCursor = cursorPos;
@@ -42,35 +60,35 @@ void main()
 	float circleSize = 0.01;
 	float dist = distance(aspectCorrectedCoords, aspectCorrectedCursor);
 
-	vec3 silhouetteColor = texture(silhouetteTexture, TexCoords).rgb;
-	int w = 3;
 
-	// if the pixel is black (we are on the silhouette)
-	if (silhouetteColor == vec3(0.0f))
+	int outlineWidth = 2;
+
+	vec2 pixelSize = 1.0f / textureSize(pickingTexture, 0);
+
+	if (selectedPrimitives[pickingColor] == 1)
 	{
-		vec2 size = 1.0f / textureSize(silhouetteTexture, 0);
-
-		for (int i = -w; i <= +w; i++)
+		for (int i = -outlineWidth; i <= +outlineWidth; i++)
 		{
-			for (int j = -w; j <= +w; j++)
+			for (int j = -outlineWidth; j <= +outlineWidth; j++)
 			{
-				if (i == 0 && j == 0)
+				vec2 offset = vec2(i, j) * pixelSize;
+				if (texture(pickingTexture, TexCoords + offset).r != pickingColor)
 				{
-					continue;
-				}
-
-				vec2 offset = vec2(i, j) * size;
-
-				// and if one of the pixel-neighbor is white (we are on the border)
-				if (texture(silhouetteTexture, TexCoords + offset).rgb == vec3(1.0f))
-				{
-					FragColor = vec4(vec3(1.0f), 1.0f);
+					FragColor = vec4(1.0, 0.5, 0.0, 1.0);
 					return;
 				}
 			}
 		}
 	}
+
+		// Add before the final FragColor assignment
+	vec3 debugOverlay = debugArrayValue(0, TexCoords);
+	for(int i = 1; i < 256; i++) {
+		debugOverlay += debugArrayValue(i, TexCoords);
+	}
 	FragColor = vec4(tonemapped, 1.0);
-	
+
+
+	// FragColor = vec4(float(int(pickingColor.r * 255.0)) / 255.0, 0.0, 0.0, 1.0);
 
 }

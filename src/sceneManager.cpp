@@ -5,13 +5,12 @@
 namespace SceneManager
 {
 	static Primitive *selectedPrimitive = nullptr;
-	static std::vector<Primitive *> selectedPrimitives;
+	static std::vector<uint32_t> selectedPrimitives;
 	static std::vector<Light> lights;
 	static std::vector<Primitive> primitives;
 	static std::vector<Shader *> shaders;
 	static std::unordered_map<uint32_t, std::shared_ptr<Mat>> materials;
 	static std::unordered_map<std::string, std::shared_ptr<Tex>> textureCache;
-	static uint32_t lightSSBO = 0;
 
 	void addPrimitives(std::vector<Primitive> &&Primitives)
 	{
@@ -25,32 +24,61 @@ namespace SceneManager
 	{
 		return primitives;
 	}
-	void selectPrimitive(uint32_t vao)
+
+	void selectPrimitive(int32_t vao, bool addToSelection)
 	{
+		auto found = std::find(selectedPrimitives.begin(), selectedPrimitives.end(), vao);
 		if (vao == 0)
 		{
+			std::fill(selectedPrimitives.begin(), selectedPrimitives.end(), 0);
 			selectedPrimitive = nullptr;
 		}
-		for (auto &primitive : primitives)
+		else
 		{
-			if (primitive.vao == vao)
+			if (selectedPrimitives.size() <= vao)
 			{
-				selectedPrimitive = &primitive;
-				std::cout << "Selected primitive with VAO: " << vao << "\n";
-				std::cout << "Selected primitive bounds: min("
-						  << selectedPrimitive->boundingBox.first.x << ", "
-						  << selectedPrimitive->boundingBox.first.y << ", "
-						  << selectedPrimitive->boundingBox.first.z << ") max("
-						  << selectedPrimitive->boundingBox.second.x << ", "
-						  << selectedPrimitive->boundingBox.second.y << ", "
-						  << selectedPrimitive->boundingBox.second.z << ")\n";
+				selectedPrimitives.resize(vao + 1, 0);
 			}
+
+			if (addToSelection)
+			{
+				if (selectedPrimitives[vao] == 1)
+				{
+					selectedPrimitives[vao] = 0; // Deselect if already selected
+				}
+				else
+				{
+					selectedPrimitives[vao] = 1;
+				}
+			}
+			else
+			{
+				std::fill(selectedPrimitives.begin(), selectedPrimitives.end(), 0);
+				selectedPrimitives[vao] = 1;
+			}
+			selectedPrimitive = std::find_if(primitives.begin(), primitives.end(),
+											 [vao](const Primitive &p)
+											 { return p.vao == vao; })
+									.operator->();
 		}
+
+		std::cout << "Selected primitives: ";
+		for (size_t i = 0; i < selectedPrimitives.size(); i++)
+		{
+			if (selectedPrimitives[i])
+				std::cout << i << " ";
+		}
+		std::cout << std::endl;
 	}
 
 	Primitive *getSelectedPrimitive()
 	{
 		return selectedPrimitive;
+	}
+
+	std::vector<uint32_t> getSelectedPrimitives()
+	{
+		return selectedPrimitives;
 	}
 
 	void deletePrimitive(uint32_t vao)
