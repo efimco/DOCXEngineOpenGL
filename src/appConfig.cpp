@@ -3,6 +3,7 @@
 #include <string>
 #include <filesystem>
 #include "appConfig.hpp"
+#include "sceneManager.hpp"
 
 std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\multipleLightsSurface.frag").string();
 std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\vertex.vert").string();
@@ -37,7 +38,9 @@ namespace AppConfig
 	void initShaders()
 	{
 		baseShader = new Shader(vShaderPath, fShaderPath);
+		SceneManager::addShader(baseShader);
 		screenShader = new Shader(vScreenShader, fScreenShader);
+		SceneManager::addShader(screenShader);
 	}
 
 }

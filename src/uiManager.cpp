@@ -388,7 +388,7 @@ void UIManager::showTools()
 	if (ImGui::Button("Reload Shaders"))
 	{
 		SceneManager::reloadShaders();
-		AppConfig::screenShader->reload();
+		// AppConfig::screenShader->reload();
 		std::cout << "Shaders reloaded successfully!" << std::endl;
 	}
 	ImGui::End();
