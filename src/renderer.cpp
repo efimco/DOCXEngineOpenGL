@@ -281,7 +281,6 @@ void Renderer::composedPass(ViewportState viewportState)
 	glBufferData(GL_SHADER_STORAGE_BUFFER, SceneManager::getSelectedPrimitives().size() * sizeof(uint32_t), SceneManager::getSelectedPrimitives().data(), GL_DYNAMIC_DRAW);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pickingSSBO); // 1 matches binding in shader
 
-
 	glBindVertexArray(m_fullFrameQuadVAO);
 	glBindTextureUnit(0, m_screenTexture);
 	glBindTextureUnit(1, m_pickingPass->pickingTexture);
@@ -290,7 +289,7 @@ void Renderer::composedPass(ViewportState viewportState)
 	{
 		AppConfig::screenShader->setIntArray("selectedPrimitives",
 											 static_cast<uint32_t>(SceneManager::getSelectedPrimitives().size()),
-											 reinterpret_cast<const int32_t*>(SceneManager::getSelectedPrimitives().data()));
+											 reinterpret_cast<const int32_t *>(SceneManager::getSelectedPrimitives().data()));
 	}
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);

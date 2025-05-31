@@ -129,7 +129,7 @@ void UIManager::getCursorPos()
 	int readX = static_cast<int>(mousePos.x - viewportPos.x);
 	// need to flip y axis cuz imgui makes it top left, but opengl uses bottom left
 	int readY = static_cast<int>(AppConfig::RENDER_HEIGHT - (mousePos.y - viewportPos.y));
-	ImVec2 cursorPos(readX, readY);
+	ImVec2 cursorPos(static_cast<float>(readX), static_cast<float>(readY));
 	m_viewportState.cursorPos = cursorPos;
 }
 
