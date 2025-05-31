@@ -1,7 +1,7 @@
 #include <string>
 #include <iostream>
 #include <iterator>
-#include "glad/gl.h"
+#include <glad/gl.h>
 #include "sceneManager.hpp"
 #include "gltfImporter.hpp"
 

@@ -3,6 +3,8 @@ project(LearnOpenGL VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(RESOURCE_DIR ${CMAKE_SOURCE_DIR}/src/resources)
+set(PASSES_DIR ${CMAKE_SOURCE_DIR}/src/passes)
 
 set (
 	IMGUI_SRC
@@ -16,37 +18,41 @@ set (
 	)
 
 
+add_subdirectory(${PASSES_DIR})
+add_subdirectory(${RESOURCE_DIR})
+
 add_executable(OpenGLLearn 
 	thirdparty/include/glad/glad.c
 	src/main.cpp 
 	src/camera.cpp
-	src/texture.cpp
-	src/material.cpp
-	src/shader.cpp
-	src/primitive.cpp
-	src/gltfImporter.cpp
 	src/stb_image_impl.cpp
 	src/tiny_gltf_impl.cpp
-	src/shadowMap.cpp
-	src/cubemap.cpp
 	src/uiManager.cpp
 	src/sceneManager.cpp
 	src/appConfig.cpp
 	src/inputManager.cpp
 	src/renderer.cpp
-	src/pickingPass.cpp
 	${IMGUI_SRC}
 )
 
 target_include_directories(OpenGLLearn PRIVATE 
-	thirdparty/include
+	${CMAKE_SOURCE_DIR}/thirdparty/include
+	${CMAKE_SOURCE_DIR}/src
+	${PASSES_DIR}
+	${RESOURCE_DIR}
 )
 
 target_link_directories(OpenGLLearn PRIVATE 
-	thirdparty/lib
+	${CMAKE_SOURCE_DIR}/thirdparty/lib
+	${CMAKE_SOURCE_DIR}/src
+	${PASSES_DIR}
+	${RESOURCE_DIR}
+
 )
 
-target_link_libraries(OpenGLLearn PRIVATE 
+target_link_libraries(OpenGLLearn PRIVATE
 	glfw3
 	opengl32
+	passes
+	resources
 )
