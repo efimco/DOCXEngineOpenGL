@@ -12,16 +12,15 @@ class Primitive : public SceneNode
 
     std::shared_ptr<Mat> material;
 
-    Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, size_t indexCount,
-              Transform transform, std::pair<glm::vec3, glm::vec3> boundingBox,
-              std::shared_ptr<Mat> material);
+    Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, size_t indexCount, Transform transform,
+              std::pair<glm::vec3, glm::vec3> boundingBox, std::shared_ptr<Mat> material);
     Primitive(Primitive &) = delete;
     Primitive &operator=(Primitive &) = delete;
     Primitive(Primitive &&other) noexcept;
     Primitive &operator=(Primitive &&other) noexcept;
     ~Primitive() override;
     void draw() const override;
-	void update() const override;
+    void update() const override;
 
   private:
     uint32_t vbo;

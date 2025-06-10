@@ -1,84 +1,72 @@
 #pragma once
 
+#include "primitive.hpp"
 #include "camera.hpp"
-#include "shader.hpp"
 #include "material.hpp"
-#include <iostream>
+#include "shader.hpp"
+#include <glad/gl.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glad/gl.h>
-#include "primitive.hpp"
+#include <iostream>
 
-Primitive::Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo,
-					 size_t indexCount, Transform transform, std::pair<glm::vec3, glm::vec3> boundingBox, std::shared_ptr<Mat> material)
-	: vao(vao),
-	  vbo(vbo),
-	  ebo(ebo),
-	  indexCount(indexCount),
-	  boundingBox(boundingBox),
-	  material(material)
+Primitive::Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, size_t indexCount, Transform transform,
+                     std::pair<glm::vec3, glm::vec3> boundingBox, std::shared_ptr<Mat> material)
+    : vao(vao), vbo(vbo), ebo(ebo), indexCount(indexCount), boundingBox(boundingBox), material(material)
 {
-	SceneNode::transform = transform;
+    SceneNode::transform = transform;
 }
 
 Primitive::Primitive(Primitive &&other) noexcept
-	: vao(other.vao),
-	  vbo(other.vbo),
-	  ebo(other.ebo),
-	  indexCount(other.indexCount),
-	  boundingBox(other.boundingBox),
-	  material(std::move(other.material))
+    : vao(other.vao), vbo(other.vbo), ebo(other.ebo), indexCount(other.indexCount), boundingBox(other.boundingBox),
+      material(std::move(other.material))
 {
-	SceneNode::transform = other.transform;
-	other.vao = 0;
-	other.vbo = 0;
-	other.ebo = 0;
-	other.indexCount = 0;
-	boundingBox = {glm::vec3(0.0f), glm::vec3(0.0f)};
-	other.SceneNode::transform = Transform();
+    SceneNode::transform = other.transform;
+    other.vao = 0;
+    other.vbo = 0;
+    other.ebo = 0;
+    other.indexCount = 0;
+    boundingBox = {glm::vec3(0.0f), glm::vec3(0.0f)};
+    other.SceneNode::transform = Transform();
 }
 
 Primitive &Primitive::operator=(Primitive &&other) noexcept
 {
-	if (this == &other)
-		return *this;
+    if (this == &other)
+        return *this;
 
-	vao = other.vao;
-	vbo = other.vbo;
-	ebo = other.ebo;
-	indexCount = other.indexCount;
-	SceneNode::transform = other.SceneNode::transform;
-	boundingBox = other.boundingBox;
-	material = std::move(other.material);
+    vao = other.vao;
+    vbo = other.vbo;
+    ebo = other.ebo;
+    indexCount = other.indexCount;
+    SceneNode::transform = other.SceneNode::transform;
+    boundingBox = other.boundingBox;
+    material = std::move(other.material);
 
-	other.vao = 0;
-	other.vbo = 0;
-	other.ebo = 0;
-	other.indexCount = 0;
-	other.SceneNode::transform = Transform();
+    other.vao = 0;
+    other.vbo = 0;
+    other.ebo = 0;
+    other.indexCount = 0;
+    other.SceneNode::transform = Transform();
 
-	return *this;
+    return *this;
 }
 
 Primitive::~Primitive()
 {
-	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ebo);
-	material.reset();
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vbo);
+    glDeleteBuffers(1, &ebo);
+    material.reset();
 }
 
 void Primitive::draw() const
 {
-	glBindVertexArray(vao);
-	int eboSize = 0;
-	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
-	const int indexSize = eboSize / sizeof(int);
-	glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void *)0);
-	glBindVertexArray(0);
+    glBindVertexArray(vao);
+    int eboSize = 0;
+    glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
+    const int indexSize = eboSize / sizeof(int);
+    glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void *)0);
+    glBindVertexArray(0);
 }
 
-void Primitive::update() const 
-{
-	
-}
+void Primitive::update() const {}

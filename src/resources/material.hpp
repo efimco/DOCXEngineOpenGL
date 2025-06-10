@@ -1,23 +1,24 @@
 #pragma once
-#include <string>
 #include "texture.hpp"
 #include <memory>
+#include <string>
+
 
 class Mat
 {
-public:
-	std::string name;
-	std::shared_ptr<Tex> diffuse;
-	std::shared_ptr<Tex> specular;
+  public:
+    std::string name;
+    std::shared_ptr<Tex> diffuse;
+    std::shared_ptr<Tex> specular;
 
-	float metallic;
-	float roughness;
+    float metallic;
+    float roughness;
 
-	std::shared_ptr<Tex> normal;
+    std::shared_ptr<Tex> normal;
 
-	Mat(std::string Name, std::shared_ptr<Tex> diffuse, std::shared_ptr<Tex> Specular);
+    Mat(std::string Name, std::shared_ptr<Tex> diffuse, std::shared_ptr<Tex> Specular);
 
-	~Mat();
+    ~Mat();
 
-	Mat();
+    Mat();
 };
