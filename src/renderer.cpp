@@ -63,6 +63,12 @@ Renderer::~Renderer()
 	glDeleteBuffers(1, &m_fullFrameQuadVBO);
 	glDeleteVertexArrays(1, &m_fullFrameQuadVAO);
 	glDeleteBuffers(1, &m_lightsSSBO);
+	delete m_shadowMap;
+	delete m_cubemap;
+	delete m_inputManager;
+	delete m_uiManager;
+	delete m_pickingPass;
+	glfwTerminate();
 }
 
 void Renderer::createLightsSSBO()
@@ -335,5 +341,4 @@ void Renderer::render(GLFWwindow *window)
 		m_inputManager->processInput(m_deltaTime, viewportState, m_pickingPass->pickingTexture);
 		glfwSwapBuffers(window);
 	}
-	this->~Renderer();
 }

@@ -72,3 +72,8 @@ void Primitive::draw() const
 	glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void *)0);
 	glBindVertexArray(0);
 }
+
+void Primitive::update() const 
+{
+	
+}

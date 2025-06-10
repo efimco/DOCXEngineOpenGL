@@ -5,10 +5,14 @@ add_library(resources STATIC)
 file(GLOB RESOURCES_SOURCES 
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
 )
+file(GLOB SCENE_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/scene/*.cpp" 
+)
 
 target_sources(resources
     PRIVATE
         ${RESOURCES_SOURCES}
+        ${SCENE_SOURCES}
 )
 
 target_include_directories(resources

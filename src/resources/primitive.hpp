@@ -1,28 +1,31 @@
 #pragma once
-#include "shader.hpp"
-#include "glm/glm.hpp"
 #include "material.hpp"
+#include "scene/sceneNode.hpp"
+#include "shader.hpp"
+#include <glm/glm.hpp>
 
-class Primitive
+class Primitive : public SceneNode
 {
-public:
-	uint32_t vao;
-	std::pair<glm::vec3, glm::vec3> boundingBox; // minimum and maximum value
+  public:
+    uint32_t vao;
+    std::pair<glm::vec3, glm::vec3> boundingBox; // minimum and maximum value
 
-	glm::mat4 transform;
-	std::shared_ptr<Mat> material;
+    glm::mat4 transform;
+    std::shared_ptr<Mat> material;
 
-	Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo,
-			  size_t indexCount, glm::mat4 transform, std::pair<glm::vec3, glm::vec3> boundingBox, std::shared_ptr<Mat> material);
-	Primitive(Primitive &) = delete;
-	Primitive &operator=(Primitive &) = delete;
-	Primitive(Primitive &&other) noexcept;
-	Primitive &operator=(Primitive &&other) noexcept;
-	~Primitive();
-	void draw() const;
+    Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, size_t indexCount,
+              glm::mat4 transform, std::pair<glm::vec3, glm::vec3> boundingBox,
+              std::shared_ptr<Mat> material);
+    Primitive(Primitive &) = delete;
+    Primitive &operator=(Primitive &) = delete;
+    Primitive(Primitive &&other) noexcept;
+    Primitive &operator=(Primitive &&other) noexcept;
+    ~Primitive() override;
+    void draw() const override;
+	void update() const override;
 
-private:
-	uint32_t vbo;
-	uint32_t ebo;
-	size_t indexCount;
+  private:
+    uint32_t vbo;
+    uint32_t ebo;
+    size_t indexCount;
 };
