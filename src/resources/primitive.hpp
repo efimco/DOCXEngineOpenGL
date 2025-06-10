@@ -10,11 +10,10 @@ class Primitive : public SceneNode
     uint32_t vao;
     std::pair<glm::vec3, glm::vec3> boundingBox; // minimum and maximum value
 
-    glm::mat4 transform;
     std::shared_ptr<Mat> material;
 
     Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, size_t indexCount,
-              glm::mat4 transform, std::pair<glm::vec3, glm::vec3> boundingBox,
+              Transform transform, std::pair<glm::vec3, glm::vec3> boundingBox,
               std::shared_ptr<Mat> material);
     Primitive(Primitive &) = delete;
     Primitive &operator=(Primitive &) = delete;

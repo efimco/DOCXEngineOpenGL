@@ -78,7 +78,7 @@ void ShadowMap::draw(Camera &camera)
 
 		depthShader->setMat4("projection", projection);
 		depthShader->setMat4("view", camera.getViewMatrix());
-		depthShader->setMat4("model", primitive.transform);
+		depthShader->setMat4("model", primitive.transform.matrix);
 
 		primitive.draw();
 	}

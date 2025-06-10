@@ -59,7 +59,7 @@ void PickingPass::draw(glm::mat4 projection, glm::mat4 view)
 		pickingShader->use();
 		pickingShader->setMat4("projection", projection);
 		pickingShader->setMat4("view", view);
-		pickingShader->setMat4("model", primitive.transform);
+		pickingShader->setMat4("model", primitive.transform.matrix);
 		pickingShader->setInt("objectID", primitive.vao);
 		primitive.draw();
 	}

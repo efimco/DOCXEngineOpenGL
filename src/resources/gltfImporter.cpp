@@ -4,6 +4,8 @@
 #include <glad/gl.h>
 #include "sceneManager.hpp"
 #include "gltfImporter.hpp"
+#include "glm/gtx/quaternion.hpp"
+
 
 GLTFModel::GLTFModel(std::string path) : path(path)
 {
@@ -114,23 +116,62 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 			glVertexArrayAttribBinding(vao, 2, 2);
 			glVertexArrayAttribBinding(vao, 3, 3);
 
-			glm::mat4 translation(1.0f);
+			Transform transform;
 			size_t meshIndex = &mesh - &model.meshes[0];
 			if (model.nodes[meshIndex].translation.size() != 0)
-				translation[3] = glm::vec4(model.nodes[meshIndex].translation[0], model.nodes[meshIndex].translation[1], model.nodes[meshIndex].translation[2], 1.0f);
+			{
+				transform.position = glm::vec3(model.nodes[meshIndex].translation[0],
+											   model.nodes[meshIndex].translation[1],
+											   model.nodes[meshIndex].translation[2]);
+			}
+			else
+			{
+				transform.position = glm::vec3(0.0f, 0.0f, 0.0f);
+			}
 
+			if (model.nodes[meshIndex].rotation.size() != 0)
+			{
+				glm::quat quatRot(
+					static_cast<float>(model.nodes[meshIndex].rotation[3]),
+					static_cast<float>(model.nodes[meshIndex].rotation[0]),
+					static_cast<float>(model.nodes[meshIndex].rotation[1]),
+					static_cast<float>(model.nodes[meshIndex].rotation[2]));
+				transform.rotation = glm::eulerAngles(quatRot);
+			}
+			else
+			{
+				transform.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+			}
+
+			if (model.nodes[meshIndex].scale.size() != 0)
+			{
+				transform.scale = glm::vec3(model.nodes[meshIndex].scale[0],
+											model.nodes[meshIndex].scale[1],
+											model.nodes[meshIndex].scale[2]);
+			}
+			else
+			{
+				transform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
+			}
+			transform.matrix = glm::translate(glm::mat4(1.0f), transform.position) *
+							   glm::mat4_cast(transform.rotation) *
+							   glm::scale(glm::mat4(1.0f), transform.scale);
 			assert(indexBuffer.size() == model.accessors[primitive.indices].count);
 			size_t indexCount = indexBuffer.size();
-			Primitive prim(vao, vbo, ebo,
+			primitives.emplace_back(vao, vbo, ebo,
 						   indexCount,
-						   translation,
+						   transform,
 						   boundingBox,
 						   materialsIndex[primitive.material]);
-			primitives.push_back(std::move(prim));
 		}
 	}
 	SceneManager::addPrimitives(std::move(primitives));
 	std::cout << "Loaded " << primitives.size() << " primitives from model." << std::endl;
+}
+
+void GLTFModel::processTransforms(tinygltf::Node &node, Transform transform)
+{
+
 }
 
 void GLTFModel::processTextures(tinygltf::Model &model)
@@ -173,14 +214,6 @@ void GLTFModel::processMaterials(tinygltf::Model &model)
 			SceneManager::addMaterial(std::make_shared<Mat>(mat), uid);
 		}
 		materialsIndex[i] = SceneManager::getMaterial(uid);
-	}
-}
-
-void GLTFModel::setTransform(glm::mat4 transform)
-{
-	for (auto &primitive : primitives)
-	{
-		primitive.transform += transform;
 	}
 }
 

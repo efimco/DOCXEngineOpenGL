@@ -64,8 +64,8 @@ void Camera::updateCameraVecotrs()
 
 void Camera::focusOn(Primitive *primitive)
 {
-	glm::vec3 minPos = primitive->boundingBox.first + glm::vec3(primitive->transform[3]);
-	glm::vec3 maxPos = primitive->boundingBox.second + glm::vec3(primitive->transform[3]);
+	glm::vec3 minPos = primitive->boundingBox.first + glm::vec3(primitive->transform.position);
+	glm::vec3 maxPos = primitive->boundingBox.second + glm::vec3(primitive->transform.position);
 	glm::vec3 center = (minPos + maxPos) * 0.5f;
 	float radius = glm::length(maxPos - minPos) * 0.5f;
 	orbitPivot = center;

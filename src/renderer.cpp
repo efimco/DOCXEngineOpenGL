@@ -222,7 +222,7 @@ void Renderer::mainPass()
 
 		AppConfig::baseShader->setMat4("projection", m_projection);
 		AppConfig::baseShader->setMat4("view", m_view);
-		AppConfig::baseShader->setMat4("model", primitive.transform);
+		AppConfig::baseShader->setMat4("model", primitive.transform.matrix);
 
 		glBindTextureUnit(4, m_cubemap->irradianceMap);
 		glBindTextureUnit(5, m_shadowMap->depthMap);

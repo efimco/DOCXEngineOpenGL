@@ -10,28 +10,32 @@
 #include "primitive.hpp"
 
 Primitive::Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo,
-					 size_t indexCount, glm::mat4 transform, std::pair<glm::vec3, glm::vec3> boundingBox, std::shared_ptr<Mat> material)
+					 size_t indexCount, Transform transform, std::pair<glm::vec3, glm::vec3> boundingBox, std::shared_ptr<Mat> material)
 	: vao(vao),
 	  vbo(vbo),
 	  ebo(ebo),
 	  indexCount(indexCount),
 	  boundingBox(boundingBox),
-	  transform(transform),
-	  material(material) {};
+	  material(material)
+{
+	SceneNode::transform = transform;
+}
 
 Primitive::Primitive(Primitive &&other) noexcept
 	: vao(other.vao),
 	  vbo(other.vbo),
 	  ebo(other.ebo),
 	  indexCount(other.indexCount),
-	  transform(other.transform),
 	  boundingBox(other.boundingBox),
 	  material(std::move(other.material))
 {
+	SceneNode::transform = other.transform;
 	other.vao = 0;
 	other.vbo = 0;
 	other.ebo = 0;
 	other.indexCount = 0;
+	boundingBox = {glm::vec3(0.0f), glm::vec3(0.0f)};
+	other.SceneNode::transform = Transform();
 }
 
 Primitive &Primitive::operator=(Primitive &&other) noexcept
@@ -43,7 +47,7 @@ Primitive &Primitive::operator=(Primitive &&other) noexcept
 	vbo = other.vbo;
 	ebo = other.ebo;
 	indexCount = other.indexCount;
-	transform = other.transform;
+	SceneNode::transform = other.SceneNode::transform;
 	boundingBox = other.boundingBox;
 	material = std::move(other.material);
 
@@ -51,6 +55,7 @@ Primitive &Primitive::operator=(Primitive &&other) noexcept
 	other.vbo = 0;
 	other.ebo = 0;
 	other.indexCount = 0;
+	other.SceneNode::transform = Transform();
 
 	return *this;
 }
