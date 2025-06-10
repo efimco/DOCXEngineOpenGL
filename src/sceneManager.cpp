@@ -5,6 +5,7 @@
 namespace SceneManager
 {
 static Primitive *selectedPrimitive = nullptr;
+static std::vector<Scene::Model> models;
 static std::vector<uint32_t> selectedPrimitives;
 static std::vector<Light> lights;
 static std::vector<Primitive> primitives;
@@ -18,6 +19,11 @@ void addPrimitives(std::vector<Primitive> &&Primitives)
     {
         SceneManager::primitives.push_back(std::move(primitive));
     }
+}
+
+void addModel(Scene::Model &&model)
+{
+	models.push_back(std::move(model));
 }
 
 std::vector<Primitive> &getPrimitives() { return primitives; }

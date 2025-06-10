@@ -1,6 +1,7 @@
 #include "gltfImporter.hpp"
 #include "glm/gtx/quaternion.hpp"
 #include "sceneManager.hpp"
+#include "scene/model.hpp"
 #include <glad/gl.h>
 #include <iostream>
 #include <iterator>
@@ -74,14 +75,6 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 
             size_t indexSize = indexBuffer.size() * sizeof(uint32_t);
 
-            // std::cout << "Pos buffer size: " << posSize << std::endl;
-            // std::cout << "Tex buffer size: " << texSize << std::endl;
-            // std::cout << "Norm buffer size: " << normalSize << std::endl;
-            // std::cout << "TangNorm buffer size: " << tangentNormalSize << std::endl;
-            // std::cout << "Index buffer size: " << indexSize << std::endl;
-            // std::cout << "Final buffer size: " << bufferSize << std::endl;
-            // std::cout << std::endl;
-
             glCreateBuffers(1, &ebo);
             glNamedBufferData(ebo, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), GL_STATIC_DRAW);
             glVertexArrayElementBuffer(vao, ebo);
@@ -126,8 +119,10 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
 
             if (model.nodes[meshIndex].rotation.size() != 0)
             {
-                glm::quat quatRot(model.nodes[meshIndex].rotation[3], model.nodes[meshIndex].rotation[0],
-                                  model.nodes[meshIndex].rotation[1], model.nodes[meshIndex].rotation[2]);
+                glm::quat quatRot(static_cast<float>(model.nodes[meshIndex].rotation[3]),
+                                  static_cast<float>(model.nodes[meshIndex].rotation[0]),
+                                  static_cast<float>(model.nodes[meshIndex].rotation[1]),
+                                  static_cast<float>(model.nodes[meshIndex].rotation[2]));
                 transform.rotation = glm::eulerAngles(quatRot);
             }
             else
@@ -151,6 +146,17 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
             primitives.emplace_back(vao, vbo, ebo, indexCount, transform, boundingBox, materialsIndex[primitive.material]);
         }
     }
+    Transform modelTransform;
+    modelTransform.matrix = glm::mat4(1.0f);
+    modelTransform.position = glm::vec3(0.0f, 0.0f, 0.0f);
+    modelTransform.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+    modelTransform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
+    Scene::Model finalModel(modelTransform);
+	// for (const auto& primitive: primitives)
+	// {
+	// 	finalModel.addChild(std::make_unique<Primitive>(primitive));
+	// }
+	SceneManager::addModel(std::move(finalModel));
     SceneManager::addPrimitives(std::move(primitives));
     std::cout << "Loaded " << primitives.size() << " primitives from model." << std::endl;
 }

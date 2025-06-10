@@ -1,3 +1,4 @@
+#pragma once
 #include "transform.hpp"
 #include <glm/glm.hpp>
 #include <list>

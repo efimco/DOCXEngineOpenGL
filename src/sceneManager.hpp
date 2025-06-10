@@ -1,9 +1,10 @@
 #pragma once
-#include "light.hpp"
-#include "primitive.hpp"
 #include <unordered_map>
 #include <vector>
 
+#include "light.hpp"
+#include "primitive.hpp"
+#include "scene/model.hpp"
 
 namespace SceneManager
 {
@@ -25,6 +26,7 @@ std::shared_ptr<Tex> &getTexture(std::string name);
 void addTexture(const std::string &name, std::shared_ptr<Tex> texture);
 
 void addLight(Light &light);
+void addModel(Scene::Model &&model);
 std::vector<Light> &getLights();
 void reloadShaders();
 }; // namespace SceneManager
