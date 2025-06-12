@@ -1,21 +1,32 @@
 #include "model.hpp"
 
-Scene::Model::Model(Transform transform) { SceneNode::transform = transform; }
+Scene::Model::Model(Transform transform, std::string name)
+{
+    this->transform = transform;
+    this->name = name;
+    this->parent = nullptr;
+    this->visible = true;
+    this->dirty = false;
+    this->movable = true;
+    this->children = std::list<std::unique_ptr<SceneNode>>();
+    
+}
 Scene::Model::~Model() = default;
 
 Scene::Model::Model(Model &&other)
 {
-    SceneNode::transform = other.SceneNode::transform;
-    other.SceneNode::transform = Transform();
-    SceneNode::children = std::move(other.SceneNode::children);
-    SceneNode::parent = other.SceneNode::parent;
-    SceneNode::visible = other.SceneNode::visible;
-    SceneNode::dirty = other.SceneNode::dirty;
-    SceneNode::movable = other.SceneNode::movable;
-    other.SceneNode::parent = nullptr;
-    other.SceneNode::visible = false;
-    other.SceneNode::dirty = false;
-    other.SceneNode::movable = false;
+    this->transform = other.transform;
+    this->children = std::move(other.children);
+    this->parent = other.parent;
+    this->visible = other.visible;
+    this->dirty = other.dirty;
+    this->movable = other.movable;
+    this->name = other.name;
+    other.transform = Transform();
+    other.parent = nullptr;
+    other.visible = false;
+    other.dirty = false;
+    other.movable = false;
 }
 
 Scene::Model &Scene::Model::operator=(Model &&other)
@@ -23,17 +34,18 @@ Scene::Model &Scene::Model::operator=(Model &&other)
     if (this == &other)
         return *this;
 
-    SceneNode::transform = other.SceneNode::transform;
-    other.SceneNode::transform = Transform();
-    SceneNode::children = std::move(other.SceneNode::children);
-    SceneNode::parent = other.SceneNode::parent;
-    SceneNode::visible = other.SceneNode::visible;
-    SceneNode::dirty = other.SceneNode::dirty;
-    SceneNode::movable = other.SceneNode::movable;
-    other.SceneNode::parent = nullptr;
-    other.SceneNode::visible = false;
-    other.SceneNode::dirty = false;
-    other.SceneNode::movable = false;
+    this->transform = other.transform;
+    this->children = std::move(other.children);
+    this->parent = other.parent;
+    this->visible = other.visible;
+    this->dirty = other.dirty;
+    this->movable = other.movable;
+    this->name = other.name;
+    other.transform = Transform();
+    other.parent = nullptr;
+    other.visible = false;
+    other.dirty = false;
+    other.movable = false;
 
     return *this;
 }

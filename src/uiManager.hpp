@@ -44,6 +44,8 @@ class UIManager
     void showLights();
     void showObjectInspector();
     void showTools();
+    void displaySceneNode(const SceneNode &node) const;
+    void showOutliner();
     void showMaterialBrowser();
     void getScroll();
     void getViewportPos();

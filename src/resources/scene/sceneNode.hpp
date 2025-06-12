@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <list>
 #include <memory>
+#include <string>
 
 class SceneNode
 {
@@ -13,6 +14,7 @@ class SceneNode
     bool visible = true;
     bool dirty = false;
     bool movable = true;
+    std::string name;
     SceneNode();
     SceneNode(const SceneNode &) = delete;
     SceneNode &operator=(const SceneNode &) = delete;

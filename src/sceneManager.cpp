@@ -21,10 +21,9 @@ void addPrimitives(std::vector<Primitive> &&Primitives)
     }
 }
 
-void addModel(Scene::Model &&model)
-{
-	models.push_back(std::move(model));
-}
+
+void addModel(Scene::Model &&model) { models.push_back(std::move(model)); }
+std::vector<Scene::Model> &getModels() { return models; }
 
 std::vector<Primitive> &getPrimitives() { return primitives; }
 

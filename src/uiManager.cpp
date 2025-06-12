@@ -2,6 +2,7 @@
 #include <commdlg.h>
 #include <iostream>
 #include <filesystem>
+#include <set>
 
 #include "ImGui/imgui_impl_glfw.h"
 #include "ImGui/imgui_impl_opengl3.h"
@@ -94,6 +95,7 @@ void UIManager::draw(float deltaTime)
 	showLights();
 	showTools();
 	showMaterialBrowser();
+	showOutliner();
 	// showCameraTransforms();
 
 	getScroll();
@@ -116,13 +118,13 @@ void UIManager::draw(float deltaTime)
 	}
 }
 
-void UIManager::getScroll()
+void UIManager::getScroll() 
 {
 	float yOffset = ImGui::GetIO().MouseWheel;
 	m_viewportState.mouseWheel = yOffset;
 }
 
-void UIManager::getCursorPos()
+void UIManager::getCursorPos() 
 {
 	ImVec2 mousePos = ImGui::GetIO().MousePos;
 	ImVec2 viewportPos = m_viewportState.position;
@@ -133,7 +135,7 @@ void UIManager::getCursorPos()
 	m_viewportState.cursorPos = cursorPos;
 }
 
-void UIManager::getViewportPos()
+void UIManager::getViewportPos() 
 {
 	m_viewportState.position = m_viewportPos;
 }
@@ -310,6 +312,7 @@ void UIManager::showObjectInspector()
 	if (SceneManager::getSelectedPrimitive() != nullptr)
 	{
 		ImGui::Begin("Object Inspector");
+		ImGui::Text("Object: %s", SceneManager::getSelectedPrimitive()->name.c_str());
 		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform.position));
 		if (SceneManager::getSelectedPrimitive()->material->diffuse != nullptr)
 			ImGui::Image(SceneManager::getSelectedPrimitive()->material->diffuse->id, ImVec2(64, 64));
@@ -390,6 +393,88 @@ void UIManager::showTools()
 		SceneManager::reloadShaders();
 		// AppConfig::screenShader->reload();
 		std::cout << "Shaders reloaded successfully!" << std::endl;
+	}
+	ImGui::End();
+}
+
+
+static ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanAllColumns;
+void UIManager::displaySceneNode(const SceneNode &node) const
+{
+	ImGui::TableNextRow();
+	ImGui::TableNextColumn();
+	const bool is_folder = node.children.size() > 0;
+	if (is_folder)
+	{
+		bool open = ImGui::TreeNodeEx(node.name.c_str(), tree_node_flags);
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(typeid(node).name() + 6); // skip "struct" or "class"
+		if (open)
+		{
+			for (const auto &child : node.children)
+			{
+				displaySceneNode(*child);
+			}
+			ImGui::TreePop();
+		}
+		
+	}
+	else
+	{
+		bool selected = false;
+		ImGui::Bullet();
+		static std::set<std::string> selectedNodes;
+		bool isSelected = selectedNodes.count(node.name) > 0;
+		if (ImGui::Selectable(node.name.c_str(), isSelected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick))
+		{
+			if (ImGui::GetIO().KeyCtrl)
+			{
+				if (isSelected)
+					selectedNodes.erase(node.name);
+				else
+					selectedNodes.insert(node.name);
+			}
+			else
+			{
+				selectedNodes.clear();
+				selectedNodes.insert(node.name);
+			}
+			std::cout << "Node clicked: " << node.name << std::endl;
+			const Primitive* prim = dynamic_cast<const Primitive*>(&node);
+			if (prim != nullptr)
+			{
+				if (ImGui::GetIO().KeyCtrl)
+				{
+					SceneManager::selectPrimitive(prim->vao, true);
+				}
+				else
+				{
+					SceneManager::selectPrimitive(prim->vao, false);
+				}
+			}
+		}
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(typeid(node).name() + 6); // skip "struct" or "class"
+	}
+}
+
+void UIManager::showOutliner()
+{
+	ImGui::Begin("Outliner");
+	int objectsCount = SceneManager::getModels().size() + SceneManager::getPrimitives().size() + SceneManager::getLights().size();
+	ImGui::Text("Objects in Scene: %d", objectsCount);
+	if (ImGui::BeginTable("OutlinerTable", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+	{
+		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.8f);
+		ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthStretch, 0.4f);
+		ImGui::TableHeadersRow();
+
+		for (const auto &model : SceneManager::getModels())
+		{
+			displaySceneNode(model);
+		}
+		
+		ImGui::EndTable();
 	}
 	ImGui::End();
 }

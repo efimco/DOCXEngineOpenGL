@@ -1,11 +1,12 @@
 #include "gltfImporter.hpp"
 #include "glm/gtx/quaternion.hpp"
-#include "sceneManager.hpp"
 #include "scene/model.hpp"
+#include "sceneManager.hpp"
 #include <glad/gl.h>
 #include <iostream>
 #include <iterator>
 #include <string>
+
 
 GLTFModel::GLTFModel(std::string path) : path(path)
 {
@@ -143,7 +144,19 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
                                glm::scale(glm::mat4(1.0f), transform.scale);
             assert(indexBuffer.size() == model.accessors[primitive.indices].count);
             size_t indexCount = indexBuffer.size();
-            primitives.emplace_back(vao, vbo, ebo, indexCount, transform, boundingBox, materialsIndex[primitive.material]);
+            std::string name = mesh.name;
+            auto it = std::find_if(primitives.begin(), primitives.end(),
+            [&](const Primitive& prim) 
+            {
+                return prim.name == name;
+            });
+
+            if (it != primitives.end()) {
+                std::cerr << "Warning: Duplicate primitive names were detected: " << name << std::endl;
+                continue;
+            }
+            primitives.emplace_back(vao, vbo, ebo, indexCount, transform, boundingBox, materialsIndex[primitive.material],
+                                    name);
         }
     }
     Transform modelTransform;
@@ -151,12 +164,13 @@ void GLTFModel::processGLTFModel(tinygltf::Model &model)
     modelTransform.position = glm::vec3(0.0f, 0.0f, 0.0f);
     modelTransform.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     modelTransform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
-    Scene::Model finalModel(modelTransform);
-	// for (const auto& primitive: primitives)
-	// {
-	// 	finalModel.addChild(std::make_unique<Primitive>(primitive));
-	// }
-	SceneManager::addModel(std::move(finalModel));
+    std::string modelName = path.substr(path.find_last_of("/\\") + 1);
+    Scene::Model finalModel(modelTransform, modelName);
+    for (const auto &primitive : primitives)
+    {
+        finalModel.addChild(std::make_unique<Primitive>(primitive));
+    }
+    SceneManager::addModel(std::move(finalModel));
     SceneManager::addPrimitives(std::move(primitives));
     std::cout << "Loaded " << primitives.size() << " primitives from model." << std::endl;
 }

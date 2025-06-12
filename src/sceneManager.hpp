@@ -27,6 +27,7 @@ void addTexture(const std::string &name, std::shared_ptr<Tex> texture);
 
 void addLight(Light &light);
 void addModel(Scene::Model &&model);
+std::vector<Scene::Model> &getModels();
 std::vector<Light> &getLights();
 void reloadShaders();
 }; // namespace SceneManager
