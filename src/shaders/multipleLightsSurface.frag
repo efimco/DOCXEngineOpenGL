@@ -105,7 +105,7 @@ Material getMaterial() {
 	
 	// Default albedo for missing texture
 	if (all(lessThanEqual(textureSize(tDiffuse, 0), ivec2(1)))) {
-		material.albedo = vec3(1.0, 0.0, 1.0);
+		material.albedo = vec3(1.0, 1.0, 1.0);
 	}
 	
 	return material;

@@ -6,9 +6,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 
-Cubemap::Cubemap(Camera &camera, std::string pathToCubemap)
+Cubemap::Cubemap(Camera& camera, std::string pathToCubemap)
     : camera(camera), m_cubeVAO(0), m_cubeVBO(0), m_quadVAO(0), m_quadVBO(0), m_hdri(0), envCubemap(0), m_captureFBO(0),
-      m_captureRBO(0)
+    m_captureRBO(0)
 {
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
@@ -25,7 +25,7 @@ Cubemap::Cubemap(Camera &camera, std::string pathToCubemap)
     renderEquirectToCubemap();
     convoluteIrradianceCubemap();
     convoluteSpecularCubemap();
-    renderBRDFLUTTExture();
+    renderBRDFLUTTexture();
 }
 
 Cubemap::~Cubemap()
@@ -76,7 +76,7 @@ void Cubemap::loadHDR(std::string pathToCubemap)
 {
     int width, height, nrChannels;
     stbi_set_flip_vertically_on_load(true);
-    float *imageData = stbi_loadf(pathToCubemap.c_str(), &width, &height, &nrChannels, 0);
+    float* imageData = stbi_loadf(pathToCubemap.c_str(), &width, &height, &nrChannels, 0);
     if (imageData)
     {
         std::cout << "Loading HDR cubemap" << std::endl;
@@ -259,7 +259,7 @@ void Cubemap::convoluteSpecularCubemap()
     glPopDebugGroup();
 }
 
-void Cubemap::renderBRDFLUTTExture()
+void Cubemap::renderBRDFLUTTexture()
 {
     glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "BRDF LUT");
 

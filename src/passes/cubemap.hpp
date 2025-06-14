@@ -34,7 +34,7 @@ class Cubemap
     void renderQuad();
     void convoluteIrradianceCubemap();
     void convoluteSpecularCubemap();
-    void renderBRDFLUTTExture();
+    void renderBRDFLUTTexture();
     void renderEquirectToCubemap();
     void loadHDR(std::string pathToCubemap);
     void initShaders();

@@ -8,7 +8,7 @@
 #include "inputManager.hpp"
 #include "sceneManager.hpp"
 
-InputManager::InputManager(GLFWwindow *window, Camera &camera) : window(window), camera(camera)
+InputManager::InputManager(GLFWwindow* window, Camera& camera) : window(window), camera(camera)
 {
     lastX = (float)(AppConfig::RENDER_WIDTH / 2);
     lastY = (float)(AppConfig::RENDER_HEIGHT / 2);
@@ -25,6 +25,7 @@ void InputManager::processInput(float deltaTime, ViewportState viewportState, ui
     scrollCallback(viewportState);
     exitCallback();
     pickObjectCallback(viewportState, pickingTexture);
+    deleteObjectCallback();
 }
 
 void InputManager::cameraFocusCallback()
@@ -38,9 +39,26 @@ void InputManager::cameraFocusCallback()
     }
 }
 
+void InputManager::deleteObjectCallback()
+{
+    if ((ImGui::IsKeyPressed(ImGuiKey_X, false) || ImGui::IsKeyPressed(ImGuiKey_Delete, false)) &&
+        !ImGui::IsKeyDown(ImGuiKey_LeftCtrl) &&
+        !ImGui::IsKeyDown(ImGuiKey_LeftAlt) &&
+        !ImGui::IsKeyDown(ImGuiKey_LeftShift))
+    {
+        if (auto selectedPrimitive = SceneManager::getSelectedPrimitive())
+        {
+            if (selectedPrimitive->parent)
+            {
+                selectedPrimitive->parent->removeChild(selectedPrimitive);
+            }
+        }
+    }
+}
+
 void InputManager::scrollCallback(ViewportState viewportState)
 {
-    if (viewportState.mouseWheel != 0.0f)
+    if (viewportState.mouseWheel != 0.0f && viewportState.isHovered)
     {
         camera.processMouseScroll(viewportState.mouseWheel);
     }
@@ -57,7 +75,7 @@ void InputManager::pickObjectCallback(ViewportState viewportState, uint32_t pick
         int readY = static_cast<int>(AppConfig::RENDER_HEIGHT - (mousePos.y - viewportPos.y));
         int pixel = 0;
         glGetTextureSubImage(pickingTexture, 0, readX, readY, 0, 1, 1, 1, GL_RED_INTEGER, GL_INT, sizeof(pixel),
-                             &pixel); // pixel == vao id
+            &pixel); // pixel == vao id
         if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
         {
             SceneManager::selectPrimitive(pixel, true); // add to selection
@@ -79,13 +97,14 @@ void InputManager::exitCallback()
 
 void InputManager::wireframeToggleCallback()
 {
-    if (ImGui::IsKeyPressed(ImGuiKey_LeftCtrl, false))
+    if (ImGui::IsKeyPressed(ImGuiKey_Z, false) && !ImGui::IsKeyDown(ImGuiKey_LeftCtrl) &&
+        ImGui::IsKeyDown(ImGuiKey_LeftAlt) && !ImGui::IsKeyDown(ImGuiKey_LeftShift))
     {
         AppConfig::isWireframe = !AppConfig::isWireframe;
     }
 }
 
-void InputManager::cameraMovementCallback(GLFWwindow *window, float deltaTime, ViewportState viewportState)
+void InputManager::cameraMovementCallback(GLFWwindow* window, float deltaTime, ViewportState viewportState)
 {
     if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
         camera.speed = camera.increasedSpeed;
@@ -109,12 +128,12 @@ void InputManager::cameraMovementCallback(GLFWwindow *window, float deltaTime, V
     lastX = (float)xPos;
     lastY = (float)yPos;
 
-    if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsMouseDown(ImGuiMouseButton_Middle))
+    if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsMouseDown(ImGuiMouseButton_Middle) && viewportState.isHovered)
     {
         camera.processPanning(xOffset, yOffset);
     }
 
-    if (ImGui::IsMouseDown(ImGuiMouseButton_Middle) && !ImGui::IsKeyDown(ImGuiKey_LeftShift))
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Middle) && !ImGui::IsKeyDown(ImGuiKey_LeftShift) && viewportState.isHovered)
     {
         camera.processOrbit(xOffset, yOffset);
     }

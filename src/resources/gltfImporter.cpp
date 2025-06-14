@@ -187,8 +187,6 @@ std::unique_ptr<SceneGraph::Model> GLTFModel::getModel()
 	return finalModel;
 }
 
-void GLTFModel::processTransforms(tinygltf::Node& node, Transform transform) {}
-
 void GLTFModel::processTextures(tinygltf::Model& model)
 {
 	for (int i = 0; i < model.images.size(); i++)
@@ -229,6 +227,14 @@ void GLTFModel::processMaterials(tinygltf::Model& model)
 			SceneManager::addMaterial(std::make_shared<Mat>(mat), uid);
 		}
 		materialsIndex[i] = SceneManager::getMaterial(uid);
+	}
+	if (model.materials.empty())
+	{
+		std::cerr << "No materials found in the model." << std::endl;
+	}
+	else
+	{
+		std::cout << "Processed " << model.materials.size() << " materials." << std::endl;
 	}
 }
 

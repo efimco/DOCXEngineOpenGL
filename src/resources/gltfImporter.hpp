@@ -23,7 +23,6 @@ private:
 
 	tinygltf::Model readGlb(const std::string& path);
 	void processGLTFModel(tinygltf::Model& model);
-	void processTransforms(tinygltf::Node& node, Transform transform);
 	void processTextures(tinygltf::Model& model);
 	void processMaterials(tinygltf::Model& model);
 	const std::pair<std::vector<float>, std::pair<glm::vec3, glm::vec3>>

@@ -8,7 +8,7 @@ namespace SceneGraph
 class Model final : public SceneNode
 {
   public:
-    inline static std::pmr::monotonic_buffer_resource modelMemoryResource{};
+    inline static std::pmr::unsynchronized_pool_resource modelMemoryResource{};
     Model(Transform transform, std::string name);
     ~Model() override final;
     Model(const Model &) = delete;

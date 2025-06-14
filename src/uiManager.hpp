@@ -9,6 +9,12 @@
 #include "viewportState.hpp"
 #include "scene/sceneNode.hpp"
 
+enum class FileType
+{
+	IMAGE,
+	MODEL,
+	UNKNOWN
+};
 
 class UIManager
 {
@@ -40,7 +46,7 @@ private:
 	uint32_t m_shadowMapTexture;
 	ImVec2 m_vpSize;
 
-	std::string OpenFileDialog();
+	std::string OpenFileDialog(FileType type);
 
 	void showCameraTransforms();
 	void showLights();

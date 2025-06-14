@@ -311,7 +311,7 @@ void UIManager::showObjectInspector()
 			ImGui::Image(SceneManager::getSelectedPrimitive()->material->specular->id, ImVec2(64, 64));
 		if (ImGui::Button("Diffuse"))
 		{
-			std::string filePath = OpenFileDialog();
+			std::string filePath = OpenFileDialog(FileType::IMAGE);
 			if (!filePath.empty())
 			{
 				// Update the object's texture path
@@ -322,7 +322,7 @@ void UIManager::showObjectInspector()
 		ImGui::SameLine();
 		if (ImGui::Button("Specular"))
 		{
-			std::string filePath = OpenFileDialog();
+			std::string filePath = OpenFileDialog(FileType::IMAGE);
 			if (!filePath.empty())
 			{
 				// Update the object's texture path
@@ -367,7 +367,7 @@ void UIManager::showTools()
 	ImGui::Checkbox("ShadowMap Debug", &AppConfig::showShadowMap);
 	if (ImGui::Button("Load CubeMap"))
 	{
-		std::string filePath = OpenFileDialog();
+		std::string filePath = OpenFileDialog(FileType::IMAGE);
 		if (!filePath.empty())
 		{
 			// Signal that a new cubemap needs to be loaded
@@ -377,10 +377,11 @@ void UIManager::showTools()
 	}
 	if (ImGui::Button("Import Model"))
 	{
-		std::string filePath = OpenFileDialog();
+		std::string filePath = OpenFileDialog(FileType::MODEL);
 		if (!filePath.empty())
 		{
 			GLTFModel model(filePath);
+			scene->addChild(std::move(model.getModel()));
 		}
 	}
 	AppConfig::polygonMode = AppConfig::isWireframe ? GL_LINE : GL_FILL;
@@ -472,7 +473,8 @@ void UIManager::showOutliner()
 	ImGui::End();
 }
 
-std::string UIManager::OpenFileDialog()
+
+std::string UIManager::OpenFileDialog(FileType type)
 {
 	OPENFILENAMEA ofn;
 	char fileName[260] = { 0 }; // buffer for file name
@@ -484,7 +486,18 @@ std::string UIManager::OpenFileDialog()
 	ofn.nMaxFile = sizeof(fileName);
 
 	// Filter: display image files by default (you can adjust as needed)
-	ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.jpeg;*.bmp\0All Files\0*.*\0";
+	if (type == FileType::IMAGE)
+	{
+		ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.jpeg;*.bmp\0All Files\0*.*\0";
+	}
+	else if (type == FileType::MODEL)
+	{
+		ofn.lpstrFilter = "Model Files\0*.gltf;*.glb;*.obj\0All Files\0*.*\0";
+	}
+	else
+	{
+		ofn.lpstrFilter = "All Files\0*.*\0";
+	}
 	ofn.nFilterIndex = 1;
 	ofn.lpstrTitle = "Select a Texture";
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
@@ -548,7 +561,7 @@ void UIManager::showMaterialBrowser()
 
 				if (ImGui::Button("Diffuse", ImVec2(imageSize, 0)))
 				{
-					std::string filePath = OpenFileDialog();
+					std::string filePath = OpenFileDialog(FileType::IMAGE);
 					if (!filePath.empty())
 					{
 						mat->diffuse->setPath(filePath);
@@ -558,7 +571,7 @@ void UIManager::showMaterialBrowser()
 				ImGui::SameLine();
 				if (ImGui::Button("Specular", ImVec2(imageSize, 0)))
 				{
-					std::string filePath = OpenFileDialog();
+					std::string filePath = OpenFileDialog(FileType::IMAGE);
 					if (!filePath.empty())
 					{
 						mat->specular->setPath(filePath);
