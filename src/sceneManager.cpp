@@ -4,95 +4,108 @@
 #include <utility>
 namespace SceneManager
 {
-static Primitive *selectedPrimitive = nullptr;
-static std::vector<SceneGraph::Model *> models;
-static std::vector<uint32_t> selectedPrimitives;
-static std::vector<Light> lights;
-static std::vector<Primitive *> primitives;
-static std::vector<Shader *> shaders;
-static std::unordered_map<uint32_t, std::shared_ptr<Mat>> materials;
-static std::unordered_map<std::string, std::shared_ptr<Tex>> textureCache;
+    static Primitive* selectedPrimitive = nullptr;
+    static std::vector<SceneGraph::Model*> models;
+    static std::vector<uint32_t> selectedPrimitives;
+    static std::vector<Light> lights;
+    static std::vector<Primitive*> primitives;
+    static std::vector<Shader*> shaders;
+    static std::unordered_map<uint32_t, std::shared_ptr<Mat>> materials;
+    static std::unordered_map<std::string, std::shared_ptr<Tex>> textureCache;
 
-void addPrimitive(Primitive *primitive) { SceneManager::primitives.push_back(std::move(primitive)); }
-void addModel(SceneGraph::Model *model) { models.push_back(std::move(model)); }
-std::vector<SceneGraph::Model *> getModels() { return models; }
-std::vector<Primitive *> getPrimitives() { return primitives; }
-
-void selectPrimitive(int32_t vao, bool addToSelection)
-{
-    auto found = std::find(selectedPrimitives.begin(), selectedPrimitives.end(), vao);
-    if (vao == 0)
+    void addPrimitive(Primitive* primitive) { SceneManager::primitives.push_back(std::move(primitive)); }
+    void removePrimitive(Primitive* primitive)
     {
-        std::fill(selectedPrimitives.begin(), selectedPrimitives.end(), 0);
-        selectedPrimitive = nullptr;
-    }
-    else
-    {
-        if (selectedPrimitives.size() <= vao)
+        auto it = std::remove_if(primitives.begin(), primitives.end(),
+            [primitive](const Primitive* p) { return p->vao == primitive->vao; });
+        if (it != primitives.end())
         {
-            selectedPrimitives.resize(vao + 1, 0);
+            primitives.erase(it, primitives.end());
+            if (selectedPrimitive && selectedPrimitive->vao == primitive->vao)
+            {
+                selectedPrimitive = nullptr;
+            }
         }
+    }
+    void addModel(SceneGraph::Model* model) { models.push_back(std::move(model)); }
+    std::vector<SceneGraph::Model*> getModels() { return models; }
+    std::vector<Primitive*> getPrimitives() { return primitives; }
 
-        if (addToSelection)
+    void selectPrimitive(int32_t vao, bool addToSelection)
+    {
+        auto found = std::find(selectedPrimitives.begin(), selectedPrimitives.end(), vao);
+        if (vao == 0)
         {
-            // Toggle selection state for the given vao
-            bool isSelected = selectedPrimitives[vao] == 1;
-            selectedPrimitives[vao] = isSelected ? 0 : 1;
+            std::fill(selectedPrimitives.begin(), selectedPrimitives.end(), 0);
+            selectedPrimitive = nullptr;
         }
         else
         {
-            std::fill(selectedPrimitives.begin(), selectedPrimitives.end(), 0);
-            selectedPrimitives[vao] = 1;
+            if (selectedPrimitives.size() <= vao)
+            {
+                selectedPrimitives.resize(vao + 1, 0);
+            }
+
+            if (addToSelection)
+            {
+                // Toggle selection state for the given vao
+                bool isSelected = selectedPrimitives[vao] == 1;
+                selectedPrimitives[vao] = isSelected ? 0 : 1;
+            }
+            else
+            {
+                std::fill(selectedPrimitives.begin(), selectedPrimitives.end(), 0);
+                selectedPrimitives[vao] = 1;
+            }
+            auto it = std::find_if(primitives.begin(), primitives.end(), [vao](Primitive* p) { return p->vao == vao; });
+            selectedPrimitive = (it != primitives.end()) ? *it : nullptr;
         }
-        auto it = std::find_if(primitives.begin(), primitives.end(), [vao](Primitive *p) { return p->vao == vao; });
-        selectedPrimitive = (it != primitives.end()) ? *it : nullptr;
+        std::cout << "Selected primitives: ";
+        for (size_t i = 0; i < selectedPrimitives.size(); i++)
+        {
+            if (selectedPrimitives[i])
+                std::cout << i << " ";
+        }
+        std::cout << std::endl;
     }
-    std::cout << "Selected primitives: ";
-    for (size_t i = 0; i < selectedPrimitives.size(); i++)
+
+    Primitive* getSelectedPrimitive() { return selectedPrimitive; }
+
+    std::vector<uint32_t> getSelectedPrimitives() { return selectedPrimitives; }
+
+    void deletePrimitive(uint32_t vao)
     {
-        if (selectedPrimitives[i])
-            std::cout << i << " ";
+        auto it = std::remove_if(primitives.begin(), primitives.end(), [vao](const auto& p) { return p->vao == vao; });
+        primitives.erase(it, primitives.end());
+        if (selectedPrimitive && selectedPrimitive->vao == vao)
+        {
+            selectedPrimitive = nullptr;
+        }
     }
-    std::cout << std::endl;
-}
 
-Primitive *getSelectedPrimitive() { return selectedPrimitive; }
+    void addShader(Shader* shader) { shaders.push_back(shader); }
 
-std::vector<uint32_t> getSelectedPrimitives() { return selectedPrimitives; }
+    void addLight(Light& light) { lights.push_back(std::move(light)); }
 
-void deletePrimitive(uint32_t vao)
-{
-    auto it = std::remove_if(primitives.begin(), primitives.end(), [vao](const auto &p) { return p->vao == vao; });
-    primitives.erase(it, primitives.end());
-    if (selectedPrimitive && selectedPrimitive->vao == vao)
+    std::vector<Light>& getLights() { return lights; }
+
+    void reloadShaders()
     {
-        selectedPrimitive = nullptr;
+        for (auto& shader : shaders)
+        {
+            shader->reload();
+        }
     }
-}
 
-void addShader(Shader *shader) { shaders.push_back(shader); }
+    std::unordered_map<uint32_t, std::shared_ptr<Mat>>& getMaterials() { return materials; }
 
-void addLight(Light &light) { lights.push_back(std::move(light)); }
+    std::shared_ptr<Mat>& getMaterial(uint32_t uid) { return materials[uid]; }
 
-std::vector<Light> &getLights() { return lights; }
+    void addMaterial(std::shared_ptr<Mat>& material, uint32_t uid) { SceneManager::materials[uid] = material; }
 
-void reloadShaders()
-{
-    for (auto &shader : shaders)
-    {
-        shader->reload();
-    }
-}
+    std::unordered_map<std::string, std::shared_ptr<Tex>>& getTextureCache() { return textureCache; }
 
-std::unordered_map<uint32_t, std::shared_ptr<Mat>> &getMaterials() { return materials; }
+    std::shared_ptr<Tex>& getTexture(std::string name) { return textureCache[name]; }
 
-std::shared_ptr<Mat> &getMaterial(uint32_t uid) { return materials[uid]; }
-
-void addMaterial(std::shared_ptr<Mat> &material, uint32_t uid) { SceneManager::materials[uid] = material; }
-
-std::unordered_map<std::string, std::shared_ptr<Tex>> &getTextureCache() { return textureCache; }
-
-std::shared_ptr<Tex> &getTexture(std::string name) { return textureCache[name]; }
-
-void addTexture(const std::string &name, std::shared_ptr<Tex> texture) { textureCache[name] = texture; }
+    void addTexture(const std::string& name, std::shared_ptr<Tex> texture) { textureCache[name] = texture; }
 }; // namespace SceneManager
