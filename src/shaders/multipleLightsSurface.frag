@@ -7,7 +7,8 @@
 out vec4 FragColor;
 
 // Inputs from vertex shader
-layout (location = 3) in VS_OUT {
+layout (location = 3) in VS_OUT 
+{
 	vec3 FragPos;
 	vec3 Normal;
 	vec2 TexCoords;
@@ -15,7 +16,8 @@ layout (location = 3) in VS_OUT {
 } fs_in;
 
 // Lights buffer
-layout (std140, binding = 0) buffer LightBuffer {
+layout (std140, binding = 0) buffer LightBuffer 
+{
 	Light lights[];
 };
 
@@ -44,7 +46,8 @@ const float MAX_REFLECTION_LOD = 5.0;
 const float MIN_REFLECTANCE = 0.04;
 
 // Material structure
-struct Material {
+struct Material 
+{
 	vec3 albedo;
 	float metallic;
 	float roughness;
@@ -52,7 +55,8 @@ struct Material {
 };
 
 // Calculate rotation matrix for environment mapping
-mat3 getIrradianceMapRotation() {
+mat3 getIrradianceMapRotation() 
+{
 	float angle = irradianceMapRotationY * yaw;
 	float cosA = cos(angle);
 	float sinA = sin(angle);
@@ -64,7 +68,8 @@ mat3 getIrradianceMapRotation() {
 }
 
 // Normal mapping calculation
-vec3 getNormalFromMap() {
+vec3 getNormalFromMap() 
+{
 	if (textureSize(tNormal, 0).x <= 1 || textureSize(tNormal, 0).y <= 1) 
 	{
 		return fs_in.Normal; // No normal map, return the original normal
@@ -85,7 +90,8 @@ vec3 getNormalFromMap() {
 }
 
 // Get material properties from textures
-Material getMaterial() {
+Material getMaterial() 
+{
 	Material material;
 	
 	// Normal
@@ -121,7 +127,8 @@ Material getMaterial() {
 }
 
 // Calculate IBL (Image Based Lighting)
-vec3 calculateIBL(Material material, vec3 F0) {
+vec3 calculateIBL(Material material, vec3 F0)
+{
 	mat3 rotationMatrix = getIrradianceMapRotation();
 	vec3 viewDir = normalize(viewPos - fs_in.FragPos);
 	vec3 R = reflect(-viewDir, material.normal);
@@ -157,7 +164,8 @@ vec3 calculateIBL(Material material, vec3 F0) {
 	return (kD * diffuse + specular) * irradianceMapIntensity;
 }
 
-void main() {
+void main()
+{
 	// Early discard for transparent pixels
 	if (texture(tDiffuse, fs_in.TexCoords).a < 0.2) discard;
 
