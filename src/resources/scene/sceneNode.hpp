@@ -1,15 +1,15 @@
 #pragma once
 #include "transform.hpp"
 #include <glm/glm.hpp>
-#include <list>
 #include <memory>
 #include <string>
+#include <vector>
 
 class SceneNode
 {
   public:
     Transform transform;
-    std::list<std::unique_ptr<SceneNode>> children;
+    std::vector<std::unique_ptr<SceneNode>> children;
     SceneNode *parent = nullptr;
     bool visible = true;
     bool dirty = false;
@@ -20,9 +20,5 @@ class SceneNode
     SceneNode &operator=(const SceneNode &) = delete;
     SceneNode(SceneNode &&other) noexcept;
     virtual ~SceneNode();
-    virtual void draw() const = 0;
-    virtual void update() const = 0;
-    void addChild(std::unique_ptr<SceneNode> child);
-    void removeChild(SceneNode *child);
-    void setParent(SceneNode *newParent);
+    void addChild(std::unique_ptr<SceneNode> &&child);
 };

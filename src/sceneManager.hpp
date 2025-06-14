@@ -8,8 +8,8 @@
 
 namespace SceneManager
 {
-void addPrimitives(std::vector<Primitive> &&Primitives);
-std::vector<Primitive> &getPrimitives();
+void addPrimitive(Primitive *primitive);
+std::vector<Primitive *> getPrimitives();
 void selectPrimitive(int32_t vao, bool addToSelection);
 Primitive *getSelectedPrimitive();
 std::vector<uint32_t> getSelectedPrimitives();
@@ -26,8 +26,8 @@ std::shared_ptr<Tex> &getTexture(std::string name);
 void addTexture(const std::string &name, std::shared_ptr<Tex> texture);
 
 void addLight(Light &light);
-void addModel(Scene::Model &&model);
-std::vector<Scene::Model> &getModels();
+void addModel(SceneGraph::Model *model);
+std::vector<SceneGraph::Model *> getModels();
 std::vector<Light> &getLights();
 void reloadShaders();
 }; // namespace SceneManager

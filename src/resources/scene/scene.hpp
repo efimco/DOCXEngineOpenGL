@@ -2,5 +2,6 @@
 
 class Scene : public SceneNode
 {
-    Scene();
+public:
+	Scene(std::string name);
 };

@@ -1,6 +1,6 @@
 #include "model.hpp"
 
-Scene::Model::Model(Transform transform, std::string name)
+SceneGraph::Model::Model(Transform transform, std::string name)
 {
     this->transform = transform;
     this->name = name;
@@ -8,12 +8,11 @@ Scene::Model::Model(Transform transform, std::string name)
     this->visible = true;
     this->dirty = false;
     this->movable = true;
-    this->children = std::list<std::unique_ptr<SceneNode>>();
-    
+    this->children = std::vector<std::unique_ptr<SceneNode>>();
 }
-Scene::Model::~Model() = default;
+SceneGraph::Model::~Model() = default;
 
-Scene::Model::Model(Model &&other)
+SceneGraph::Model::Model(Model &&other)
 {
     this->transform = other.transform;
     this->children = std::move(other.children);
@@ -29,7 +28,7 @@ Scene::Model::Model(Model &&other)
     other.movable = false;
 }
 
-Scene::Model &Scene::Model::operator=(Model &&other)
+SceneGraph::Model &SceneGraph::Model::operator=(Model &&other)
 {
     if (this == &other)
         return *this;
@@ -50,11 +49,12 @@ Scene::Model &Scene::Model::operator=(Model &&other)
     return *this;
 }
 
-void Scene::Model::draw() const
+void *SceneGraph::Model::operator new(size_t size)
 {
-    // Implement the draw logic for the model here
-}
-void Scene::Model::update() const
+    return modelMemoryResource.allocate(size, alignof(SceneGraph::Model));
+}   
+
+void SceneGraph::Model::operator delete(void *ptr) noexcept
 {
-    // Implement the update logic for the model here
+    modelMemoryResource.deallocate(ptr, sizeof(Model), alignof(SceneGraph::Model));
 }

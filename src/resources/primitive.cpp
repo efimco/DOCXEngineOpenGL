@@ -84,4 +84,10 @@ void Primitive::draw() const
     glBindVertexArray(0);
 }
 
-void Primitive::update() const {}
+
+void *Primitive::operator new(size_t size) { return primitiveAllocator.allocate(size, alignof(Primitive)); }
+
+void Primitive::operator delete(void *ptr) noexcept
+{
+    primitiveAllocator.deallocate(ptr, sizeof(Primitive), alignof(Primitive));
+}

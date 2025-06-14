@@ -66,7 +66,7 @@ void ShadowMap::draw(Camera &camera)
 
     glm::mat4 lightView = glm::lookAt(lightPos, lightDirection, glm::vec3(0.0, 1.0, 0.0));
     glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-    for (Primitive &primitive : SceneManager::getPrimitives())
+    for (const auto &primitive : SceneManager::getPrimitives())
     {
         glm::mat4 projection = glm::mat4(1.0f);
         if (AppConfig::RENDER_WIDTH != 0 && AppConfig::RENDER_HEIGHT != 0)
@@ -79,9 +79,9 @@ void ShadowMap::draw(Camera &camera)
 
         depthShader->setMat4("projection", projection);
         depthShader->setMat4("view", camera.getViewMatrix());
-        depthShader->setMat4("model", primitive.transform.matrix);
+        depthShader->setMat4("model", primitive->transform.matrix);
 
-        primitive.draw();
+        primitive->draw();
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glPopDebugGroup();
