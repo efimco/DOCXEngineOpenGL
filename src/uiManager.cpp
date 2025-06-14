@@ -303,7 +303,8 @@ void UIManager::showObjectInspector()
 	{
 		ImGui::Begin("Object Inspector");
 		ImGui::Text("Object: %s", SceneManager::getSelectedPrimitive()->name.c_str());
-		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform.position));
+		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform.matrix[3]),
+			0.01f, -100.0f, 100.0f);
 		if (SceneManager::getSelectedPrimitive()->material->diffuse != nullptr)
 			ImGui::Image(SceneManager::getSelectedPrimitive()->material->diffuse->id, ImVec2(64, 64));
 		ImGui::SameLine();

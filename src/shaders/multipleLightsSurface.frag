@@ -65,6 +65,10 @@ mat3 getIrradianceMapRotation() {
 
 // Normal mapping calculation
 vec3 getNormalFromMap() {
+	if (textureSize(tNormal, 0).x <= 1 || textureSize(tNormal, 0).y <= 1) 
+	{
+		return fs_in.Normal; // No normal map, return the original normal
+	}
 	vec3 tangentNormal = texture(tNormal, fs_in.TexCoords).xyz * 2.0 - 1.0;
 	vec3 Q1 = dFdx(fs_in.FragPos);
 	vec3 Q2 = dFdy(fs_in.FragPos);
@@ -86,7 +90,8 @@ Material getMaterial() {
 	
 	// Normal
 	material.normal = getNormalFromMap();
-	if (all(equal(material.normal, vec3(0.0)))) {
+	if (all(equal(material.normal, vec3(0.0)))) 
+	{
 		material.normal = fs_in.Normal;
 	}
 	
@@ -95,16 +100,20 @@ Material getMaterial() {
 	
 	// Metallic and roughness
 	ivec2 specTexSize = textureSize(tSpecular, 0);
-	if (all(lessThanEqual(specTexSize, ivec2(1)))) {
+	if (all(lessThanEqual(specTexSize, ivec2(1)))) 
+	{
 		material.metallic = ufMetallic;
 		material.roughness = ufRoughness;
-	} else {
+	}
+	else 
+	{
 		material.metallic = texture(tSpecular, fs_in.TexCoords).b;
 		material.roughness = texture(tSpecular, fs_in.TexCoords).g;
 	}
 	
 	// Default albedo for missing texture
-	if (all(lessThanEqual(textureSize(tDiffuse, 0), ivec2(1)))) {
+	if (all(lessThanEqual(textureSize(tDiffuse, 0), ivec2(1)))) 
+	{
 		material.albedo = vec3(1.0, 1.0, 1.0);
 	}
 	
