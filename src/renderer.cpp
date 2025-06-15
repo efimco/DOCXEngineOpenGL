@@ -59,6 +59,7 @@ Renderer::~Renderer()
 	glDeleteTextures(1, &m_composedTexture);
 	glDeleteRenderbuffers(1, &m_mainRbo);
 	glDeleteFramebuffers(1, &m_mainFbo);
+	glDeleteFramebuffers(1, &m_deferedFBO);
 	glDeleteFramebuffers(1, &m_composedFbo);
 	glDeleteBuffers(1, &m_fullFrameQuadVBO);
 	glDeleteVertexArrays(1, &m_fullFrameQuadVAO);
@@ -126,9 +127,11 @@ void Renderer::createOrResizeFrameBufferAndRenderTarget()
 		glDeleteRenderbuffers(1, &m_mainRbo);
 		glDeleteTextures(1, &m_composedTexture);
 		glDeleteFramebuffers(1, &m_composedFbo);
+		glDeleteFramebuffers(1, &m_deferedFBO);
 	}
 
 	glCreateFramebuffers(1, &m_mainFbo);
+	glCreateFramebuffers(1, &m_deferedFBO);
 	glCreateFramebuffers(1, &m_composedFbo);
 	glCreateRenderbuffers(1, &m_mainRbo);
 
@@ -146,11 +149,14 @@ void Renderer::createOrResizeFrameBufferAndRenderTarget()
 	glTextureParameteri(m_screenTexture, GL_TEXTURE_MAX_LEVEL, m_nMipLevels - 1);
 	glNamedFramebufferTexture(m_mainFbo, GL_COLOR_ATTACHMENT0, m_screenTexture, 0);
 
-	GLint width, height, mipLevels, maxLevels;
-	glGetTextureParameteriv(m_screenTexture, GL_TEXTURE_IMMUTABLE_LEVELS, &mipLevels);
-	glGetTextureParameteriv(m_screenTexture, GL_TEXTURE_MAX_LEVEL, &maxLevels);
-	glGetTextureLevelParameteriv(m_screenTexture, maxLevels, GL_TEXTURE_WIDTH, &width);
-	glGetTextureLevelParameteriv(m_screenTexture, maxLevels, GL_TEXTURE_HEIGHT, &height);
+	glCreateTextures(GL_TEXTURE_2D, 1, &m_deferedScreenTexture);
+	glTextureStorage2D(m_deferedScreenTexture, 1, GL_RGBA32F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_MAX_LEVEL, 0);
+	glNamedFramebufferTexture(m_deferedFBO, GL_COLOR_ATTACHMENT0, m_deferedScreenTexture, 0);
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_composedTexture);
 	glTextureStorage2D(m_composedTexture, m_nMipLevels, GL_RGBA32F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
@@ -219,7 +225,6 @@ void Renderer::mainPass()
 		AppConfig::baseShader->setFloat("irradianceMapIntensity", AppConfig::irradianceMapIntensity);
 		AppConfig::baseShader->setFloat("ufRoughness", primitive->material->roughness);
 		AppConfig::baseShader->setFloat("ufMetallic", primitive->material->metallic);
-
 		primitive->draw();
 	}
 	// CUBEMAP RENDER PASS
@@ -244,6 +249,41 @@ void Renderer::mainPass()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	glPopDebugGroup();
+}
+
+void Renderer::deferedPass()
+{
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Defered Pass");
+	glBindFramebuffer(GL_FRAMEBUFFER, m_deferedFBO);
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glPolygonMode(GL_FRONT_AND_BACK, AppConfig::polygonMode);
+	glActiveTexture(GL_TEXTURE0);
+	AppConfig::deferedShader->use();
+	glBindVertexArray(m_fullFrameQuadVAO);
+	glBindTextureUnit(0, m_gBufferPass->tAlbedo);
+	glBindTextureUnit(1, m_gBufferPass->tMetallic);
+	glBindTextureUnit(2, m_gBufferPass->tRoughness);
+	glBindTextureUnit(3, m_gBufferPass->tNormal);
+	glBindTextureUnit(4, m_gBufferPass->tPosition);
+	glBindTextureUnit(5, m_gBufferPass->tPosition);
+
+	glBindTextureUnit(6, m_cubemap->irradianceMap);
+	glBindTextureUnit(7, m_shadowMap->depthMap);
+	glBindTextureUnit(8, m_cubemap->brdfLUTTexture);
+	glBindTextureUnit(9, m_cubemap->specularMap);
+
+	AppConfig::deferedShader->setVec3("viewPos", m_camera.position);
+	AppConfig::deferedShader->setFloat("irradianceMapRotationY", AppConfig::irradianceMapRotationY);
+	AppConfig::deferedShader->setFloat("irradianceMapIntensity", AppConfig::irradianceMapIntensity);
+
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTextureUnit(0, 0);
 	glPopDebugGroup();
 }
 
@@ -318,6 +358,7 @@ void Renderer::render(GLFWwindow* window)
 		m_gBufferPass->draw(m_projection, m_view);
 		m_shadowMap->draw(m_camera);
 		m_pickingPass->draw(m_projection, m_view);
+		deferedPass();
 
 		// MAIN RENDER PASS
 		updateLights();

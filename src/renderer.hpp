@@ -30,6 +30,7 @@ private:
 	uint32_t m_mainFbo, m_mainRbo, m_screenTexture;
 	uint32_t m_composedFbo, m_composedTexture;
 	uint32_t m_lightsSSBO;
+	uint32_t m_deferedFBO, m_deferedScreenTexture;
 
 	int m_nMipLevels;
 	ShadowMap* m_shadowMap;
@@ -51,4 +52,5 @@ private:
 	void checkLightBuffer();
 	void addLight(Light& light);
 	void updateLights();
+	void deferedPass();
 };
