@@ -9,6 +9,7 @@
 #include "shadowMap.hpp"
 #include "uiManager.hpp"
 #include "scene/scene.hpp"
+#include "gBuffer.hpp"
 
 class Renderer
 {
@@ -36,6 +37,7 @@ private:
 	Cubemap* m_cubemap;
 	InputManager* m_inputManager;
 	PickingPass* m_pickingPass;
+	GBuffer* m_gBufferPass;
 
 	glm::mat4 m_view;
 	glm::mat4 m_projection;

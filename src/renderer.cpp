@@ -30,6 +30,7 @@ Renderer::Renderer(GLFWwindow* window) : m_camera(glm::vec3(-10.0f, 3.0f, 13.0f)
 	m_inputManager = new InputManager(window, m_camera);
 	m_uiManager = new UIManager(window, m_camera, scene);
 	m_pickingPass = new PickingPass();
+	m_gBufferPass = new GBuffer();
 	initScreenQuad();
 	createOrResizeFrameBufferAndRenderTarget();
 
@@ -171,6 +172,7 @@ void Renderer::checkFrameBufeerSize()
 		AppConfig::RENDER_HEIGHT = (int)m_uiManager->getViewportSize().y;
 		createOrResizeFrameBufferAndRenderTarget();
 		m_pickingPass->createOrResize();
+		m_gBufferPass->createOrResize();
 		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 
 		AppConfig::isFramebufferSizeSetted = true;
@@ -199,26 +201,10 @@ void Renderer::mainPass()
 
 		AppConfig::baseShader->use();
 		AppConfig::baseShader->setVec3("viewPos", m_camera.position);
-		if (hasDiffuse)
-		{
-			glBindTextureUnit(1, primitive->material->diffuse->id);
-		}
-		else
-			glBindTextureUnit(1, 0);
 
-		if (hasSpecular)
-		{
-			glBindTextureUnit(2, primitive->material->specular->id);
-		}
-		else
-			glBindTextureUnit(2, 0);
-
-		if (hasNormal)
-		{
-			glBindTextureUnit(3, primitive->material->normal->id);
-		}
-		else
-			glBindTextureUnit(3, 0);
+		glBindTextureUnit(1, hasDiffuse ? primitive->material->diffuse->id : 0);
+		glBindTextureUnit(2, hasSpecular ? primitive->material->specular->id : 0);
+		glBindTextureUnit(3, hasNormal ? primitive->material->normal->id : 0);
 
 		AppConfig::baseShader->setMat4("projection", m_projection);
 		AppConfig::baseShader->setMat4("view", m_view);
@@ -329,6 +315,7 @@ void Renderer::render(GLFWwindow* window)
 		}
 
 		// DIRECTIONAL LIGHT SHADOW MAP PASS
+		m_gBufferPass->draw(m_projection, m_view);
 		m_shadowMap->draw(m_camera);
 		m_pickingPass->draw(m_projection, m_view);
 

@@ -6,7 +6,7 @@
 out vec4 FragColor;
 
 // Inputs from vertex shader
-layout (location = 3) in VS_OUT 
+layout (location = 0) in VS_OUT 
 {
 	vec3 FragPos;
 	vec3 Normal;

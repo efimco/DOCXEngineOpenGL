@@ -1,0 +1,94 @@
+#version 460 core
+layout (location = 0) out vec4 gAlbedo;
+layout (location = 1) out float gMetallic;
+layout (location = 2) out float gRoughness;
+layout (location = 3) out vec3 gNormal;
+layout (location = 4) out vec3 gPosition;
+
+layout (binding = 1) uniform sampler2D tDiffuse;
+layout (binding = 2) uniform sampler2D tSpecular;
+layout (binding = 3) uniform sampler2D tNormal;
+
+uniform float ufRoughness;
+uniform float ufMetallic;
+
+layout (location = 0) in VS_OUT 
+{
+	vec3 FragPos;
+	vec3 Normal;
+	vec2 TexCoords;
+} fs_in;
+
+struct Material 
+{
+	vec3 albedo;
+	float metallic;
+	float roughness;
+	vec3 normal;
+};
+
+
+vec3 getNormalFromMap() 
+{
+	if (textureSize(tNormal, 0).x <= 1 || textureSize(tNormal, 0).y <= 1) 
+	{
+		return fs_in.Normal; // No normal map, return the original normal
+	}
+	vec3 tangentNormal = texture(tNormal, fs_in.TexCoords).xyz * 2.0 - 1.0;
+	vec3 Q1 = dFdx(fs_in.FragPos);
+	vec3 Q2 = dFdy(fs_in.FragPos);
+	vec2 st1 = dFdx(fs_in.TexCoords);
+	vec2 st2 = dFdy(fs_in.TexCoords);
+
+	vec3 N = normalize(fs_in.Normal);
+	vec3 T = normalize(Q1*st2.t - Q2*st1.t);
+	T.y = -T.y;
+	vec3 B = -normalize(cross(N, T));
+	mat3 TBN = mat3(T, B, N);
+	
+	return normalize(TBN * tangentNormal);
+}
+
+Material getMaterial() 
+{
+	Material material;
+	
+	// Normal
+	material.normal = getNormalFromMap();
+	if (all(equal(material.normal, vec3(0.0)))) 
+	{
+		material.normal = fs_in.Normal;
+	}
+	
+	material.albedo = pow(texture(tDiffuse, fs_in.TexCoords).rgb, vec3(2.2));
+	
+	ivec2 specTexSize = textureSize(tSpecular, 0);
+	if (all(lessThanEqual(specTexSize, ivec2(1)))) 
+	{
+		material.metallic = ufMetallic;
+		material.roughness = ufRoughness;
+	}
+	else 
+	{
+		material.metallic = texture(tSpecular, fs_in.TexCoords).b;
+		material.roughness = texture(tSpecular, fs_in.TexCoords).g;
+	}
+	
+	if (all(lessThanEqual(textureSize(tDiffuse, 0), ivec2(1)))) 
+	{
+		material.albedo = vec3(1.0, 1.0, 1.0);
+	}
+	
+	return material;
+}
+
+void main()
+{ 
+    Material material = getMaterial();
+    gAlbedo = vec4(material.albedo, 1.0);
+    gMetallic = material.metallic;
+    gRoughness = material.roughness;
+    gNormal = material.normal;
+    gPosition = fs_in.FragPos;
+}
+

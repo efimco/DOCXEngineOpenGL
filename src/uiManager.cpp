@@ -458,9 +458,9 @@ void UIManager::displaySceneNode(SceneNode* node) const
 void UIManager::showOutliner()
 {
 	ImGui::Begin("Outliner");
-	int objectsCount =
+	size_t objectsCount =
 		SceneManager::getModels().size() + SceneManager::getPrimitives().size() + SceneManager::getLights().size();
-	ImGui::Text("Objects in Scene: %d", objectsCount);
+	ImGui::Text("Objects in Scene: %zu", objectsCount);
 	if (ImGui::BeginTable("OutlinerTable", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
 	{
 		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.8f);

@@ -77,7 +77,7 @@ Primitive::~Primitive()
 void Primitive::draw() const
 {
 	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
+	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indexCount), GL_UNSIGNED_INT, nullptr);
 }
 
 

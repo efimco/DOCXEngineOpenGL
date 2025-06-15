@@ -5,7 +5,6 @@ class GBuffer
 {
 public:
 	GBuffer();
-	~GBuffer();
 
 	uint32_t tAlbedo;
 	uint32_t tMetallic;
@@ -13,13 +12,16 @@ public:
 	uint32_t tNormal;
 	uint32_t tPosition;
 	uint32_t tDepth;
-	uint32_t tEmission;
 
-	void draw();
-	void initTextures();
+	uint32_t gBufferSSBO;
 
+	void draw(glm::mat4 projection, glm::mat4 view);
+	void createOrResize();
 
 private:
 	Shader* m_gBufferShader;
 	uint32_t m_gBufferFBO;
+
+	void initTextures();
+	void createGBufferSSBO();
 };
