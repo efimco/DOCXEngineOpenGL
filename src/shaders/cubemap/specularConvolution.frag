@@ -65,7 +65,7 @@ void main()
 	vec3 R = N;
 	vec3 V = R;
 
-	const uint SAMPLE_COUNT = 1024u;
+	const uint SAMPLE_COUNT = 4096u*4; // Number of samples for convolution
 	float totalWeight = 0.0;   
 	vec3 prefilteredColor = vec3(0.0);     
 	for(uint i = 0u; i < SAMPLE_COUNT; ++i)
@@ -82,10 +82,10 @@ void main()
 		if(NdotL > 0.0)
 		{
 			float D = DistributionGGX(N,H,roughness);
-			float pdf = (D * NdotH / (4 * HdotV)) + 0.0001f  ;  
+			float pdf = (D * NdotH / (4 * HdotV)) + 0.0001f; // prevent division by zero
 			int CONV_SPEC_TEX_WIDTH = 512;
 			float saTexel = 4.0f * PI / (6.0f * CONV_SPEC_TEX_WIDTH * CONV_SPEC_TEX_WIDTH);
-			float saSample = 1.0f / (SAMPLE_COUNT * pdf)  ;          
+			float saSample = 1.0f / (SAMPLE_COUNT * pdf + 0.0001f);          
 			float mipLevel = roughness == 0.0f ? 0.0f :  0.5f * log2( saSample / saTexel );
 
 			prefilteredColor += textureLod(environmentMap, L, mipLevel).rgb * NdotL;
