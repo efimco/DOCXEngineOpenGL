@@ -322,6 +322,12 @@ void Renderer::render(GLFWwindow* window)
 			m_view = m_camera.getViewMatrix();
 		}
 
+		if (AppConfig::reloadCubeMap)
+		{
+			m_cubemap = new Cubemap(m_camera, AppConfig::cubeMapPath);
+			AppConfig::reloadCubeMap = false;
+		}
+
 		// DIRECTIONAL LIGHT SHADOW MAP PASS
 		m_shadowMap->draw(m_camera);
 		m_pickingPass->draw(m_projection, m_view);

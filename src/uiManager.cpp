@@ -489,7 +489,7 @@ std::string UIManager::OpenFileDialog(FileType type)
 	// Filter: display image files by default (you can adjust as needed)
 	if (type == FileType::IMAGE)
 	{
-		ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.jpeg;*.bmp\0All Files\0*.*\0";
+		ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.jpeg;*.bmp;*.hdr;*.exr\0All Files\0*.*\0";
 	}
 	else if (type == FileType::MODEL)
 	{

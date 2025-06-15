@@ -14,4 +14,6 @@ class PickingPass
 
   private:
     uint32_t m_pickingRBO;
+
+    void initTextures();
 };

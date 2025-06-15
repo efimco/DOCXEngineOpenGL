@@ -3,8 +3,8 @@ add_library(resources STATIC)
 
 # Gather all source files
 file(GLOB RESOURCES_SOURCES 
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/scene/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/**.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/scene/**.cpp"
 )
 
 target_sources(resources
@@ -35,6 +35,6 @@ configure_file(
 
 # Set C++ standardPRIVATE
 set_target_properties(resources PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON
 )

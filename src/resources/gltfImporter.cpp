@@ -162,11 +162,6 @@ void GLTFModel::processGLTFModel(tinygltf::Model& model)
 		SceneManager::addPrimitive(primtive.get());
 	}
 
-	for (const auto& primitive : SceneManager::getPrimitives())
-	{
-		std::cout << "Primitive: " << primitive->name << ", VAO: " << primitive->vao << std::endl;
-	}
-
 	std::cout << "Loaded " << primitives.size() << " primitives from model." << std::endl;
 }
 
@@ -205,26 +200,26 @@ void GLTFModel::processMaterials(tinygltf::Model& model)
 	for (int i = 0; i < model.materials.size(); i++)
 	{
 		const auto& material = model.materials[i];
-		Mat mat;
+		std::shared_ptr<Mat> mat = std::make_shared<Mat>();
 		if (material.pbrMetallicRoughness.baseColorTexture.index != -1)
 		{
-			mat.diffuse = texturesIndex[material.pbrMetallicRoughness.baseColorTexture.index];
+			mat->diffuse = texturesIndex[material.pbrMetallicRoughness.baseColorTexture.index];
 		}
 
 		if (material.pbrMetallicRoughness.metallicRoughnessTexture.index != -1)
 		{
-			mat.specular = texturesIndex[material.pbrMetallicRoughness.metallicRoughnessTexture.index];
+			mat->specular = texturesIndex[material.pbrMetallicRoughness.metallicRoughnessTexture.index];
 		}
 		if (material.normalTexture.index != -1)
 		{
-			mat.normal = texturesIndex[material.normalTexture.index];
+			mat->normal = texturesIndex[material.normalTexture.index];
 		}
-		mat.name = material.name;
+		mat->name = material.name;
 		std::hash<std::string> hasher;
 		uint32_t uid = (uint32_t)hasher(model.materials[i].name);
 		if (SceneManager::getMaterial(uid) == nullptr)
 		{
-			SceneManager::addMaterial(std::make_shared<Mat>(mat), uid);
+			SceneManager::addMaterial(mat, uid);
 		}
 		materialsIndex[i] = SceneManager::getMaterial(uid);
 	}

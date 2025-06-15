@@ -3,7 +3,7 @@ add_library(passes STATIC)
 
 # Gather all source files
 file(GLOB RESOURCES_SOURCES 
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/**.cpp"
 )
 
 target_sources(passes
@@ -28,6 +28,6 @@ target_link_libraries(passes
 
 # Set C++ standard
 set_target_properties(passes PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON
 )
