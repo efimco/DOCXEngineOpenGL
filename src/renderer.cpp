@@ -60,12 +60,14 @@ Renderer::~Renderer()
 	glDeleteRenderbuffers(1, &m_mainRbo);
 	glDeleteFramebuffers(1, &m_mainFbo);
 	glDeleteFramebuffers(1, &m_deferedFBO);
+	glDeleteFramebuffers(1, &m_deferedRBO);
 	glDeleteFramebuffers(1, &m_composedFbo);
 	glDeleteBuffers(1, &m_fullFrameQuadVBO);
 	glDeleteVertexArrays(1, &m_fullFrameQuadVAO);
 	glDeleteBuffers(1, &m_lightsSSBO);
 	delete m_shadowMap;
 	delete m_cubemap;
+	delete m_gBufferPass;
 	delete m_inputManager;
 	delete m_uiManager;
 	delete m_pickingPass;
@@ -128,15 +130,21 @@ void Renderer::createOrResizeFrameBufferAndRenderTarget()
 		glDeleteTextures(1, &m_composedTexture);
 		glDeleteFramebuffers(1, &m_composedFbo);
 		glDeleteFramebuffers(1, &m_deferedFBO);
+		glDeleteTextures(1, &m_deferedScreenTexture);
 	}
 
 	glCreateFramebuffers(1, &m_mainFbo);
 	glCreateFramebuffers(1, &m_deferedFBO);
 	glCreateFramebuffers(1, &m_composedFbo);
+
 	glCreateRenderbuffers(1, &m_mainRbo);
+	glCreateRenderbuffers(1, &m_deferedRBO);
 
 	glNamedRenderbufferStorage(m_mainRbo, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 	glNamedFramebufferRenderbuffer(m_mainFbo, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_mainRbo);
+
+	glNamedRenderbufferStorage(m_deferedRBO, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glNamedFramebufferRenderbuffer(m_deferedFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_deferedRBO);
 
 	m_nMipLevels = (int)floor(log2(std::max(AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT))) + 1;
 	// create a color attachment texture
@@ -150,12 +158,11 @@ void Renderer::createOrResizeFrameBufferAndRenderTarget()
 	glNamedFramebufferTexture(m_mainFbo, GL_COLOR_ATTACHMENT0, m_screenTexture, 0);
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_deferedScreenTexture);
-	glTextureStorage2D(m_deferedScreenTexture, 1, GL_RGBA32F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureStorage2D(m_deferedScreenTexture, m_nMipLevels, GL_RGBA32F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_MAX_LEVEL, 0);
 	glNamedFramebufferTexture(m_deferedFBO, GL_COLOR_ATTACHMENT0, m_deferedScreenTexture, 0);
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_composedTexture);
@@ -177,8 +184,9 @@ void Renderer::checkFrameBufeerSize()
 		AppConfig::RENDER_WIDTH = (int)m_uiManager->getViewportSize().x;
 		AppConfig::RENDER_HEIGHT = (int)m_uiManager->getViewportSize().y;
 		createOrResizeFrameBufferAndRenderTarget();
-		m_pickingPass->createOrResize();
 		m_gBufferPass->createOrResize();
+		m_pickingPass->createOrResize();
+		m_cubemap->createOrResize();
 		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 
 		AppConfig::isFramebufferSizeSetted = true;
@@ -227,8 +235,6 @@ void Renderer::mainPass()
 		AppConfig::baseShader->setFloat("ufMetallic", primitive->material->metallic);
 		primitive->draw();
 	}
-	// CUBEMAP RENDER PASS
-	m_cubemap->draw(m_projection);
 
 	glGenerateTextureMipmap(m_screenTexture);
 	float avgLum[4];
@@ -255,12 +261,14 @@ void Renderer::mainPass()
 void Renderer::deferedPass()
 {
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Defered Pass");
-	glBindFramebuffer(GL_FRAMEBUFFER, m_deferedFBO);
-	glClearColor(0, 0, 0, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClearColor(0, 0, 0, 1);
+	glDisable(GL_DEPTH_TEST);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 	glPolygonMode(GL_FRONT_AND_BACK, AppConfig::polygonMode);
 	glActiveTexture(GL_TEXTURE0);
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, m_deferedFBO);
 	AppConfig::deferedShader->use();
 	glBindVertexArray(m_fullFrameQuadVAO);
 	glBindTextureUnit(0, m_gBufferPass->tAlbedo);
@@ -268,12 +276,13 @@ void Renderer::deferedPass()
 	glBindTextureUnit(2, m_gBufferPass->tRoughness);
 	glBindTextureUnit(3, m_gBufferPass->tNormal);
 	glBindTextureUnit(4, m_gBufferPass->tPosition);
-	glBindTextureUnit(5, m_gBufferPass->tPosition);
+	glBindTextureUnit(5, m_gBufferPass->tDepth);
 
 	glBindTextureUnit(6, m_cubemap->irradianceMap);
 	glBindTextureUnit(7, m_shadowMap->depthMap);
 	glBindTextureUnit(8, m_cubemap->brdfLUTTexture);
 	glBindTextureUnit(9, m_cubemap->specularMap);
+	glBindTextureUnit(10, m_cubemap->envCubemap);
 
 	AppConfig::deferedShader->setVec3("viewPos", m_camera.position);
 	AppConfig::deferedShader->setFloat("irradianceMapRotationY", AppConfig::irradianceMapRotationY);
@@ -284,7 +293,9 @@ void Renderer::deferedPass()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindTextureUnit(0, 0);
+	glEnable(GL_DEPTH_TEST);
 	glPopDebugGroup();
+
 }
 
 void Renderer::composedPass(ViewportState viewportState)
@@ -354,21 +365,22 @@ void Renderer::render(GLFWwindow* window)
 			AppConfig::reloadCubeMap = false;
 		}
 
-		// DIRECTIONAL LIGHT SHADOW MAP PASS
+		m_cubemap->draw(m_projection);
 		m_gBufferPass->draw(m_projection, m_view);
+		deferedPass();
 		m_shadowMap->draw(m_camera);
 		m_pickingPass->draw(m_projection, m_view);
-		deferedPass();
+
 
 		// MAIN RENDER PASS
-		updateLights();
-		mainPass();
+		// updateLights();
+		// mainPass();
 
 		glfwPollEvents();
 		ViewportState viewportState = m_uiManager->getViewportState();
 		// SCREEN QUAD RENDER PASS
 		composedPass(viewportState);
-		m_uiManager->setScreenTexture(m_composedTexture);
+		m_uiManager->setScreenTexture(m_deferedScreenTexture);
 		m_uiManager->setShadowMapTexture(m_shadowMap->depthMap);
 		m_uiManager->setPickingTexture(m_pickingPass->pickingTexture);
 		m_uiManager->draw(m_deltaTime);

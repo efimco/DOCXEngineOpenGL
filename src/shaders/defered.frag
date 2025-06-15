@@ -16,6 +16,7 @@ layout (binding = 6) uniform samplerCube irradianceMap;
 layout (binding = 7) uniform sampler2D shadowMap;
 layout (binding = 8) uniform sampler2D brdfLUT;
 layout (binding = 9) uniform samplerCube specularMap;
+layout (binding = 10) uniform sampler2D envCubemap;
 
 uniform vec3 viewPos;
 uniform float irradianceMapRotationY;
@@ -101,10 +102,18 @@ vec3 calculateIBL(GBuffer gbuffer, vec3 F0)
 	return (kD * diffuse + specular) * irradianceMapIntensity;
 }
 
+float linear_rgb_to_srgb(float color)
+{
+	if (color < 0.0031308f) 
+	{
+		return (color < 0.0f) ? 0.0f : color * 12.92f;
+	}
+
+	return 1.055f * pow(color, 1.0f / 2.4f) - 0.055f;
+}
+
 void main()
 {
-	// Early discard for transparent pixels
-	if (texture(gAlbedo, TexCoords).a < 0.2) discard;
 
 	// Get gBuffer properties
 	GBuffer gBuffer = getGBuffer();
@@ -116,7 +125,18 @@ void main()
 	vec3 result = calculateIBL(gBuffer, F0);
 	
 	// Tone mapping
-	result = result / (result + vec3(1.0));
+
+	vec3 tonemapped = vec3(linear_rgb_to_srgb(result.r), linear_rgb_to_srgb(result.g), linear_rgb_to_srgb(result.b));
+	vec3 background = texture(envCubemap, TexCoords).rgb;
+	bool isBackground = gBuffer.depth >= 1.0 - 1e-5;
+
+	// Use IBL result for geometry, background otherwise
+	vec3 finalColor = isBackground ? background : tonemapped;
+
+	// Tone map if needed
+	// finalColor = finalColor / (finalColor + vec3(1.0));
+
+	// Output
+	FragColor = vec4(finalColor, 1);
 	
-	FragColor = vec4(result, 1.0);
 }

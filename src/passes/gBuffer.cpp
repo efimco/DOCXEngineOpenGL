@@ -17,7 +17,6 @@ GBuffer::GBuffer()
 	tDepth = 0;
 
 	createOrResize();
-	createGBufferSSBO();
 
 	const std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\gBuffer.frag").string();
 	const std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\gBuffer.vert").string();
@@ -86,12 +85,6 @@ void GBuffer::initTextures()
 
 }
 
-void GBuffer::createGBufferSSBO()
-{
-	glCreateBuffers(1, &gBufferSSBO);
-	glNamedBufferData(gBufferSSBO, 6 * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
-	
-}
 
 
 void GBuffer::createOrResize()
@@ -108,7 +101,6 @@ void GBuffer::createOrResize()
 	}
 	initTextures();
 	glCreateFramebuffers(1, &m_gBufferFBO);
-	createGBufferSSBO();
 	// Attach all color textures
 	glNamedFramebufferTexture(m_gBufferFBO, GL_COLOR_ATTACHMENT0, tAlbedo, 0);
 	glNamedFramebufferTexture(m_gBufferFBO, GL_COLOR_ATTACHMENT1, tMetallic, 0);
@@ -132,9 +124,6 @@ void GBuffer::createOrResize()
 	{
 		std::cout << "gBuffer Framebuffer is not complete!" << std::endl;
 	}
-
-	uint32_t gBufferData[] = { tAlbedo, tMetallic, tRoughness, tNormal, tPosition, tDepth };
-	glNamedBufferSubData(gBufferSSBO, 0, sizeof(gBufferData), gBufferData);
 }
 
 void GBuffer::draw(glm::mat4 projection, glm::mat4 view)
@@ -173,7 +162,7 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view)
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+	glDisable(GL_DEPTH_TEST);
 	glPopDebugGroup();
 
 }

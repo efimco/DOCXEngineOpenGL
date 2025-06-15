@@ -15,11 +15,12 @@ class Cubemap
     Shader irradianceShader;
     Shader specularShader;
     Shader brdfLutShader;
-    uint32_t irradianceMap, envCubemap, specularMap, brdfLUTTexture;
+    uint32_t irradianceMap, specularMap, brdfLUTTexture, envCubemap;
     Camera &camera;
     Cubemap(Camera &camera, std::string pathToCubemap);
     ~Cubemap();
 
+    void createOrResize();
     void draw(glm::mat4 projection);
 
   private:
@@ -29,6 +30,8 @@ class Cubemap
     uint32_t m_captureFBO, m_captureRBO;
     uint32_t m_irradianceFBO, m_irradianceRBO;
     uint32_t m_specularFBO, m_specularRBO;
+    uint32_t m_cubemapFBO;
+    uint32_t m_envCubemap;
     void initCaptureFBO();
     void renderCube();
     void renderQuad();

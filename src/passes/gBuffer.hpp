@@ -13,8 +13,6 @@ public:
 	uint32_t tPosition;
 	uint32_t tDepth;
 
-	uint32_t gBufferSSBO;
-
 	void draw(glm::mat4 projection, glm::mat4 view);
 	void createOrResize();
 
@@ -23,5 +21,4 @@ private:
 	uint32_t m_gBufferFBO;
 
 	void initTextures();
-	void createGBufferSSBO();
 };
