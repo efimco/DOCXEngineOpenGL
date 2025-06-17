@@ -8,6 +8,7 @@
 #include "inputManager.hpp"
 #include "viewportState.hpp"
 #include "scene/sceneNode.hpp"
+#include "gBuffer.hpp"
 
 enum class FileType
 {
@@ -35,12 +36,13 @@ public:
 	void setScreenTexture(uint32_t texId);
 	void setPickingTexture(uint32_t texId);
 	void setShadowMapTexture(uint32_t texId);
+	void setGBuffer(GBuffer* gBuffer);
 	void draw(float deltaTime);
 
 private:
 	ViewportState m_viewportState;
 	ImVec2 m_viewportPos;
-
+	GBuffer* m_gBuffer;
 	uint32_t m_screenTexture;
 	uint32_t m_pickingTexture;
 	uint32_t m_shadowMapTexture;

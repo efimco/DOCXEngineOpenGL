@@ -185,8 +185,8 @@ void UIManager::showViewport(float deltaTime)
 	ImVec2 padding = ImGui::GetStyle().WindowPadding;
 
 	const ImVec2 debugQuadSize(winSize.x / 10, winSize.y / 10);
-	ImVec2 thumbPos(m_viewportPos.x + winSize.x - debugQuadSize.x - padding.x,
-		m_viewportPos.y + padding.y); // compute top-right corner inside the window
+	ImVec2 thumbPos(m_viewportPos.x + winSize.x - debugQuadSize.x,
+		m_viewportPos.y);
 
 	ImGui::SetCursorScreenPos(thumbPos);
 
@@ -196,7 +196,7 @@ void UIManager::showViewport(float deltaTime)
 	{
 		ImGui::BeginChild("PassPreview", debugQuadSize, false, flags);
 		ImTextureID passTex = (ImTextureID)m_pickingTexture;
-		ImGui::Image(passTex, debugQuadSize, uv0, uv1);
+		ImGui::Image(passTex, debugQuadSize, uv0, uv1, ImVec4(0.0f, 0.0f, 0.0f, 1.0f), ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
 		ImGui::EndChild();
 	}
 	else if (AppConfig::showShadowMap)
@@ -204,6 +204,30 @@ void UIManager::showViewport(float deltaTime)
 		ImGui::BeginChild("PassPreview", debugQuadSize, false, flags);
 		ImTextureID passTex = (ImTextureID)m_shadowMapTexture;
 		ImGui::Image(passTex, debugQuadSize, uv0, uv1);
+		ImGui::EndChild();
+	}
+
+	// G-Buffer debug view
+	if (m_gBuffer != nullptr) {
+
+		static int currentBuffer = 0;
+		if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
+			currentBuffer = (currentBuffer + 1) % 6; // Cycle through 6 buffers
+		}
+
+		ImGui::BeginChild("GBufferPreview", debugQuadSize, false, flags);
+
+		GLuint texToShow;
+		switch (currentBuffer) {
+		case 0: texToShow = m_gBuffer->tPosition; break;
+		case 1: texToShow = m_gBuffer->tNormal; break;
+		case 2: texToShow = m_gBuffer->tAlbedo; break;
+		case 3: texToShow = m_gBuffer->tRoughness; break;
+		case 4: texToShow = m_gBuffer->tMetallic; break;
+		case 5: texToShow = m_gBuffer->tDepth; break;
+		}
+
+		ImGui::Image((ImTextureID)texToShow, debugQuadSize, uv0, uv1);
 		ImGui::EndChild();
 	}
 
@@ -217,6 +241,11 @@ void UIManager::setScreenTexture(uint32_t texId) { m_screenTexture = texId; }
 void UIManager::setPickingTexture(uint32_t texId) { m_pickingTexture = texId; }
 
 void UIManager::setShadowMapTexture(uint32_t texId) { m_shadowMapTexture = texId; }
+
+void UIManager::setGBuffer(GBuffer* gBuffer)
+{
+	m_gBuffer = gBuffer;
+}
 
 void UIManager::showCameraTransforms()
 {

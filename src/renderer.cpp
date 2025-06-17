@@ -193,70 +193,6 @@ void Renderer::checkFrameBufeerSize()
 	}
 }
 
-void Renderer::mainPass()
-{
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Main Pass");
-	glBindFramebuffer(GL_FRAMEBUFFER, m_mainFbo);
-	glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], AppConfig::clearColor[2], AppConfig::clearColor[3]);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
-	glPolygonMode(GL_FRONT_AND_BACK, AppConfig::polygonMode);
-	glActiveTexture(GL_TEXTURE0);
-	for (auto& primitive : SceneManager::getPrimitives())
-	{
-		const bool hasDiffuse =
-			primitive->material && primitive->material->diffuse && !primitive->material->diffuse->path.empty();
-
-		const bool hasSpecular =
-			primitive->material && primitive->material->specular && !primitive->material->specular->path.empty();
-
-		const bool hasNormal =
-			primitive->material && primitive->material->normal && !primitive->material->normal->path.empty();
-
-		AppConfig::baseShader->use();
-		AppConfig::baseShader->setVec3("viewPos", m_camera.position);
-
-		glBindTextureUnit(1, hasDiffuse ? primitive->material->diffuse->id : 0);
-		glBindTextureUnit(2, hasSpecular ? primitive->material->specular->id : 0);
-		glBindTextureUnit(3, hasNormal ? primitive->material->normal->id : 0);
-
-		AppConfig::baseShader->setMat4("projection", m_projection);
-		AppConfig::baseShader->setMat4("view", m_view);
-		AppConfig::baseShader->setMat4("model", primitive->transform.matrix);
-
-		glBindTextureUnit(4, m_cubemap->irradianceMap);
-		glBindTextureUnit(5, m_shadowMap->depthMap);
-		glBindTextureUnit(6, m_cubemap->brdfLUTTexture);
-		glBindTextureUnit(7, m_cubemap->specularMap);
-
-		AppConfig::baseShader->setFloat("irradianceMapRotationY", AppConfig::irradianceMapRotationY);
-		AppConfig::baseShader->setFloat("irradianceMapIntensity", AppConfig::irradianceMapIntensity);
-		AppConfig::baseShader->setFloat("ufRoughness", primitive->material->roughness);
-		AppConfig::baseShader->setFloat("ufMetallic", primitive->material->metallic);
-		primitive->draw();
-	}
-
-	glGenerateTextureMipmap(m_screenTexture);
-	float avgLum[4];
-	glGetTextureImage(m_screenTexture, m_nMipLevels - 1, GL_RGBA, GL_FLOAT, sizeof(avgLum), avgLum);
-
-	// compute luminance (e.g. Rec. 709)
-	const float sceneLum = 0.2126f * avgLum[0] + 0.7152f * avgLum[1] + 0.0722f * avgLum[2];
-	const float key = 0.18f;
-	const float eps = 1e-2f;
-	float newExposure = key / (std::max(sceneLum, eps) + eps);
-	const float tau = 0.4f;
-	float alpha = 1.0f - glm::exp(-m_deltaTime / tau);
-	if (!std::isfinite(newExposure))
-		newExposure = 1.0f;
-	if (!std::isfinite(alpha))
-		alpha = 1.0f;
-	AppConfig::exposure = glm::mix(AppConfig::exposure, newExposure, alpha);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glPopDebugGroup();
-}
 
 void Renderer::deferedPass()
 {
@@ -267,7 +203,7 @@ void Renderer::deferedPass()
 	glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
 	glPolygonMode(GL_FRONT_AND_BACK, AppConfig::polygonMode);
 	glActiveTexture(GL_TEXTURE0);
-	
+
 	glBindFramebuffer(GL_FRAMEBUFFER, m_deferedFBO);
 	AppConfig::deferedShader->use();
 	glBindVertexArray(m_fullFrameQuadVAO);
@@ -284,6 +220,22 @@ void Renderer::deferedPass()
 	glBindTextureUnit(9, m_cubemap->specularMap);
 	glBindTextureUnit(10, m_cubemap->envCubemap);
 
+	glBindTextureUnit(11, m_pickingPass->pickingTexture);
+
+	GLuint pickingSSBO;
+	glGenBuffers(1, &pickingSSBO);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, pickingSSBO);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, SceneManager::getSelectedPrimitives().size() * sizeof(uint32_t),
+		SceneManager::getSelectedPrimitives().data(), GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 12, pickingSSBO); // 12 matches binding in shader
+
+	if (SceneManager::getSelectedPrimitives().size() > 0)
+	{
+		AppConfig::deferedShader->setIntArray(
+			"selectedPrimitives", static_cast<uint32_t>(SceneManager::getSelectedPrimitives().size()),
+			reinterpret_cast<const int32_t*>(SceneManager::getSelectedPrimitives().data()));
+	}
+
 	AppConfig::deferedShader->setVec3("viewPos", m_camera.position);
 	AppConfig::deferedShader->setFloat("irradianceMapRotationY", AppConfig::irradianceMapRotationY);
 	AppConfig::deferedShader->setFloat("irradianceMapIntensity", AppConfig::irradianceMapIntensity);
@@ -296,49 +248,6 @@ void Renderer::deferedPass()
 	glEnable(GL_DEPTH_TEST);
 	glPopDebugGroup();
 
-}
-
-void Renderer::composedPass(ViewportState viewportState)
-{
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Composed Pass");
-
-	// SCREEN QUAD RENDER PASS
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glBindFramebuffer(GL_FRAMEBUFFER, m_composedFbo);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	glDisable(GL_DEPTH_TEST);
-	glClearColor(AppConfig::clearColor[0], AppConfig::clearColor[1], AppConfig::clearColor[2], AppConfig::clearColor[3]);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-	AppConfig::screenShader->use();
-	AppConfig::screenShader->setFloat("near_plane", AppConfig::near_plane);
-	AppConfig::screenShader->setFloat("far_plane", AppConfig::far_plane);
-	AppConfig::screenShader->setFloat("exposure", AppConfig::exposure);
-	float aspectRatio = float(AppConfig::RENDER_HEIGHT / (AppConfig::RENDER_WIDTH == 0 ? 0.001 : AppConfig::RENDER_WIDTH));
-	AppConfig::screenShader->setVec2("cursorPos", viewportState.cursorPos.x / AppConfig::RENDER_WIDTH,
-		viewportState.cursorPos.y / AppConfig::RENDER_HEIGHT);
-	GLuint pickingSSBO;
-	glGenBuffers(1, &pickingSSBO);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, pickingSSBO);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, SceneManager::getSelectedPrimitives().size() * sizeof(uint32_t),
-		SceneManager::getSelectedPrimitives().data(), GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pickingSSBO); // 1 matches binding in shader
-
-	glBindVertexArray(m_fullFrameQuadVAO);
-	glBindTextureUnit(0, m_screenTexture);
-	glBindTextureUnit(1, m_pickingPass->pickingTexture);
-
-	if (SceneManager::getSelectedPrimitives().size() > 0)
-	{
-		AppConfig::screenShader->setIntArray(
-			"selectedPrimitives", static_cast<uint32_t>(SceneManager::getSelectedPrimitives().size()),
-			reinterpret_cast<const int32_t*>(SceneManager::getSelectedPrimitives().data()));
-	}
-
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glBindTextureUnit(0, 0);
-	glPopDebugGroup();
 }
 
 void Renderer::render(GLFWwindow* window)
@@ -366,23 +275,18 @@ void Renderer::render(GLFWwindow* window)
 		}
 
 		m_cubemap->draw(m_projection);
-		m_gBufferPass->draw(m_projection, m_view);
-		deferedPass();
-		m_shadowMap->draw(m_camera);
 		m_pickingPass->draw(m_projection, m_view);
+		m_gBufferPass->draw(m_projection, m_view);
+		m_shadowMap->draw(m_camera);
+		deferedPass();
 
-
-		// MAIN RENDER PASS
-		// updateLights();
-		// mainPass();
 
 		glfwPollEvents();
 		ViewportState viewportState = m_uiManager->getViewportState();
-		// SCREEN QUAD RENDER PASS
-		composedPass(viewportState);
 		m_uiManager->setScreenTexture(m_deferedScreenTexture);
 		m_uiManager->setShadowMapTexture(m_shadowMap->depthMap);
 		m_uiManager->setPickingTexture(m_pickingPass->pickingTexture);
+		m_uiManager->setGBuffer(m_gBufferPass);
 		m_uiManager->draw(m_deltaTime);
 
 		m_inputManager->processInput(m_deltaTime, viewportState, m_pickingPass->pickingTexture);

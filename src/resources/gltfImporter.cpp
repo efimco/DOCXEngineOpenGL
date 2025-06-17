@@ -79,9 +79,9 @@ void GLTFModel::processGLTFModel(tinygltf::Model& model)
 			glNamedBufferData(ebo, indexBuffer.size() * sizeof(uint32_t), indexBuffer.data(), GL_STATIC_DRAW);
 			glVertexArrayElementBuffer(vao, ebo);
 
-			glNamedBufferData(vbo, bufferSize, NULL, GL_STATIC_DRAW);
-			glNamedBufferSubData(vbo, 0, posSize, posBuffer.data());
-			glNamedBufferSubData(vbo, posSize, texSize, texBuffer.data());
+			glNamedBufferData(vbo, bufferSize, NULL, GL_STATIC_DRAW); //alocate enough space for all the date
+			glNamedBufferSubData(vbo, 0, posSize, posBuffer.data()); //fill the data starting from the point where previous data ended
+			glNamedBufferSubData(vbo, posSize, texSize, texBuffer.data());	
 			glNamedBufferSubData(vbo, posSize + texSize, normalSize, normalBuffer.data());
 			glNamedBufferSubData(vbo, posSize + texSize + normalSize, tangentNormalSize, tangentNormalBuffer.data());
 

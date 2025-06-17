@@ -18,6 +18,12 @@ layout (binding = 8) uniform sampler2D brdfLUT;
 layout (binding = 9) uniform samplerCube specularMap;
 layout (binding = 10) uniform sampler2D envCubemap;
 
+layout (binding = 11) uniform isampler2D pickingTexture;
+
+layout(std430, binding = 12) buffer selectedPrimitivesBuffer {
+	int selectedPrimitives[];
+};
+
 uniform vec3 viewPos;
 uniform float irradianceMapRotationY;
 uniform float irradianceMapIntensity;
@@ -114,29 +120,40 @@ float linear_rgb_to_srgb(float color)
 
 void main()
 {
-
-	// Get gBuffer properties
 	GBuffer gBuffer = getGBuffer();
 	
-	// Calculate base reflectivity
 	vec3 F0 = mix(vec3(MIN_REFLECTANCE), gBuffer.albedo, gBuffer.metallic);
 	
-	// Calculate lighting
 	vec3 result = calculateIBL(gBuffer, F0);
 	
-	// Tone mapping
-
-	vec3 tonemapped = vec3(linear_rgb_to_srgb(result.r), linear_rgb_to_srgb(result.g), linear_rgb_to_srgb(result.b));
 	vec3 background = texture(envCubemap, TexCoords).rgb;
 	bool isBackground = gBuffer.depth >= 1.0 - 1e-5;
 
+	int pickingColor = texture(pickingTexture, TexCoords).r;
+	int outlineWidth = 2;
+
+	vec2 pixelSize = 1.0f / textureSize(pickingTexture, 0);
+
 	// Use IBL result for geometry, background otherwise
-	vec3 finalColor = isBackground ? background : tonemapped;
+	vec3 finalColor = isBackground ? background : result;
+	vec3 tonemapped = vec3(linear_rgb_to_srgb(finalColor.r), linear_rgb_to_srgb(finalColor.g), linear_rgb_to_srgb(finalColor.b));
 
-	// Tone map if needed
-	// finalColor = finalColor / (finalColor + vec3(1.0));
+	FragColor = vec4(tonemapped, 1);
 
-	// Output
-	FragColor = vec4(finalColor, 1);
+		if (selectedPrimitives[pickingColor] == 1)
+	{
+		for (int i = -outlineWidth; i <= +outlineWidth; i++)
+		{
+			for (int j = -outlineWidth; j <= +outlineWidth; j++)
+			{
+				vec2 offset = vec2(i, j) * pixelSize;
+				if (texture(pickingTexture, TexCoords + offset).r != pickingColor)
+				{
+					FragColor = vec4(1.0, 0.5, 0.0, 1.0);
+					return;
+				}
+			}
+		}
+	}
 	
 }

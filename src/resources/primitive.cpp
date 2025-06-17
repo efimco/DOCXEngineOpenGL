@@ -10,14 +10,14 @@
 #include <iostream>
 
 Primitive::Primitive(uint32_t vao, uint32_t vbo, uint32_t ebo, size_t indexCount, Transform transformation,
-					 std::pair<glm::vec3, glm::vec3> boundingBox, std::shared_ptr<Mat> material, std::string name)
+	std::pair<glm::vec3, glm::vec3> boundingBox, std::shared_ptr<Mat> material, std::string name)
 	: vao(vao), vbo(vbo), ebo(ebo), indexCount(indexCount), boundingBox(boundingBox), material(material)
 {
 	this->transform = transformation;
 	this->name = name;
 }
 
-Primitive::Primitive(const Primitive &other)
+Primitive::Primitive(const Primitive& other)
 {
 	this->vao = other.vao;
 	this->vbo = other.vbo;
@@ -29,9 +29,9 @@ Primitive::Primitive(const Primitive &other)
 	this->name = other.name;
 }
 
-Primitive::Primitive(Primitive &&other) noexcept
+Primitive::Primitive(Primitive&& other) noexcept
 	: vao(other.vao), vbo(other.vbo), ebo(other.ebo), indexCount(other.indexCount), boundingBox(other.boundingBox),
-	  material(std::move(other.material))
+	material(std::move(other.material))
 {
 	this->transform = other.transform;
 	this->name = other.name;
@@ -39,11 +39,11 @@ Primitive::Primitive(Primitive &&other) noexcept
 	other.vbo = 0;
 	other.ebo = 0;
 	other.indexCount = 0;
-	other.boundingBox = {glm::vec3(0.0f), glm::vec3(0.0f)};
+	other.boundingBox = { glm::vec3(0.0f), glm::vec3(0.0f) };
 	other.transform = Transform();
 }
 
-Primitive &Primitive::operator=(Primitive &&other) noexcept
+Primitive& Primitive::operator=(Primitive&& other) noexcept
 {
 	if (this == &other)
 		return *this;
@@ -81,9 +81,9 @@ void Primitive::draw() const
 }
 
 
-void *Primitive::operator new(size_t size) { return primitiveAllocator.allocate(size, alignof(Primitive)); }
+void* Primitive::operator new(size_t size) { return primitiveAllocator.allocate(size, alignof(Primitive)); }
 
-void Primitive::operator delete(void *ptr) noexcept
+void Primitive::operator delete(void* ptr) noexcept
 {
 	primitiveAllocator.deallocate(ptr, sizeof(Primitive), alignof(Primitive));
 }
