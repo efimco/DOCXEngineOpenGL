@@ -76,13 +76,10 @@ vec3 calculateIBL(GBuffer gbuffer, vec3 F0)
 	mat3 rotationMatrix = getIrradianceMapRotation();
 	vec3 viewDir = normalize(viewPos - gbuffer.position);
 	vec3 R = reflect(-viewDir, gbuffer.normal);
+	float cosTheta = max(dot(gbuffer.normal, viewDir), 0.0);
 	
 	// Calculate Fresnel
-	vec3 F = fresnelSchlickRoughness(
-		max(dot(gbuffer.normal, viewDir), 0.0), 
-		F0, 
-		gbuffer.roughness
-	);
+	vec3 F = fresnelSchlick(cosTheta, F0, gbuffer.roughness);
 	
 	// Calculate diffuse and specular factors
 	vec3 kS = F;
@@ -147,7 +144,7 @@ void main()
 	if (selectedPrimitives[pickingColor] == 1)
 	{
 		for (int i = -outlineWidth; i <= +outlineWidth; i++)
-		{
+		{	
 			for (int j = -outlineWidth; j <= +outlineWidth; j++)
 			{
 				vec2 offset = vec2(i, j) * pixelSize;
