@@ -139,8 +139,8 @@ void main()
 	vec3 tonemapped = vec3(linear_rgb_to_srgb(finalColor.r), linear_rgb_to_srgb(finalColor.g), linear_rgb_to_srgb(finalColor.b));
 
 	FragColor = vec4(tonemapped, 1);
-
-		if (selectedPrimitives[pickingColor] == 1)
+	vec4 outline = vec4(0);
+	if (selectedPrimitives[pickingColor] == 1)
 	{
 		for (int i = -outlineWidth; i <= +outlineWidth; i++)
 		{
@@ -149,8 +149,7 @@ void main()
 				vec2 offset = vec2(i, j) * pixelSize;
 				if (texture(pickingTexture, TexCoords + offset).r != pickingColor)
 				{
-					FragColor = vec4(1.0, 0.5, 0.0, 1.0);
-					return;
+					FragColor = vec4(1.0, 0.5, 0.0, gBuffer.depth);
 				}
 			}
 		}

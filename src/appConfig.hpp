@@ -12,8 +12,6 @@ namespace AppConfig
 	extern float irradianceMapRotationY;
 	extern float backgroundBlur;
 	extern float clearColor[4];
-	extern Shader* baseShader;
-	extern Shader* screenShader;
 	extern Shader* deferedShader;
 	extern float gamma;
 	extern float near_plane, far_plane;
