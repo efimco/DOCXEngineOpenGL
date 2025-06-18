@@ -10,6 +10,7 @@
 #include "uiManager.hpp"
 #include "scene/scene.hpp"
 #include "gBuffer.hpp"
+#include "FXAAPass.hpp"
 
 class Renderer
 {
@@ -27,8 +28,6 @@ private:
 	Camera m_camera;
 	uint32_t m_fullFrameQuadVAO, m_fullFrameQuadVBO;
 	uint32_t m_debugQuadVAO, m_debugQuadVBO;
-	uint32_t m_mainFbo, m_mainRbo, m_screenTexture;
-	uint32_t m_composedFbo, m_composedTexture;
 	uint32_t m_lightsSSBO;
 	uint32_t m_deferedFBO, m_deferedRBO, m_deferedScreenTexture;
 
@@ -39,6 +38,7 @@ private:
 	InputManager* m_inputManager;
 	PickingPass* m_pickingPass;
 	GBuffer* m_gBufferPass;
+	FXAAPass* m_FXAAPass;
 
 	glm::mat4 m_view;
 	glm::mat4 m_projection;
@@ -46,8 +46,6 @@ private:
 	void initScreenQuad();
 	void createOrResizeFrameBufferAndRenderTarget();
 	void checkFrameBufeerSize();
-	void mainPass();
-	void composedPass(ViewportState viewportState);
 	void createLightsSSBO();
 	void checkLightBuffer();
 	void addLight(Light& light);

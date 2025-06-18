@@ -273,6 +273,7 @@ const std::vector<float> GLTFModel::processTexCoordAttrib(const tinygltf::Primit
 	if (primitive.attributes.find("TEXCOORD_0") == primitive.attributes.end())
 	{
 		std::cerr << "No TEXCOORD_0 attribute found in primitive " << mesh.name << std::endl;
+		return std::vector<float>(0);
 	}
 	const tinygltf::Accessor& texAccessor = model.accessors[primitive.attributes.at("TEXCOORD_0")];
 	const tinygltf::BufferView& texBufferView = model.bufferViews[texAccessor.bufferView];
@@ -302,6 +303,7 @@ const std::vector<float> GLTFModel::processNormalAttrib(const tinygltf::Primitiv
 	if (primitive.attributes.find("NORMAL") == primitive.attributes.end())
 	{
 		std::cerr << "No NORMAL attribute found in primitive " << mesh.name << std::endl;
+		return std::vector<float>(0);
 	}
 	const tinygltf::Accessor& normalAccessor = model.accessors[primitive.attributes.at("NORMAL")];
 	const tinygltf::BufferView& normalBufferView = model.bufferViews[normalAccessor.bufferView];
@@ -331,6 +333,7 @@ const std::vector<float> GLTFModel::processTangentNormalAttrib(const tinygltf::P
 	if (primitive.attributes.find("TANGENT") == primitive.attributes.end())
 	{
 		std::cerr << "No TANGENT attribute found in primitive " << mesh.name << std::endl;
+		return std::vector<float>(0);
 	}
 	const tinygltf::Accessor& tangentNormalAccessor = model.accessors[primitive.attributes.at("TANGENT")];
 	const tinygltf::BufferView& tangentNormalBufferView = model.bufferViews[tangentNormalAccessor.bufferView];
@@ -359,6 +362,7 @@ const std::vector<uint32_t> GLTFModel::processIndexAttrib(const tinygltf::Primit
 	if (primitive.indices < 0)
 	{
 		std::cerr << "No indices found in primitive " << mesh.name << std::endl;
+		return std::vector<uint32_t>(0);
 	}
 	const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
 	const tinygltf::BufferView& indexBufferView = model.bufferViews[indexAccessor.bufferView];

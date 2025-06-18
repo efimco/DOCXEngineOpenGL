@@ -337,7 +337,7 @@ void UIManager::showObjectInspector()
 		if (SceneManager::getSelectedPrimitive()->material->diffuse != nullptr)
 			ImGui::Image(SceneManager::getSelectedPrimitive()->material->diffuse->id, ImVec2(64, 64));
 		ImGui::SameLine();
-		if (SceneManager::getSelectedPrimitive()->material->diffuse != nullptr)
+		if (SceneManager::getSelectedPrimitive()->material->specular != nullptr)
 			ImGui::Image(SceneManager::getSelectedPrimitive()->material->specular->id, ImVec2(64, 64));
 		if (ImGui::Button("Diffuse"))
 		{
@@ -395,6 +395,7 @@ void UIManager::showTools()
 	ImGui::SliderFloat("Backgorund Blur", &AppConfig::backgroundBlur, 0.0f, 1.0f);
 	ImGui::Checkbox("ObjectID Debug", &AppConfig::showObjectPicking);
 	ImGui::Checkbox("ShadowMap Debug", &AppConfig::showShadowMap);
+	ImGui::Checkbox("FXAA", &AppConfig::isFXAA);
 	if (ImGui::Button("Load CubeMap"))
 	{
 		std::string filePath = OpenFileDialog(FileType::IMAGE);

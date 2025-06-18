@@ -23,6 +23,7 @@ namespace AppConfig
 	extern float exposure;
 	extern std::string cubeMapPath;
 	extern bool reloadCubeMap;
+	extern bool isFXAA;
 
 	void initShaders();
 

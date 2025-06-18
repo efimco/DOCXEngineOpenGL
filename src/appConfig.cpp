@@ -31,6 +31,7 @@ namespace AppConfig
     std::string cubeMapPath = "";
     bool reloadCubeMap = false;
     float backgroundBlur = 0;
+    bool isFXAA;
 
     void initShaders()
     {

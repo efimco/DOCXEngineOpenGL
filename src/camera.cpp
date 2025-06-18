@@ -11,11 +11,11 @@ const float SPEED = 1.0f;
 
 Camera::Camera(glm::vec3 pos, glm::vec3 upv, float yaw, float pitch)
     : front(glm::vec3(0.0f, 0.0f, -1.0f)), speed(SPEED), zoom(ZOOM), sensitivity(SENSITIVITY), position(pos), worldUp(upv),
-      cameraReseted(true), defaultSpeed(speed)
+    cameraReseted(true), defaultSpeed(speed)
 {
     this->yaw = yaw;
     this->pitch = pitch;
-    defaultCameraMatrix = {position, front, up};
+    defaultCameraMatrix = { position, front, up };
     defaultCameraRotation[0] = pitch;
     defaultCameraRotation[1] = yaw;
     increasedSpeed = defaultSpeed * 3;
@@ -35,8 +35,8 @@ void Camera::processMouseScroll(float yOffset)
 
 void Camera::processPanning(float xOffset, float yOffset)
 {
-    glm::vec3 rightMove = right * -xOffset * sensitivity * 0.01f;
-    glm::vec3 upMove = up * -yOffset * sensitivity * 0.01f;
+    glm::vec3 rightMove = right * -xOffset * sensitivity * .1f;
+    glm::vec3 upMove = up * -yOffset * sensitivity * .1f;
 
     orbitPivot += rightMove + upMove;
     updateCameraVecotrs();
@@ -55,14 +55,14 @@ void Camera::updateCameraVecotrs()
     up = glm::normalize(glm::cross(right, front));
 }
 
-void Camera::focusOn(Primitive *primitive)
+void Camera::focusOn(Primitive* primitive)
 {
     glm::vec3 minPos = primitive->boundingBox.first + glm::vec3(primitive->transform.position);
     glm::vec3 maxPos = primitive->boundingBox.second + glm::vec3(primitive->transform.position);
     glm::vec3 center = (minPos + maxPos) * 0.5f;
     float radius = glm::length(maxPos - minPos) * 0.5f;
     orbitPivot = center;
-
+    sensitivity = radius / 5;
     // Position camera to see the entire bounding box
     float distance = radius / std::tan(glm::radians(zoom * 0.5f));
     distanceToOrbitPivot = distance;
@@ -72,8 +72,8 @@ void Camera::focusOn(Primitive *primitive)
 
 void Camera::processOrbit(float deltaX, float deltaY)
 {
-    yaw += deltaX * sensitivity;
-    pitch += deltaY * sensitivity;
+    yaw += deltaX * .5;
+    pitch += deltaY * .5;
 
     if (pitch > 89.0f)
         pitch = 89.0f;
