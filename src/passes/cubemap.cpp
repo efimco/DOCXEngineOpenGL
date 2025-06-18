@@ -73,6 +73,9 @@ void Cubemap::initShaders()
 	brdfLutShader = Shader(vBrdfLutShader, fBrdfLutShader);
 	SceneManager::addShader(&backgroundShader);
 	SceneManager::addShader(&equirectangularToCubemapShader);
+	SceneManager::addShader(&irradianceShader);
+	SceneManager::addShader(&specularShader);
+	SceneManager::addShader(&brdfLutShader);
 }
 
 void Cubemap::loadHDR(std::string pathToCubemap)

@@ -136,7 +136,11 @@ void main()
 
 	// Use IBL result for geometry, background otherwise
 	vec3 finalColor = isBackground ? background : result;
-	vec3 tonemapped = vec3(linear_rgb_to_srgb(finalColor.r), linear_rgb_to_srgb(finalColor.g), linear_rgb_to_srgb(finalColor.b));
+	vec3 tonemapped = vec3(
+		linear_rgb_to_srgb(finalColor.r),
+		linear_rgb_to_srgb(finalColor.g),
+		linear_rgb_to_srgb(finalColor.b)
+		);
 
 	FragColor = vec4(tonemapped, 1);
 	vec4 outline = vec4(0);

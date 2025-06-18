@@ -57,6 +57,7 @@ void PickingPass::draw(glm::mat4 projection, glm::mat4 view)
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Picking Pass");
 	glBindFramebuffer(GL_FRAMEBUFFER, m_pickingFBO);
 	const int zero = 0;
+	glEnable(GL_DEPTH_TEST);
 	glClearBufferiv(GL_COLOR, 0, &zero);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
@@ -72,6 +73,6 @@ void PickingPass::draw(glm::mat4 projection, glm::mat4 view)
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+	glDisable(GL_DEPTH_TEST);
 	glPopDebugGroup();
 }
