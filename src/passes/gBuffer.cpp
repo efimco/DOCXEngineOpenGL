@@ -140,17 +140,17 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view)
 	for (auto& primitive : SceneManager::getPrimitives())
 	{
 		const bool hasDiffuse =
-			primitive->material && primitive->material->diffuse && !primitive->material->diffuse->path.empty();
+			primitive->material && primitive->material->tDiffuse && !primitive->material->tDiffuse->path.empty();
 		const bool hasSpecular =
-			primitive->material && primitive->material->specular && !primitive->material->specular->path.empty();
+			primitive->material && primitive->material->tSpecular && !primitive->material->tSpecular->path.empty();
 		const bool hasNormal =
-			primitive->material && primitive->material->normal && !primitive->material->normal->path.empty();
+			primitive->material && primitive->material->tNormal && !primitive->material->tNormal->path.empty();
 
 		m_gBufferShader->use();
 
-		glBindTextureUnit(1, hasDiffuse ? primitive->material->diffuse->id : 0);
-		glBindTextureUnit(2, hasSpecular ? primitive->material->specular->id : 0);
-		glBindTextureUnit(3, hasNormal ? primitive->material->normal->id : 0);
+		glBindTextureUnit(1, hasDiffuse ? primitive->material->tDiffuse->id : 0);
+		glBindTextureUnit(2, hasSpecular ? primitive->material->tSpecular->id : 0);
+		glBindTextureUnit(3, hasNormal ? primitive->material->tNormal->id : 0);
 
 		m_gBufferShader->setMat4("projection", projection);
 		m_gBufferShader->setMat4("view", view);
@@ -158,6 +158,7 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view)
 
 		m_gBufferShader->setFloat("ufRoughness", primitive->material->roughness);
 		m_gBufferShader->setFloat("ufMetallic", primitive->material->metallic);
+		m_gBufferShader->setVec3("uvAlbedo", primitive->material->albedo);
 		primitive->draw();
 	}
 

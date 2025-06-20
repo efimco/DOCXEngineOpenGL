@@ -15,7 +15,7 @@ SceneNode::SceneNode(SceneNode&& other) noexcept
 	other.children.clear();
 }
 
-SceneNode::SceneNode() : parent(nullptr) { std::cout << "SceneNode created" << std::endl; };
+SceneNode::SceneNode() : parent(nullptr) {};
 
 SceneNode::~SceneNode() = default;
 

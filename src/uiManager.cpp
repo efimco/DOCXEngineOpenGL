@@ -261,15 +261,15 @@ void UIManager::showCameraTransforms()
 	ImGui::SameLine();
 	ImGui::Text("Up: %.1f, %.1f, %.1f", camera.up.x, camera.up.y, camera.up.z);
 	ImGui::Text("Right: %.1f, %.1f, %.1f", camera.right.x, camera.right.y, camera.right.z);
-	ImGui::Text("Default Pos: %.1f, %.1f, %.1f", camera.defaultCameraMatrix[0].x, camera.defaultCameraMatrix[0].y,
-		camera.defaultCameraMatrix[0].z);
-	ImGui::SameLine();
-	ImGui::Text("Default Rot: %.1f, %.1f", camera.defaultCameraRotation[0], camera.defaultCameraRotation[1]);
-	ImGui::Text("Default Front: %.1f, %.1f, %.1f", camera.defaultCameraMatrix[1].x, camera.defaultCameraMatrix[1].y,
-		camera.defaultCameraMatrix[1].z);
-	ImGui::SameLine();
-	ImGui::Text("Default Up: %.1f, %.1f, %.1f", camera.defaultCameraMatrix[2].x, camera.defaultCameraMatrix[2].y,
-		camera.defaultCameraMatrix[2].z);
+	// ImGui::Text("Default Pos: %.1f, %.1f, %.1f", camera.defaultCameraMatrix[0].x, camera.defaultCameraMatrix[0].y,
+	// 	camera.defaultCameraMatrix[0].z);
+	// ImGui::SameLine();
+	// ImGui::Text("Default Rot: %.1f, %.1f", camera.defaultCameraRotation[0], camera.defaultCameraRotation[1]);
+	// ImGui::Text("Default Front: %.1f, %.1f, %.1f", camera.defaultCameraMatrix[1].x, camera.defaultCameraMatrix[1].y,
+	// 	camera.defaultCameraMatrix[1].z);
+	// ImGui::SameLine();
+	// ImGui::Text("Default Up: %.1f, %.1f, %.1f", camera.defaultCameraMatrix[2].x, camera.defaultCameraMatrix[2].y,
+	// 	camera.defaultCameraMatrix[2].z);
 	ImGui::End();
 }
 
@@ -332,20 +332,25 @@ void UIManager::showObjectInspector()
 	{
 		ImGui::Begin("Object Inspector");
 		ImGui::Text("Object: %s", SceneManager::getSelectedPrimitive()->name.c_str());
+		ImGui::Text("Material: %s", SceneManager::getSelectedPrimitive()->material->name.c_str());
 		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform.matrix[3]),
 			0.01f, -100.0f, 100.0f);
-		if (SceneManager::getSelectedPrimitive()->material->diffuse != nullptr)
-			ImGui::Image(SceneManager::getSelectedPrimitive()->material->diffuse->id, ImVec2(64, 64));
+		if (SceneManager::getSelectedPrimitive()->material->tDiffuse != nullptr)
+		{
+			ImGui::Image(SceneManager::getSelectedPrimitive()->material->tDiffuse->id, ImVec2(64, 64));
+		}
 		ImGui::SameLine();
-		if (SceneManager::getSelectedPrimitive()->material->specular != nullptr)
-			ImGui::Image(SceneManager::getSelectedPrimitive()->material->specular->id, ImVec2(64, 64));
+		if (SceneManager::getSelectedPrimitive()->material->tSpecular != nullptr)
+		{
+			ImGui::Image(SceneManager::getSelectedPrimitive()->material->tSpecular->id, ImVec2(64, 64));
+		}
 		if (ImGui::Button("Diffuse"))
 		{
 			std::string filePath = OpenFileDialog(FileType::IMAGE);
 			if (!filePath.empty())
 			{
 				// Update the object's texture path
-				SceneManager::getSelectedPrimitive()->material->diffuse->setPath(filePath);
+				SceneManager::getSelectedPrimitive()->material->tDiffuse->setPath(filePath);
 				glActiveTexture(GL_TEXTURE0);
 			}
 		}
@@ -356,7 +361,7 @@ void UIManager::showObjectInspector()
 			if (!filePath.empty())
 			{
 				// Update the object's texture path
-				SceneManager::getSelectedPrimitive()->material->specular->setPath(filePath);
+				SceneManager::getSelectedPrimitive()->material->tSpecular->setPath(filePath);
 				glActiveTexture(GL_TEXTURE0);
 			}
 		}
@@ -372,7 +377,7 @@ void UIManager::showObjectInspector()
 			ImGui::End();
 			return;
 		}
-
+		ImGui::DragFloat3("Albedo", glm::value_ptr(SceneManager::getSelectedPrimitive()->material->albedo));
 		ImGui::SliderFloat("Roughness", &SceneManager::getSelectedPrimitive()->material->roughness, 0.04f, 1.0f);
 		ImGui::SliderFloat("Metallic", &SceneManager::getSelectedPrimitive()->material->metallic, 0.0f, 1.0f);
 
@@ -576,16 +581,16 @@ void UIManager::showMaterialBrowser()
 				ImGui::TextWrapped("Material: %s", mat->name.c_str());
 				ImVec2 imagePos = ImGui::GetCursorPos();
 
-				if (mat->diffuse)
+				if (mat->tDiffuse)
 				{
-					ImGui::Image(mat->diffuse->id, ImVec2(imageSize, imageSize));
+					ImGui::Image(mat->tDiffuse->id, ImVec2(imageSize, imageSize));
 					if (ImGui::IsItemHovered())
 						ImGui::SetTooltip("Diffuse");
 				}
 				ImGui::SameLine();
-				if (mat->specular)
+				if (mat->tSpecular)
 				{
-					ImGui::Image(mat->specular->id, ImVec2(imageSize, imageSize));
+					ImGui::Image(mat->tSpecular->id, ImVec2(imageSize, imageSize));
 					if (ImGui::IsItemHovered())
 						ImGui::SetTooltip("Specular");
 				}
@@ -595,7 +600,7 @@ void UIManager::showMaterialBrowser()
 					std::string filePath = OpenFileDialog(FileType::IMAGE);
 					if (!filePath.empty())
 					{
-						mat->diffuse->setPath(filePath);
+						mat->tDiffuse->setPath(filePath);
 						glActiveTexture(GL_TEXTURE0);
 					}
 				}
@@ -605,7 +610,7 @@ void UIManager::showMaterialBrowser()
 					std::string filePath = OpenFileDialog(FileType::IMAGE);
 					if (!filePath.empty())
 					{
-						mat->specular->setPath(filePath);
+						mat->tSpecular->setPath(filePath);
 						glActiveTexture(GL_TEXTURE0);
 					}
 				}

@@ -48,9 +48,8 @@ void GLTFModel::processGLTFModel(tinygltf::Model& model)
 			std::pair<glm::vec3, glm::vec3> boundingBox = posAndBB.second;
 			std::vector<float> texBuffer = processTexCoordAttrib(primitive, mesh, model);
 			std::vector<float> normalBuffer = processNormalAttrib(primitive, mesh, model);
-			std::vector<float> tangentNormalBuffer = processTangentNormalAttrib(primitive, mesh, model);
 			std::vector<uint32_t> indexBuffer = processIndexAttrib(primitive, mesh, model);
-			if (posBuffer.empty() || texBuffer.empty() || normalBuffer.empty() || tangentNormalBuffer.empty())
+			if (posBuffer.empty() || normalBuffer.empty())
 			{
 				std::cerr << "Failed to process attributes for mesh " << mesh.name << std::endl;
 				continue;
@@ -70,8 +69,7 @@ void GLTFModel::processGLTFModel(tinygltf::Model& model)
 			size_t posSize = posBuffer.size() * sizeof(float);
 			size_t texSize = texBuffer.size() * sizeof(float);
 			size_t normalSize = normalBuffer.size() * sizeof(float);
-			size_t tangentNormalSize = tangentNormalBuffer.size() * sizeof(float);
-			size_t bufferSize = posSize + texSize + normalSize + tangentNormalSize;
+			size_t bufferSize = posSize + texSize + normalSize;
 
 			size_t indexSize = indexBuffer.size() * sizeof(uint32_t);
 
@@ -81,9 +79,8 @@ void GLTFModel::processGLTFModel(tinygltf::Model& model)
 
 			glNamedBufferData(vbo, bufferSize, NULL, GL_STATIC_DRAW); //alocate enough space for all the date
 			glNamedBufferSubData(vbo, 0, posSize, posBuffer.data()); //fill the data starting from the point where previous data ended
-			glNamedBufferSubData(vbo, posSize, texSize, texBuffer.data());	
+			glNamedBufferSubData(vbo, posSize, texSize, texBuffer.data());
 			glNamedBufferSubData(vbo, posSize + texSize, normalSize, normalBuffer.data());
-			glNamedBufferSubData(vbo, posSize + texSize + normalSize, tangentNormalSize, tangentNormalBuffer.data());
 
 			glVertexArrayVertexBuffer(vao, 0, vbo, 0, 3 * sizeof(float));
 			glVertexArrayVertexBuffer(vao, 1, vbo, posSize, 2 * sizeof(float));
@@ -132,8 +129,7 @@ void GLTFModel::processGLTFModel(tinygltf::Model& model)
 
 			if (model.nodes[meshIndex].scale.size() != 0)
 			{
-				transform.scale = glm::vec3(model.nodes[meshIndex].scale[0], model.nodes[meshIndex].scale[1],
-					model.nodes[meshIndex].scale[2]);
+				transform.scale = glm::vec3(model.nodes[meshIndex].scale[0], model.nodes[meshIndex].scale[1], model.nodes[meshIndex].scale[2]);
 			}
 			else
 			{
@@ -141,19 +137,38 @@ void GLTFModel::processGLTFModel(tinygltf::Model& model)
 			}
 			transform.matrix = glm::translate(glm::mat4(1.0f), transform.position) * glm::mat4_cast(transform.rotation) *
 				glm::scale(glm::mat4(1.0f), transform.scale);
+
 			assert(indexBuffer.size() == model.accessors[primitive.indices].count);
 			size_t indexCount = indexBuffer.size();
 			std::string name = mesh.name;
-			auto it =
-				std::find_if(primitives.begin(), primitives.end(), [&](const auto& prim) { return prim->name == name; });
+			auto it = std::find_if(primitives.begin(), primitives.end(), [&](const auto& prim) { return prim->name == name; });
 
 			if (it != primitives.end())
 			{
 				std::cerr << "Warning: Duplicate primitive names were detected: " << name << std::endl;
-				continue;
+				static int duplicateCounter = 0;
+				name.append(std::to_string(duplicateCounter));
+				duplicateCounter++;
 			}
-			std::unique_ptr<Primitive> newPrimtive = std::make_unique<Primitive>(
-				vao, vbo, ebo, indexCount, transform, boundingBox, materialsIndex[primitive.material], name);
+
+			std::shared_ptr<Mat> mat = std::make_shared<Mat>();
+
+			if (primitive.material < 0)
+			{
+				mat->name = name;
+				std::hash<std::string> hasher;
+				uint32_t uid = (uint32_t)hasher(mat->name);
+				if (SceneManager::getMaterial(uid) == nullptr)
+				{
+					SceneManager::addMaterial(mat, uid);
+				}
+			}
+			else
+			{
+				mat = materialsIndex[primitive.material];
+			}
+			std::unique_ptr<Primitive> newPrimtive =
+				std::make_unique<Primitive>(vao, vbo, ebo, indexCount, transform, boundingBox, mat, name);
 			primitives.push_back(std::move(newPrimtive));
 		}
 	}
@@ -203,18 +218,26 @@ void GLTFModel::processMaterials(tinygltf::Model& model)
 		std::shared_ptr<Mat> mat = std::make_shared<Mat>();
 		if (material.pbrMetallicRoughness.baseColorTexture.index != -1)
 		{
-			mat->diffuse = texturesIndex[material.pbrMetallicRoughness.baseColorTexture.index];
+			mat->tDiffuse = texturesIndex[material.pbrMetallicRoughness.baseColorTexture.index];
 		}
 
 		if (material.pbrMetallicRoughness.metallicRoughnessTexture.index != -1)
 		{
-			mat->specular = texturesIndex[material.pbrMetallicRoughness.metallicRoughnessTexture.index];
+			mat->tSpecular = texturesIndex[material.pbrMetallicRoughness.metallicRoughnessTexture.index];
 		}
 		if (material.normalTexture.index != -1)
 		{
-			mat->normal = texturesIndex[material.normalTexture.index];
+			mat->tNormal = texturesIndex[material.normalTexture.index];
 		}
 		mat->name = material.name;
+		if (material.pbrMetallicRoughness.baseColorFactor.size() == 4) {
+			mat->albedo = glm::vec4(
+				static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[0]),
+				static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[1]),
+				static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[2]),
+				static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[3])
+			);
+		}
 		std::hash<std::string> hasher;
 		uint32_t uid = (uint32_t)hasher(model.materials[i].name);
 		if (SceneManager::getMaterial(uid) == nullptr)
@@ -324,36 +347,6 @@ const std::vector<float> GLTFModel::processNormalAttrib(const tinygltf::Primitiv
 		}
 	}
 	return normalData;
-}
-
-const std::vector<float> GLTFModel::processTangentNormalAttrib(const tinygltf::Primitive& primitive,
-	const tinygltf::Mesh& mesh, const tinygltf::Model& model)
-{
-
-	if (primitive.attributes.find("TANGENT") == primitive.attributes.end())
-	{
-		std::cerr << "No TANGENT attribute found in primitive " << mesh.name << std::endl;
-		return std::vector<float>(0);
-	}
-	const tinygltf::Accessor& tangentNormalAccessor = model.accessors[primitive.attributes.at("TANGENT")];
-	const tinygltf::BufferView& tangentNormalBufferView = model.bufferViews[tangentNormalAccessor.bufferView];
-	const tinygltf::Buffer& tangentBuffer = model.buffers[tangentNormalBufferView.buffer];
-
-	const float* pTangentNormalData = reinterpret_cast<const float*>(
-		tangentBuffer.data.data() + tangentNormalBufferView.byteOffset + tangentNormalAccessor.byteOffset);
-
-	size_t vertexCount = tangentNormalAccessor.count;
-	int components = (tangentNormalAccessor.type == TINYGLTF_TYPE_VEC4) ? 4 : 0;
-	std::vector<float> tangentNormalData;
-	tangentNormalData.reserve(vertexCount * components);
-	for (size_t i = 0; i < vertexCount; i++)
-	{
-		for (int j = 0; j < components; j++)
-		{
-			tangentNormalData.push_back(pTangentNormalData[i * components + j]);
-		}
-	}
-	return tangentNormalData;
 }
 
 const std::vector<uint32_t> GLTFModel::processIndexAttrib(const tinygltf::Primitive& primitive, const tinygltf::Mesh& mesh,
