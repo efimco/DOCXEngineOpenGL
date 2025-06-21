@@ -36,22 +36,6 @@ Renderer::Renderer(GLFWwindow* window) : m_camera(glm::vec3(-10.0f, 3.0f, 13.0f)
 	createOrResizeFrameBufferAndRenderTarget();
 
 	AppConfig::initShaders();
-
-	createLightsSSBO();
-
-	Light directionalLight;
-	directionalLight.type = 1;
-	directionalLight.intensity = 0.1f;
-	directionalLight.position = glm::vec3(0, 300.0f, 0);
-	directionalLight.direction = glm::vec3(0.0f, 0.0f, 0.0f);
-	directionalLight.ambient = glm::vec3(0.05f);
-	directionalLight.diffuse = glm::vec3(0.8f);
-	directionalLight.specular = glm::vec3(1.0f);
-	directionalLight.constant = 1.0f;
-	directionalLight.linear = 0.09f;
-	directionalLight.quadratic = 0.032f;
-
-	addLight(directionalLight);
 }
 
 Renderer::~Renderer()
@@ -60,7 +44,6 @@ Renderer::~Renderer()
 	glDeleteFramebuffers(1, &m_deferedRBO);
 	glDeleteBuffers(1, &m_fullFrameQuadVBO);
 	glDeleteVertexArrays(1, &m_fullFrameQuadVAO);
-	glDeleteBuffers(1, &m_lightsSSBO);
 	delete m_shadowMap;
 	delete m_cubemap;
 	delete m_gBufferPass;
@@ -71,35 +54,7 @@ Renderer::~Renderer()
 	glfwTerminate();
 }
 
-void Renderer::createLightsSSBO()
-{
-	glCreateBuffers(1, &m_lightsSSBO);
-	glNamedBufferData(m_lightsSSBO, SceneManager::getLights().size() * sizeof(Light), nullptr, GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_lightsSSBO);
-}
 
-void Renderer::checkLightBuffer()
-{
-	GLint bufferSize = 0;
-	glGetNamedBufferParameteriv(m_lightsSSBO, GL_BUFFER_SIZE, &bufferSize);
-	std::cout << "Light buffer size: " << bufferSize << " bytes" << std::endl;
-	std::cout << "Lights count: " << SceneManager::getLights().size() << std::endl;
-	std::cout << "Light size: " << sizeof(Light) << std::endl;
-}
-
-void Renderer::addLight(Light& light)
-{
-	SceneManager::addLight(light);
-	glNamedBufferData(m_lightsSSBO, SceneManager::getLights().size() * sizeof(Light), nullptr, GL_DYNAMIC_DRAW);
-	updateLights();
-	checkLightBuffer();
-}
-
-void Renderer::updateLights()
-{
-	glNamedBufferSubData(m_lightsSSBO, 0, SceneManager::getLights().size() * sizeof(Light),
-		SceneManager::getLights().data());
-}
 
 void Renderer::initScreenQuad()
 {

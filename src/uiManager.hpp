@@ -47,6 +47,7 @@ private:
 	uint32_t m_pickingTexture;
 	uint32_t m_shadowMapTexture;
 	ImVec2 m_vpSize;
+	Tex* m_noTexture;
 
 	std::string OpenFileDialog(FileType type);
 

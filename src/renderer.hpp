@@ -28,7 +28,6 @@ private:
 	Camera m_camera;
 	uint32_t m_fullFrameQuadVAO, m_fullFrameQuadVBO;
 	uint32_t m_debugQuadVAO, m_debugQuadVBO;
-	uint32_t m_lightsSSBO;
 	uint32_t m_deferedFBO, m_deferedRBO, m_deferedScreenTexture;
 
 	int m_nMipLevels;
@@ -46,9 +45,5 @@ private:
 	void initScreenQuad();
 	void createOrResizeFrameBufferAndRenderTarget();
 	void checkFrameBufeerSize();
-	void createLightsSSBO();
-	void checkLightBuffer();
-	void addLight(Light& light);
-	void updateLights();
 	void deferedPass();
 };

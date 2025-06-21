@@ -12,7 +12,7 @@
 #include "glad/gl.h"
 #include "glm/gtc/type_ptr.hpp"
 
-
+#include "texture.hpp"
 #include "appConfig.hpp"
 #include "gltfImporter.hpp"
 #include "sceneManager.hpp"
@@ -21,6 +21,7 @@
 
 UIManager::UIManager(GLFWwindow* window, Camera& camera, SceneNode* scene) : camera(camera), window(window), scene(scene)
 {
+	m_noTexture = new Tex(std::filesystem::absolute("..\\..\\res\\icons\\No Image.png").string().c_str());
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -276,53 +277,7 @@ void UIManager::showCameraTransforms()
 void UIManager::showLights()
 {
 	ImGui::Begin("Lights");
-	for (int i = 0; i < SceneManager::getLights().size(); i++)
-	{
-		ImGui::PushID(i);
-		ImGui::Text("Light: %d %s ", i,
-			(SceneManager::getLights()[i].type == 1) ? "directional"
-			: (SceneManager::getLights()[i].type == 2) ? "spot"
-			: "point");
-		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getLights()[i].position));
-		ImGui::SliderFloat("Intensity", &SceneManager::getLights()[i].intensity, 0.0f, 10.0f);
 
-		static glm::vec3 lightRotation = glm::vec3(0.0f);
-		if (ImGui::DragFloat3("Light Rotation", glm::value_ptr(lightRotation), 0.1f))
-		{
-			float pitch = glm::radians(lightRotation.x);
-			float yaw = glm::radians(lightRotation.y);
-			float roll = glm::radians(lightRotation.z);
-			glm::vec3 baseDirection(0.0f, -1.0f, 0.0f);
-			glm::mat4 rotX = glm::rotate(glm::mat4(1.0f), pitch, glm::vec3(1.0f, 0.0f, 0.0f));
-			glm::mat4 rotY = glm::rotate(glm::mat4(1.0f), yaw, glm::vec3(0.0f, 1.0f, 0.0f));
-			glm::mat4 rotZ = glm::rotate(glm::mat4(1.0f), roll, glm::vec3(0.0f, 0.0f, 1.0f));
-			glm::mat4 rotationMatrix = rotZ * rotY * rotX;
-			SceneManager::getLights()[i].direction = glm::vec3(rotationMatrix * glm::vec4(baseDirection, 0.0f));
-		}
-		if (SceneManager::getLights()[i].type == 2)
-		{
-			float cutoffAngle = glm::degrees(glm::acos(SceneManager::getLights()[i].cutOff));
-			float outerCutoffAngle = glm::degrees(glm::acos(SceneManager::getLights()[i].outerCutOff));
-			if (ImGui::SliderFloat("CutOff Angle", &cutoffAngle, 0.0f, 180.0f))
-			{
-				if (outerCutoffAngle <= cutoffAngle)
-				{
-					outerCutoffAngle = cutoffAngle + 0.001f;
-					SceneManager::getLights()[i].outerCutOff = glm::cos(glm::radians(outerCutoffAngle));
-				}
-				SceneManager::getLights()[i].cutOff = glm::cos(glm::radians(cutoffAngle));
-			}
-
-			if (ImGui::SliderFloat("Outer CutOff Angle", &outerCutoffAngle, cutoffAngle, 180))
-			{
-				if (outerCutoffAngle <= cutoffAngle)
-					outerCutoffAngle = cutoffAngle + 0.001f;
-				SceneManager::getLights()[i].outerCutOff = glm::cos(glm::radians(outerCutoffAngle));
-			}
-		}
-		ImGui::ColorEdit3("Color", glm::value_ptr(SceneManager::getLights()[i].diffuse));
-		ImGui::PopID();
-	}
 	ImGui::End();
 }
 
@@ -335,111 +290,97 @@ void UIManager::showObjectInspector()
 		ImGui::Text("Material: %s", SceneManager::getSelectedPrimitive()->material->name.c_str());
 		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform.matrix[3]), 0.01f, -100.0f, 100.0f);
 
-		bool hasDiffuse = SceneManager::getSelectedPrimitive()->material->tDiffuse != nullptr;
-		bool hasSpecular = SceneManager::getSelectedPrimitive()->material->tSpecular != nullptr;
-		bool hasNormal = SceneManager::getSelectedPrimitive()->material->tNormal != nullptr;
-		if (hasDiffuse)
-		{
-			uint32_t id = SceneManager::getSelectedPrimitive()->material->tDiffuse->id;
-			if (id <= 0)
-			{
-				hasDiffuse = false;
-			}
-			else
-			{
-				ImGui::Image(id, ImVec2(64, 64));
-			}
+		bool hasDiffuse = SceneManager::getSelectedPrimitive()->material->tDiffuse != nullptr && SceneManager::getSelectedPrimitive()->material->tDiffuse->id > 0;
+		bool hasSpecular = SceneManager::getSelectedPrimitive()->material->tSpecular != nullptr && SceneManager::getSelectedPrimitive()->material->tSpecular->id > 0;
+		bool hasNormal = SceneManager::getSelectedPrimitive()->material->tNormal != nullptr && SceneManager::getSelectedPrimitive()->material->tNormal->id > 0;
+		auto& material = SceneManager::getSelectedPrimitive()->material;
 
-		}
-		if (hasSpecular)
 		{
-
-			uint32_t id = SceneManager::getSelectedPrimitive()->material->tSpecular->id;
-			if (id <= 0)
-			{
-				hasSpecular = false;
-			}
-			else
-			{
-				ImGui::SameLine();
-				ImGui::Image(id, ImVec2(64, 64));
-			}
-
-		}
-		if (hasNormal)
-		{
-			uint32_t id = SceneManager::getSelectedPrimitive()->material->tNormal->id;
-			if (id <= 0)
-			{
-				hasNormal = false;
-			}
-			else
-			{
-				ImGui::SameLine();
-				ImGui::Image(id, ImVec2(64, 64));
-			}
+			uint32_t id = (hasDiffuse == true) ? material->tDiffuse->id : m_noTexture->id;
+			ImGui::Image(id, ImVec2(64, 64));
+			ImGui::SameLine();
 		}
 
-		if (hasDiffuse)
 		{
-			bool* isTiled = &SceneManager::getSelectedPrimitive()->material->tDiffuse->tiled;
-			ImGui::PushID(SceneManager::getSelectedPrimitive()->material->tDiffuse->id);
-			ImGui::Checkbox("Tiled", isTiled);
+			uint32_t id = (hasSpecular == true) ? material->tSpecular->id : m_noTexture->id;
+			ImGui::Image(id, ImVec2(64, 64));
+			ImGui::SameLine();
+
+		}
+
+		{
+			uint32_t id = (hasNormal == true) ? material->tNormal->id : m_noTexture->id;
+			ImGui::Image(id, ImVec2(64, 64));
+		}
+
+		if (ImGui::Button("Diffuse", ImVec2(64, 20)))
+		{
+			std::string filePath = OpenFileDialog(FileType::IMAGE);
+			if (!filePath.empty())
+			{
+				material->tDiffuse->setPath(filePath);
+				glActiveTexture(GL_TEXTURE0);
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Specular", ImVec2(64, 20)))
+		{
+			std::string filePath = OpenFileDialog(FileType::IMAGE);
+			if (!filePath.empty())
+			{
+				material->tSpecular->setPath(filePath);
+				glActiveTexture(GL_TEXTURE0);
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Normal", ImVec2(64, 20)))
+		{
+			std::string filePath = OpenFileDialog(FileType::IMAGE);
+			if (!filePath.empty())
+			{
+				material->tNormal->setPath(filePath);
+				glActiveTexture(GL_TEXTURE0);
+			}
+		}
+
+
+		// Tiling options for Diffuse, Specular, and Normal textures
+
+		// Diffuse texture tiling
+		{
+			bool* isTiled = &material->tDiffuse->tiled;
+			ImGui::PushID(material->tDiffuse->id);
+			if (!hasDiffuse) ImGui::BeginDisabled();
+			ImGui::Checkbox("Diffuse Tiled", isTiled);
+			if (!hasDiffuse) ImGui::EndDisabled();
 			ImGui::PopID();
-			SceneManager::getSelectedPrimitive()->material->tDiffuse->setTiled(*isTiled);
+			material->tDiffuse->setTiled(*isTiled);
 		}
 
-		if (hasSpecular)
+		// Specular texture tiling
 		{
 			ImGui::SameLine();
-			bool* isTiled = &SceneManager::getSelectedPrimitive()->material->tSpecular->tiled;
-			ImGui::PushID(SceneManager::getSelectedPrimitive()->material->tSpecular->id);
-			ImGui::Checkbox("Tiled", isTiled);
+			bool* isTiled = &material->tSpecular->tiled;
+			ImGui::PushID(material->tSpecular->id);
+			if (!hasSpecular) ImGui::BeginDisabled();
+			ImGui::Checkbox("Specular Tiled", isTiled);
+			if (!hasSpecular) ImGui::EndDisabled();
 			ImGui::PopID();
-			SceneManager::getSelectedPrimitive()->material->tSpecular->setTiled(*isTiled);
+			material->tSpecular->setTiled(*isTiled);
 		}
 
-		if (hasNormal)
+		// Normal texture tiling
 		{
 			ImGui::SameLine();
-			bool* isTiled = &SceneManager::getSelectedPrimitive()->material->tNormal->tiled;
-			ImGui::PushID(SceneManager::getSelectedPrimitive()->material->tNormal->id);
-			ImGui::Checkbox("Tiled", isTiled);
+			bool* isTiled = &material->tNormal->tiled;
+			ImGui::PushID(material->tNormal->id);
+			if (!hasNormal) ImGui::BeginDisabled();
+			ImGui::Checkbox("Normal Tiled", isTiled);
+			if (!hasNormal) ImGui::EndDisabled();
 			ImGui::PopID();
-			SceneManager::getSelectedPrimitive()->material->tNormal->setTiled(*isTiled);
+			material->tNormal->setTiled(*isTiled);
 		}
 
-		if (ImGui::Button("Diffuse"))
-		{
-			std::string filePath = OpenFileDialog(FileType::IMAGE);
-			if (!filePath.empty())
-			{
-				// Update the object's texture path
-				SceneManager::getSelectedPrimitive()->material->tDiffuse->setPath(filePath);
-				glActiveTexture(GL_TEXTURE0);
-			}
-		}
-
-		if (ImGui::Button("Specular"))
-		{
-			std::string filePath = OpenFileDialog(FileType::IMAGE);
-			if (!filePath.empty())
-			{
-				// Update the object's texture path
-				SceneManager::getSelectedPrimitive()->material->tSpecular->setPath(filePath);
-				glActiveTexture(GL_TEXTURE0);
-			}
-		}
-		if (ImGui::Button("Normal"))
-		{
-			std::string filePath = OpenFileDialog(FileType::IMAGE);
-			if (!filePath.empty())
-			{
-				// Update the object's texture path
-				SceneManager::getSelectedPrimitive()->material->tNormal->setPath(filePath);
-				glActiveTexture(GL_TEXTURE0);
-			}
-		}
 		if (ImGui::Button("DELETE"))
 		{
 			if (auto selectedPrimitive = SceneManager::getSelectedPrimitive())
@@ -458,7 +399,7 @@ void UIManager::showObjectInspector()
 
 		ImGui::End();
 	}
-}
+};
 
 void UIManager::showTools()
 {
@@ -568,8 +509,7 @@ void UIManager::displaySceneNode(SceneNode* node) const
 void UIManager::showOutliner()
 {
 	ImGui::Begin("Outliner");
-	size_t objectsCount =
-		SceneManager::getModels().size() + SceneManager::getPrimitives().size() + SceneManager::getLights().size();
+	size_t objectsCount = SceneManager::getModels().size() + SceneManager::getPrimitives().size();
 	ImGui::Text("Objects in Scene: %zu", objectsCount);
 	if (ImGui::BeginTable("OutlinerTable", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
 	{
