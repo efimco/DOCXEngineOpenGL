@@ -334,15 +334,81 @@ void UIManager::showObjectInspector()
 		ImGui::Text("Object: %s", SceneManager::getSelectedPrimitive()->name.c_str());
 		ImGui::Text("Material: %s", SceneManager::getSelectedPrimitive()->material->name.c_str());
 		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform.matrix[3]), 0.01f, -100.0f, 100.0f);
-		if (SceneManager::getSelectedPrimitive()->material->tDiffuse != nullptr)
+
+		bool hasDiffuse = SceneManager::getSelectedPrimitive()->material->tDiffuse != nullptr;
+		bool hasSpecular = SceneManager::getSelectedPrimitive()->material->tSpecular != nullptr;
+		bool hasNormal = SceneManager::getSelectedPrimitive()->material->tNormal != nullptr;
+		if (hasDiffuse)
 		{
-			ImGui::Image(SceneManager::getSelectedPrimitive()->material->tDiffuse->id, ImVec2(64, 64));
+			uint32_t id = SceneManager::getSelectedPrimitive()->material->tDiffuse->id;
+			if (id <= 0)
+			{
+				hasDiffuse = false;
+			}
+			else
+			{
+				ImGui::Image(id, ImVec2(64, 64));
+			}
+
+		}
+		if (hasSpecular)
+		{
+
+			uint32_t id = SceneManager::getSelectedPrimitive()->material->tSpecular->id;
+			if (id <= 0)
+			{
+				hasSpecular = false;
+			}
+			else
+			{
+				ImGui::SameLine();
+				ImGui::Image(id, ImVec2(64, 64));
+			}
+
+		}
+		if (hasNormal)
+		{
+			uint32_t id = SceneManager::getSelectedPrimitive()->material->tNormal->id;
+			if (id <= 0)
+			{
+				hasNormal = false;
+			}
+			else
+			{
+				ImGui::SameLine();
+				ImGui::Image(id, ImVec2(64, 64));
+			}
+		}
+
+		if (hasDiffuse)
+		{
+			bool* isTiled = &SceneManager::getSelectedPrimitive()->material->tDiffuse->tiled;
+			ImGui::PushID(SceneManager::getSelectedPrimitive()->material->tDiffuse->id);
+			ImGui::Checkbox("Tiled", isTiled);
+			ImGui::PopID();
+			SceneManager::getSelectedPrimitive()->material->tDiffuse->setTiled(*isTiled);
+		}
+
+		if (hasSpecular)
+		{
 			ImGui::SameLine();
+			bool* isTiled = &SceneManager::getSelectedPrimitive()->material->tSpecular->tiled;
+			ImGui::PushID(SceneManager::getSelectedPrimitive()->material->tSpecular->id);
+			ImGui::Checkbox("Tiled", isTiled);
+			ImGui::PopID();
+			SceneManager::getSelectedPrimitive()->material->tSpecular->setTiled(*isTiled);
 		}
-		if (SceneManager::getSelectedPrimitive()->material->tSpecular != nullptr)
+
+		if (hasNormal)
 		{
-			ImGui::Image(SceneManager::getSelectedPrimitive()->material->tSpecular->id, ImVec2(64, 64));
+			ImGui::SameLine();
+			bool* isTiled = &SceneManager::getSelectedPrimitive()->material->tNormal->tiled;
+			ImGui::PushID(SceneManager::getSelectedPrimitive()->material->tNormal->id);
+			ImGui::Checkbox("Tiled", isTiled);
+			ImGui::PopID();
+			SceneManager::getSelectedPrimitive()->material->tNormal->setTiled(*isTiled);
 		}
+
 		if (ImGui::Button("Diffuse"))
 		{
 			std::string filePath = OpenFileDialog(FileType::IMAGE);
@@ -361,6 +427,16 @@ void UIManager::showObjectInspector()
 			{
 				// Update the object's texture path
 				SceneManager::getSelectedPrimitive()->material->tSpecular->setPath(filePath);
+				glActiveTexture(GL_TEXTURE0);
+			}
+		}
+		if (ImGui::Button("Normal"))
+		{
+			std::string filePath = OpenFileDialog(FileType::IMAGE);
+			if (!filePath.empty())
+			{
+				// Update the object's texture path
+				SceneManager::getSelectedPrimitive()->material->tNormal->setPath(filePath);
 				glActiveTexture(GL_TEXTURE0);
 			}
 		}

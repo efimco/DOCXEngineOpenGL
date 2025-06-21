@@ -8,6 +8,8 @@ class Tex
 public:
 	uint32_t id;
 	std::string path;
+	bool tiled;
+	void setTiled(bool tiled);
 
 	Tex(const char* path);
 	Tex();

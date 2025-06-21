@@ -5,9 +5,25 @@
 #include <iostream>
 
 
-Tex::Tex() : id(-1), path("") {};
+Tex::Tex() : id(-1), path(""), tiled(false) {};
 
-Tex::Tex(const char *path) : path(path)
+void Tex::setTiled(bool tiled)
+{
+	if (tiled == true)
+	{
+		glTextureParameteri(id, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTextureParameteri(id, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		this->tiled = tiled;
+	}
+	else
+	{
+		glTextureParameteri(id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTextureParameteri(id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		this->tiled = tiled;
+	}
+}
+
+Tex::Tex(const char* path) : path(path), tiled(false)
 {
 	if (path && path[0] != '\0')
 	{
@@ -18,7 +34,7 @@ Tex::Tex(const char *path) : path(path)
 		id = 0;
 };
 
-Tex::Tex(tinygltf::Image &image) : path(path)
+Tex::Tex(tinygltf::Image& image) : path(path), tiled(false)
 {
 	id = TextureFromGlb(image);
 	std::cout << "Loaded texture from gltf: " << image.name << std::endl;
@@ -31,9 +47,9 @@ Tex::~Tex()
 	this->id = -1;
 };
 
-void Tex::setPath(const std::string &newPath)
+void Tex::setPath(const std::string& newPath)
 {
-	auto &cache = SceneManager::getTextureCache();
+	auto& cache = SceneManager::getTextureCache();
 	auto it = cache.find(path);
 	if (it != cache.end())
 	{
@@ -44,14 +60,14 @@ void Tex::setPath(const std::string &newPath)
 	id = TextureFromFile(newPath.c_str());
 }
 
-uint32_t Tex::TextureFromFile(const char *path)
+uint32_t Tex::TextureFromFile(const char* path)
 {
 	std::string filename = std::string(path);
 	uint32_t textureID;
 	glCreateTextures(GL_TEXTURE_2D, 1, &textureID);
 
 	int width, height, nrComponents;
-	float *data = stbi_loadf(filename.c_str(), &width, &height, &nrComponents, 0);
+	float* data = stbi_loadf(filename.c_str(), &width, &height, &nrComponents, 0);
 	if (data)
 	{
 		GLenum format;
@@ -93,7 +109,7 @@ uint32_t Tex::TextureFromFile(const char *path)
 	return textureID;
 }
 
-uint32_t Tex::TextureFromGlb(tinygltf::Image &image)
+uint32_t Tex::TextureFromGlb(tinygltf::Image& image)
 {
 	GLenum format;
 	GLenum internalFormat;
