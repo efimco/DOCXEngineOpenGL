@@ -14,11 +14,13 @@ const int QUALITY = 12; // Range from 1 to 12
 const float ITERATIONS = float(QUALITY); // Same as QUALITY but as float
 
 // From the NVIDIA FXAA whitepaper
-float rgb2luma(vec3 rgb) {
+float rgb2luma(vec3 rgb)
+{
 	return sqrt(dot(rgb, vec3(0.299, 0.587, 0.114)));
 }
 
-void main() {
+void main()
+{
 	vec2 screenSize = textureSize(screenTexture, 0);
 	vec2 texelSize = 1.0 / screenSize;
 
@@ -44,7 +46,8 @@ void main() {
 	float lumaRange = lumaMax - lumaMin;
 
     // If the luma variation is lower than a threshold (or if we are in a really dark area), we are not on an edge, don't perform anti-aliasing
-	if(lumaRange < max(EDGE_THRESHOLD_MIN, lumaMax * EDGE_THRESHOLD_MAX)) {
+	if(lumaRange < max(EDGE_THRESHOLD_MIN, lumaMax * EDGE_THRESHOLD_MAX))
+	{
 		FragColor = vec4(colorCenter, 1.0);
 		return;
 	}
@@ -95,19 +98,25 @@ void main() {
     // Average luma in the correct direction
 	float lumaLocalAverage = 0.0;
 
-	if(is1Steepest) {
+	if(is1Steepest)
+	{
         // Switch the direction
 		stepLength = -stepLength;
 		lumaLocalAverage = 0.5 * (luma1 + lumaCenter);
-	} else {
+	}
+	else
+	{
 		lumaLocalAverage = 0.5 * (luma2 + lumaCenter);
 	}
 
     // Shift UV in the correct direction by half a pixel
 	vec2 currentUv = TexCoords;
-	if(isHorizontal) {
+	if(isHorizontal)
+	{
 		currentUv.y += stepLength * 0.5;
-	} else {
+	}
+	else
+	{
 		currentUv.x += stepLength * 0.5;
 	}
 
@@ -131,23 +140,29 @@ void main() {
 	bool reachedBoth = reached1 && reached2;
 
     // If the side is not reached, we continue to explore in this direction
-	if(!reached1) {
+	if(!reached1)
+	{
 		uv1 -= offset;
 	}
-	if(!reached2) {
+	if(!reached2)
+	{
 		uv2 += offset;
 	}
 
     // If both sides have not been reached, continue exploration
-	if(!reachedBoth) {
-		for(int i = 2; i < QUALITY; i++) {
+	if(!reachedBoth)
+	{
+		for(int i = 2; i < QUALITY; i++)
+		{
             // If needed, read luma in 1st direction, compute delta
-			if(!reached1) {
+			if(!reached1)
+			{
 				lumaEnd1 = rgb2luma(texture(screenTexture, uv1).rgb);
 				lumaEnd1 = lumaEnd1 - lumaLocalAverage;
 			}
             // If needed, read luma in opposite direction, compute delta
-			if(!reached2) {
+			if(!reached2)
+			{
 				lumaEnd2 = rgb2luma(texture(screenTexture, uv2).rgb);
 				lumaEnd2 = lumaEnd2 - lumaLocalAverage;
 			}
@@ -157,10 +172,12 @@ void main() {
 			reachedBoth = reached1 && reached2;
 
             // If one of the sides has not been reached, continue exploration in this direction
-			if(!reached1) {
+			if(!reached1)
+			{
 				uv1 -= offset * (1.0 + float(i) * 0.2);
 			}
-			if(!reached2) {
+			if(!reached2)
+			{
 				uv2 += offset * (1.0 + float(i) * 0.2);
 			}
 
@@ -207,9 +224,12 @@ void main() {
 
     // Compute the final UV coordinates
 	vec2 finalUv = TexCoords;
-	if(isHorizontal) {
+	if(isHorizontal)
+	{
 		finalUv.y += finalOffset * stepLength;
-	} else {
+	}
+	else
+	{
 		finalUv.x += finalOffset * stepLength;
 	}
 

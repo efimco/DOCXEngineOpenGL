@@ -13,21 +13,26 @@ uniform vec3 uvAlbedo;
 uniform float ufRoughness;
 uniform float ufMetallic;
 
-layout(location = 0) in VS_OUT {
+layout(location = 0) in VS_OUT
+{
 	vec3 FragPos;
 	vec3 Normal;
 	vec2 TexCoords;
-} fs_in;
+}
+fs_in;
 
-struct Material {
+struct Material
+{
 	vec3 albedo;
 	float metallic;
 	float roughness;
 	vec3 normal;
 };
 
-vec3 getNormalFromMap() {
-	if(textureSize(tNormal, 0).x <= 1 || textureSize(tNormal, 0).y <= 1) {
+vec3 getNormalFromMap()
+{
+	if(textureSize(tNormal, 0).x <= 1 || textureSize(tNormal, 0).y <= 1)
+	{
 		return fs_in.Normal; // No normal map, return the original normal
 	}
 	vec3 tangentNormal = texture(tNormal, fs_in.TexCoords).xyz * 2.0 - 1.0;
@@ -45,26 +50,34 @@ vec3 getNormalFromMap() {
 	return normalize(TBN * tangentNormal);
 }
 
-Material getMaterial() {
+Material getMaterial()
+{
 	Material material;
 
 	// Normal
 	material.normal = getNormalFromMap();
-	if(all(equal(material.normal, vec3(0.0)))) {
+	if(all(equal(material.normal, vec3(0.0))))
+	{
 		material.normal = fs_in.Normal;
 	}
 
-	if(all(lessThanEqual(textureSize(tDiffuse, 0), ivec2(1)))) {
+	if(all(lessThanEqual(textureSize(tDiffuse, 0), ivec2(1))))
+	{
 		material.albedo = pow(uvAlbedo, vec3(2.2));
-	} else {
+	}
+	else
+	{
 		material.albedo = pow(texture(tDiffuse, fs_in.TexCoords).rgb, vec3(2.2));
 	}
 
 	ivec2 specTexSize = textureSize(tSpecular, 0);
-	if(all(lessThanEqual(specTexSize, ivec2(1)))) {
+	if(all(lessThanEqual(specTexSize, ivec2(1))))
+	{
 		material.metallic = ufMetallic;
 		material.roughness = ufRoughness;
-	} else {
+	}
+	else
+	{
 		material.metallic = texture(tSpecular, fs_in.TexCoords).b;
 		material.roughness = texture(tSpecular, fs_in.TexCoords).g;
 	}
@@ -72,7 +85,8 @@ Material getMaterial() {
 	return material;
 }
 
-void main() {
+void main()
+{
 	Material material = getMaterial();
 	gAlbedo = vec4(material.albedo, 1.0);
 	gMetallic = material.metallic;

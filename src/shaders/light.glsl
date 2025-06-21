@@ -1,4 +1,4 @@
-struct Light 
+struct Light
 {
 	int type;
 	float intensity;

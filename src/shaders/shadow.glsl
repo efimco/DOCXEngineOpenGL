@@ -2,24 +2,21 @@
 
 const float offset = 1.0 / 300.0;
 
-vec2 offsets[9] = vec2[](
-		vec2(-offset,  offset), // top-left
-		vec2( 0.0f,    offset), // top-center
-		vec2( offset,  offset), // top-right
-		vec2(-offset,  0.0f),   // center-left
-		vec2( 0.0f,    0.0f),   // center-center
-		vec2( offset,  0.0f),   // center-right
-		vec2(-offset, -offset), // bottom-left
-		vec2( 0.0f,   -offset), // bottom-center
-		vec2( offset, -offset)  // bottom-right    
-	);
+vec2 offsets[9] = vec2[](vec2(-offset, offset), // top-left
+vec2(0.0, offset), // top-center
+vec2(offset, offset), // top-right
+vec2(-offset, 0.0),   // center-left
+vec2(0.0, 0.0),   // center-center
+vec2(offset, 0.0),   // center-right
+vec2(-offset, -offset), // bottom-left
+vec2(0.0, -offset), // bottom-center
+vec2(offset, -offset)  // bottom-right    
+);
 
-vec2 randomOffset(int i, vec2 texelSize) {
+vec2 randomOffset(int i, vec2 texelSize)
+{
 	// Generate more varied offsets using the fragment position
-	vec2 noise = vec2(
-		rand(vec2(i * 0.764331, fs_in.FragPos.x)),
-		rand(vec2(fs_in.FragPos.z, i * 0.358318))
-	);
+	vec2 noise = vec2(rand(vec2(i * 0.764331, fs_in.FragPos.x)), rand(vec2(fs_in.FragPos.z, i * 0.358318)));
 
 	// Convert to polar coordinates for better distribution
 	float angle = noise.x * 2.0 * 3.14159;
@@ -46,22 +43,21 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 lightPos)
 
 	float shadow = 0.0;
 
-	vec2 texelSize = 1.0 / textureSize(shadowMap,0);
+	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
 	int samples = 16;
 
-	for(int i = 0; i < samples; ++i) 
+	for(int i = 0; i < samples; ++i)
 	{
 		vec2 offset = randomOffset(i, texelSize);
 		float pcfDepth = texture(shadowMap, projCoords.xy + offset).r;
 		shadow += (currentDepth - bias) > pcfDepth ? 1.0 : 0.0;
 	}
-	
-	shadow /= float(samples)*2;
+
+	shadow /= float(samples) * 2;
 
 	// shadow = (currentDepth - bias) >  closestDepth ? 1.0 : 0.0;
 	if(projCoords.z > 1.0)
 		shadow = 0.0;
-	
-		
+
 	return shadow;
 }
