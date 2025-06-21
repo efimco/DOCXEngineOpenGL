@@ -11,6 +11,7 @@ GLTFModel::GLTFModel(std::string path) : path(path)
 {
 	auto model = readGlb(path);
 	processTextures(model);
+	processImages(model);
 	processMaterials(model);
 	processGLTFModel(model);
 }
@@ -24,8 +25,16 @@ tinygltf::Model GLTFModel::readGlb(const std::string& path)
 	std::string err;
 	std::string warn;
 	printf("Loading...%s\n ", path.c_str());
-	bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
-	// bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
+	bool ret = false;
+	if (path.ends_with("gltf"))
+	{
+		ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
+	}
+	else
+	{
+		ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
+	}
+
 	if (!warn.empty())
 		printf("Warn: %s\n", warn.c_str());
 	if (!err.empty())
@@ -199,6 +208,14 @@ std::unique_ptr<SceneGraph::Model> GLTFModel::getModel()
 
 void GLTFModel::processTextures(tinygltf::Model& model)
 {
+	for (int i = 0; i < model.textures.size(); i++)
+	{
+		texturesIndex[i] = model.textures[i].source;
+	}
+}
+
+void GLTFModel::processImages(tinygltf::Model& model)
+{
 	for (int i = 0; i < model.images.size(); i++)
 	{
 		std::string name = model.images[i].name;
@@ -206,7 +223,7 @@ void GLTFModel::processTextures(tinygltf::Model& model)
 		{
 			SceneManager::addTexture(name, std::make_shared<Tex>(model.images[i]));
 		}
-		texturesIndex[i] = SceneManager::getTexture(name);
+		imageIndex[i] = SceneManager::getTexture(name);
 	}
 }
 
@@ -214,23 +231,24 @@ void GLTFModel::processMaterials(tinygltf::Model& model)
 {
 	for (int i = 0; i < model.materials.size(); i++)
 	{
-		const auto& material = model.materials[i];
+		auto& material = model.materials[i];
 		std::shared_ptr<Mat> mat = std::make_shared<Mat>();
 		if (material.pbrMetallicRoughness.baseColorTexture.index != -1)
 		{
-			mat->tDiffuse = texturesIndex[material.pbrMetallicRoughness.baseColorTexture.index];
+			mat->tDiffuse = imageIndex[texturesIndex[material.pbrMetallicRoughness.baseColorTexture.index]];
 		}
 
 		if (material.pbrMetallicRoughness.metallicRoughnessTexture.index != -1)
 		{
-			mat->tSpecular = texturesIndex[material.pbrMetallicRoughness.metallicRoughnessTexture.index];
+			mat->tSpecular = imageIndex[texturesIndex[material.pbrMetallicRoughness.metallicRoughnessTexture.index]];
 		}
 		if (material.normalTexture.index != -1)
 		{
-			mat->tNormal = texturesIndex[material.normalTexture.index];
+			mat->tNormal = imageIndex[texturesIndex[material.normalTexture.index]];
 		}
 		mat->name = material.name;
-		if (material.pbrMetallicRoughness.baseColorFactor.size() == 4) {
+		if (material.pbrMetallicRoughness.baseColorFactor.size() == 4)
+		{
 			mat->albedo = glm::vec4(
 				static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[0]),
 				static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[1]),
@@ -238,6 +256,9 @@ void GLTFModel::processMaterials(tinygltf::Model& model)
 				static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[3])
 			);
 		}
+
+		mat->roughness = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
+		mat->metallic = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
 		std::hash<std::string> hasher;
 		uint32_t uid = (uint32_t)hasher(model.materials[i].name);
 		if (SceneManager::getMaterial(uid) == nullptr)

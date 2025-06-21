@@ -333,13 +333,12 @@ void UIManager::showObjectInspector()
 		ImGui::Begin("Object Inspector");
 		ImGui::Text("Object: %s", SceneManager::getSelectedPrimitive()->name.c_str());
 		ImGui::Text("Material: %s", SceneManager::getSelectedPrimitive()->material->name.c_str());
-		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform.matrix[3]),
-			0.01f, -100.0f, 100.0f);
+		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform.matrix[3]), 0.01f, -100.0f, 100.0f);
 		if (SceneManager::getSelectedPrimitive()->material->tDiffuse != nullptr)
 		{
 			ImGui::Image(SceneManager::getSelectedPrimitive()->material->tDiffuse->id, ImVec2(64, 64));
+			ImGui::SameLine();
 		}
-		ImGui::SameLine();
 		if (SceneManager::getSelectedPrimitive()->material->tSpecular != nullptr)
 		{
 			ImGui::Image(SceneManager::getSelectedPrimitive()->material->tSpecular->id, ImVec2(64, 64));
@@ -354,7 +353,7 @@ void UIManager::showObjectInspector()
 				glActiveTexture(GL_TEXTURE0);
 			}
 		}
-		ImGui::SameLine();
+
 		if (ImGui::Button("Specular"))
 		{
 			std::string filePath = OpenFileDialog(FileType::IMAGE);
@@ -377,7 +376,7 @@ void UIManager::showObjectInspector()
 			ImGui::End();
 			return;
 		}
-		ImGui::DragFloat3("Albedo", glm::value_ptr(SceneManager::getSelectedPrimitive()->material->albedo));
+		ImGui::ColorEdit4("Albedo", glm::value_ptr(SceneManager::getSelectedPrimitive()->material->albedo));
 		ImGui::SliderFloat("Roughness", &SceneManager::getSelectedPrimitive()->material->roughness, 0.04f, 1.0f);
 		ImGui::SliderFloat("Metallic", &SceneManager::getSelectedPrimitive()->material->metallic, 0.0f, 1.0f);
 
