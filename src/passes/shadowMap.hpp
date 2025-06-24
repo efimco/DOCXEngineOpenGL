@@ -2,6 +2,7 @@
 #include "camera.hpp"
 #include "shader.hpp"
 #include "light.hpp"
+#include "appConfig.hpp"
 
 #include <glm/glm.hpp>
 #include <cstdint>
@@ -18,6 +19,7 @@ public:
 	void draw(Camera& camera, Light light);
 
 private:
+	AppConfig& m_appConfig;
 	Shader* depthShader;
 	const int width;
 	const int height;

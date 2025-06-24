@@ -5,10 +5,12 @@
 #include <filesystem>
 #include "sceneManager.hpp"
 
-FXAAPass::FXAAPass() : m_fxaaTextrue(0), m_fbo(0)
+
+FXAAPass::FXAAPass() : m_fxaaTextrue(0), m_fbo(0), m_appConfig(AppConfig::get())
 {
 	createOrResize();
 	initScreenQuad();
+	m_appConfig = AppConfig::get();
 	const std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\fxaa.frag").string();
 	const std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\fxaa.vert").string();
 	m_shader = new Shader(vShaderPath, fShaderPath);
@@ -22,13 +24,13 @@ void FXAAPass::draw(uint32_t deferedTextrue)
 	glClearColor(0, 0, 0, 0);
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glViewport(0, 0, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glActiveTexture(GL_TEXTURE0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 	m_shader->use();
-	if (AppConfig::isFXAA == true)
+	if (m_appConfig.isFXAA == true)
 		m_shader->setInt("isFXAA", 1);
 	else
 		m_shader->setInt("isFXAA", 0);
@@ -53,7 +55,7 @@ void FXAAPass::createOrResize()
 	}
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_fxaaTextrue);
-	glTextureStorage2D(m_fxaaTextrue, 1, GL_RGBA16F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureStorage2D(m_fxaaTextrue, 1, GL_RGBA16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glTextureParameteri(m_fxaaTextrue, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_fxaaTextrue, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_fxaaTextrue, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);

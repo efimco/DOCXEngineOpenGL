@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 #include "shader.hpp"
+#include "appConfig.hpp"
+
 class FXAAPass
 {
 public:
@@ -12,7 +14,7 @@ public:
 	void draw(uint32_t deferedTextrue);
 	void createOrResize();
 private:
-
+	AppConfig& m_appConfig;
 	uint32_t m_fbo, m_rbo;
 	uint32_t m_fullFrameQuadVAO, m_fullFrameQuadVBO;
 	Shader* m_shader;

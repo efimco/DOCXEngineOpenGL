@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 #include "shader.hpp"
+#include "appConfig.hpp"
+
 class GBuffer
 {
 public:
@@ -17,6 +19,7 @@ public:
 	void createOrResize();
 
 private:
+	AppConfig& m_appConfig;
 	Shader* m_gBufferShader;
 	uint32_t m_gBufferFBO;
 

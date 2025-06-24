@@ -19,7 +19,7 @@
 #include "uiManager.hpp"
 
 
-UIManager::UIManager(GLFWwindow* window, Camera& camera, SceneNode* scene) : camera(camera), window(window), scene(scene)
+UIManager::UIManager(GLFWwindow* window, Camera& camera, SceneNode* scene) : camera(camera), window(window), scene(scene), m_appConfig(AppConfig::get())
 {
 	m_noTexture = new Tex(std::filesystem::absolute("..\\..\\res\\icons\\No Image.png").string().c_str());
 	ImGui::CreateContext();
@@ -135,7 +135,7 @@ void UIManager::getCursorPos()
 	ImVec2 viewportPos = m_viewportState.position;
 	int readX = static_cast<int>(mousePos.x - viewportPos.x);
 	// need to flip y axis cuz imgui makes it top left, but opengl uses bottom left
-	int readY = static_cast<int>(AppConfig::RENDER_HEIGHT - (mousePos.y - viewportPos.y));
+	int readY = static_cast<int>(m_appConfig.renderHeight - (mousePos.y - viewportPos.y));
 	ImVec2 cursorPos(static_cast<float>(readX), static_cast<float>(readY));
 	m_viewportState.cursorPos = cursorPos;
 }
@@ -159,7 +159,7 @@ void UIManager::showViewport(float deltaTime)
 	m_vpSize = ImGui::GetContentRegionAvail();
 	ImVec2 origin = ImGui::GetCursorScreenPos();
 
-	if ((AppConfig::RENDER_WIDTH != (int)m_vpSize.x) || (AppConfig::RENDER_HEIGHT != (int)m_vpSize.y))
+	if ((m_appConfig.renderWidth != (int)m_vpSize.x) || (m_appConfig.renderHeight != (int)m_vpSize.y))
 	{
 		viewportSizeSetteled = false;
 	}
@@ -193,14 +193,14 @@ void UIManager::showViewport(float deltaTime)
 
 	ImGuiWindowFlags flags =
 		ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs; // block inputs so clicks pass through
-	if (AppConfig::showObjectPicking)
+	if (m_appConfig.showObjectPicking)
 	{
 		ImGui::BeginChild("PassPreview", debugQuadSize, false, flags);
 		ImTextureID passTex = (ImTextureID)m_pickingTexture;
 		ImGui::Image(passTex, debugQuadSize, uv0, uv1, ImVec4(0.0f, 0.0f, 0.0f, 1.0f), ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
 		ImGui::EndChild();
 	}
-	else if (AppConfig::showShadowMap)
+	else if (m_appConfig.showShadowMap)
 	{
 		ImGui::BeginChild("PassPreview", debugQuadSize, false, flags);
 		ImTextureID passTex = (ImTextureID)m_shadowMapTexture;
@@ -404,27 +404,27 @@ void UIManager::showObjectInspector()
 void UIManager::showTools()
 {
 	ImGui::Begin("Tools");
-	ImGui::ColorEdit4("BG Color", AppConfig::clearColor);
+	ImGui::ColorEdit4("BG Color", m_appConfig.clearColor);
 
 	ImGui::SliderFloat("FOV", &camera.zoom, 1.f, 100.f, "%.3f");
-	ImGui::SliderFloat("Gamma", &AppConfig::gamma, 0.01f, 5);
-	ImGui::SliderFloat("Near plane", &AppConfig::near_plane, -10.0f, 10.f, "%.6f");
-	ImGui::SliderFloat("Far plane", &AppConfig::far_plane, -10.0f, 10.f);
-	ImGui::Checkbox("Wireframe Mode", &AppConfig::isWireframe);
-	ImGui::SliderFloat("CubeMap intensity", &AppConfig::irradianceMapIntensity, 0.0f, 3.0f);
-	ImGui::SliderFloat("CubeMap Rotatation Y", &AppConfig::irradianceMapRotationY, -180.0f, 180.0f);
-	ImGui::SliderFloat("Backgorund Blur", &AppConfig::backgroundBlur, 0.0f, 1.0f);
-	ImGui::Checkbox("ObjectID Debug", &AppConfig::showObjectPicking);
-	ImGui::Checkbox("ShadowMap Debug", &AppConfig::showShadowMap);
-	ImGui::Checkbox("FXAA", &AppConfig::isFXAA);
+	ImGui::SliderFloat("Gamma", &m_appConfig.gamma, 0.01f, 5);
+	ImGui::SliderFloat("Near plane", &m_appConfig.nearPlane, -10.0f, 10.f, "%.6f");
+	ImGui::SliderFloat("Far plane", &m_appConfig.farPlane, -10.0f, 10.f);
+	ImGui::Checkbox("Wireframe Mode", &m_appConfig.isWireframe);
+	ImGui::SliderFloat("CubeMap intensity", &m_appConfig.irradianceMapIntensity, 0.0f, 3.0f);
+	ImGui::SliderFloat("CubeMap Rotatation Y", &m_appConfig.irradianceMapRotationY, -180.0f, 180.0f);
+	ImGui::SliderFloat("Backgorund Blur", &m_appConfig.backgroundBlur, 0.0f, 1.0f);
+	ImGui::Checkbox("ObjectID Debug", &m_appConfig.showObjectPicking);
+	ImGui::Checkbox("ShadowMap Debug", &m_appConfig.showShadowMap);
+	ImGui::Checkbox("FXAA", &m_appConfig.isFXAA);
 	if (ImGui::Button("Load CubeMap"))
 	{
 		std::string filePath = OpenFileDialog(FileType::IMAGE);
 		if (!filePath.empty())
 		{
 			// Signal that a new cubemap needs to be loaded
-			AppConfig::cubeMapPath = filePath;
-			AppConfig::reloadCubeMap = true;
+			m_appConfig.cubeMapPath = filePath;
+			m_appConfig.reloadCubeMap = true;
 		}
 	}
 	if (ImGui::Button("Import Model"))
@@ -436,11 +436,11 @@ void UIManager::showTools()
 			scene->addChild(std::move(model.getModel()));
 		}
 	}
-	AppConfig::polygonMode = AppConfig::isWireframe ? GL_LINE : GL_FILL;
+	m_appConfig.polygonMode = m_appConfig.isWireframe ? GL_LINE : GL_FILL;
 	if (ImGui::Button("Reload Shaders"))
 	{
 		SceneManager::reloadShaders();
-		// AppConfig::screenShader->reload();
+		// m_appConfig.screenShader->reload();
 		std::cout << "Shaders reloaded successfully!" << std::endl;
 	}
 	ImGui::End();

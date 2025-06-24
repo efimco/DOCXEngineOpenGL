@@ -9,10 +9,9 @@
 Cubemap::Cubemap(Camera& camera, std::string pathToCubemap)
 	: camera(camera), m_cubeVAO(0), m_cubeVBO(0), m_quadVAO(0), m_quadVBO(0),
 	m_hdri(0), envCubemap(0), m_captureFBO(0),
-	m_captureRBO(0), m_envCubemap(0)
+	m_captureRBO(0), m_envCubemap(0), m_appConfig(AppConfig::get())
 {
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
 	loadHDR(pathToCubemap);
 
 	initShaders();
@@ -115,7 +114,7 @@ void Cubemap::createOrResize()
 	}
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &envCubemap);
-	glTextureStorage2D(envCubemap, 1, GL_RGBA16F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureStorage2D(envCubemap, 1, GL_RGBA16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glTextureParameteri(envCubemap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(envCubemap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(envCubemap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -142,7 +141,7 @@ void Cubemap::createCubemap()
 	glTextureParameteri(m_envCubemap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_envCubemap, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTextureParameteri(m_envCubemap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		// Check framebuffer completeness
+	// Check framebuffer completeness
 	if (glCheckNamedFramebufferStatus(m_cubemapFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
 		std::cout << "m_cubemapFBO Framebuffer is not complete!" << std::endl;
@@ -368,7 +367,7 @@ void Cubemap::draw(glm::mat4 projection)
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glViewport(0, 0, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_cubemapFBO);
 	glm::mat4 skyView = camera.getViewMatrix();
@@ -377,9 +376,9 @@ void Cubemap::draw(glm::mat4 projection)
 	backgroundShader.setMat4("view", skyView);
 	glBindTextureUnit(0, specularMap);
 	backgroundShader.setInt("environmentMap", 0);
-	backgroundShader.setFloat("rotationY", AppConfig::irradianceMapRotationY);
-	backgroundShader.setFloat("intensity", AppConfig::irradianceMapIntensity);
-	backgroundShader.setFloat("blur", AppConfig::backgroundBlur);
+	backgroundShader.setFloat("rotationY", m_appConfig.irradianceMapRotationY);
+	backgroundShader.setFloat("intensity", m_appConfig.irradianceMapIntensity);
+	backgroundShader.setFloat("blur", m_appConfig.backgroundBlur);
 	renderCube();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindTextureUnit(0, 0);

@@ -23,6 +23,7 @@ public:
 	Scene* scene;
 
 private:
+	AppConfig& m_appConfig;
 	float m_deltaTime, m_lastFrameTime;
 	Camera m_camera;
 	uint32_t m_fullFrameQuadVAO, m_fullFrameQuadVBO;
@@ -43,6 +44,6 @@ private:
 
 	void initScreenQuad();
 	void createOrResizeFrameBufferAndRenderTarget();
-	void checkFrameBufeerSize();
+	void checkFrameBuferSize();
 	void deferedPass();
 };

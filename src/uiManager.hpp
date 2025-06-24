@@ -40,6 +40,7 @@ public:
 	void draw(float deltaTime);
 
 private:
+	AppConfig& m_appConfig;
 	ViewportState m_viewportState;
 	ImVec2 m_viewportPos;
 	GBuffer* m_gBuffer;

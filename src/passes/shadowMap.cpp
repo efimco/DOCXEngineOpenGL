@@ -9,7 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <stdexcept>
 
-ShadowMap::ShadowMap(const int width, const int height) : width(width), height(height)
+ShadowMap::ShadowMap(const int width, const int height) : width(width), height(height), m_appConfig(AppConfig::get())
 {
 	glCreateFramebuffers(1, &depthMapFBO);
 
@@ -47,7 +47,7 @@ void ShadowMap::draw(Camera& camera, Light light)
 	glm::vec3 sceneCenter = glm::vec3(0.0f);
 	float distance = 10000.0f;
 
-	glm::mat4 lightProjection = glm::ortho(-3.0f, 3.0f, -3.0f, 3.0f, distance + AppConfig::near_plane, distance + AppConfig::far_plane);
+	glm::mat4 lightProjection = glm::ortho(-3.0f, 3.0f, -3.0f, 3.0f, distance + m_appConfig.nearPlane, distance +  m_appConfig.farPlane);
 
 	glm::vec3 lightDirection = glm::normalize(light.getDirection());
 
@@ -58,7 +58,7 @@ void ShadowMap::draw(Camera& camera, Light light)
 	for (const auto& primitive : SceneManager::getPrimitives())
 	{
 		glm::mat4 projection = glm::mat4(1.0f);
-		if (AppConfig::RENDER_WIDTH != 0 && AppConfig::RENDER_HEIGHT != 0)
+		if (m_appConfig.renderWidth != 0 && m_appConfig.renderHeight != 0)
 		{
 			projection = glm::perspective(glm::radians(camera.zoom), float(width) / float(height), 0.1f, 100.0f);
 		}

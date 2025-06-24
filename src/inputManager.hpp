@@ -2,6 +2,7 @@
 #include "ImGui/imgui.h"
 #include "camera.hpp"
 #include "viewportState.hpp"
+#include "appConfig.hpp"
 #include <GLFW/glfw3.h>
 
 
@@ -14,6 +15,7 @@ public:
 	void processInput(float deltaTime, ViewportState viewportState, uint32_t pickingTexture);
 
 private:
+	AppConfig& m_appConfig;
 	GLFWwindow* window;
 	Camera& camera;
 

@@ -5,11 +5,12 @@
 #include "appConfig.hpp"
 #include "renderer.hpp"
 
+
 void framebufferSizeCallback(GLFWwindow *window, int32_t newWINDOW_WIDTH, int32_t newWINDOW_HEIGHT)
 {
-	AppConfig::WINDOW_WIDTH = newWINDOW_WIDTH;
-	AppConfig::WINDOW_HEIGHT = newWINDOW_HEIGHT;
-	AppConfig::isFramebufferSizeSetted = false;
+	AppConfig::get().windowWidth = newWINDOW_WIDTH;
+	AppConfig::get().windowHeight = newWINDOW_HEIGHT;
+	AppConfig::get().isFramebufferSizeSet = false;
 }
 
 int main()
@@ -21,8 +22,8 @@ int main()
 	// glfwWindowHint(GLFW_FLOATING, GLFW_TRUE); // Uncomment this line to make the window floating
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-
-	window = glfwCreateWindow(AppConfig::WINDOW_WIDTH, AppConfig::WINDOW_HEIGHT, "Main Window", NULL, NULL);
+    AppConfig::get().windowWidth = AppConfig::get().windowHeight = 1024;
+	window = glfwCreateWindow(AppConfig::get().windowWidth, AppConfig::get().windowHeight, "Main Window", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;

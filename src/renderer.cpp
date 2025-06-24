@@ -14,13 +14,14 @@ static const float fullFrameQuadVertices[] = {
 
 	-1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  -1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  1.0f, 1.0f };
 
-Renderer::Renderer(GLFWwindow* window) : m_camera(glm::vec3(-10.0f, 3.0f, 13.0f), glm::vec3(0.0f, 1.0f, 0.0f), -45.0f, 0.0f)
+Renderer::Renderer(GLFWwindow* window) : m_camera(glm::vec3(-10.0f, 3.0f, 13.0f), glm::vec3(0.0f, 1.0f, 0.0f), -45.0f, 0.0f),
+m_appConfig(AppConfig::get())
 {
 	m_view = glm::mat4(1.0f);
 	m_projection = glm::mat4(1.0f);
 	// import
 	scene = new Scene("Main Scene");
-	GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\mr_elephant_RENDERTEST.glb").string());
+	GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Train.glb").string());
 	scene->addChild(std::move(model.getModel()));
 
 	m_deltaTime = 0;
@@ -35,7 +36,7 @@ Renderer::Renderer(GLFWwindow* window) : m_camera(glm::vec3(-10.0f, 3.0f, 13.0f)
 	initScreenQuad();
 	createOrResizeFrameBufferAndRenderTarget();
 
-	AppConfig::initShaders();
+	m_appConfig.initShaders();
 }
 
 Renderer::~Renderer()
@@ -83,13 +84,13 @@ void Renderer::createOrResizeFrameBufferAndRenderTarget()
 	glCreateFramebuffers(1, &m_deferedFBO);
 	glCreateRenderbuffers(1, &m_deferedRBO);
 
-	glNamedRenderbufferStorage(m_deferedRBO, GL_DEPTH24_STENCIL8, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glNamedRenderbufferStorage(m_deferedRBO, GL_DEPTH24_STENCIL8, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glNamedFramebufferRenderbuffer(m_deferedFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_deferedRBO);
 
-	m_nMipLevels = (int)floor(log2(std::max(AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT))) + 1;
+	m_nMipLevels = (int)floor(log2(std::max(m_appConfig.renderWidth, m_appConfig.renderHeight))) + 1;
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_deferedScreenTexture);
-	glTextureStorage2D(m_deferedScreenTexture, m_nMipLevels, GL_RGBA32F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureStorage2D(m_deferedScreenTexture, m_nMipLevels, GL_RGBA32F, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTextureParameteri(m_deferedScreenTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -98,20 +99,20 @@ void Renderer::createOrResizeFrameBufferAndRenderTarget()
 
 }
 
-void Renderer::checkFrameBufeerSize()
+void Renderer::checkFrameBuferSize()
 {
-	if (!AppConfig::isFramebufferSizeSetted || !m_uiManager->viewportSizeSetteled)
+	if (!m_appConfig.isFramebufferSizeSet || !m_uiManager->viewportSizeSetteled)
 	{
-		AppConfig::RENDER_WIDTH = (int)m_uiManager->getViewportSize().x;
-		AppConfig::RENDER_HEIGHT = (int)m_uiManager->getViewportSize().y;
+		m_appConfig.renderWidth = (int)m_uiManager->getViewportSize().x;
+		m_appConfig.renderHeight = (int)m_uiManager->getViewportSize().y;
 		createOrResizeFrameBufferAndRenderTarget();
 		m_gBufferPass->createOrResize();
 		m_pickingPass->createOrResize();
 		m_cubemap->createOrResize();
 		m_FXAAPass->createOrResize();
-		glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+		glViewport(0, 0, m_appConfig.renderWidth, m_appConfig.renderHeight);
 
-		AppConfig::isFramebufferSizeSetted = true;
+		m_appConfig.isFramebufferSizeSet = true;
 	}
 }
 
@@ -122,12 +123,12 @@ void Renderer::deferedPass()
 	glClearColor(0, 0, 0, 1);
 	glDisable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
-	glPolygonMode(GL_FRONT_AND_BACK, AppConfig::polygonMode);
+	glViewport(0, 0, m_appConfig.renderWidth, m_appConfig.renderHeight);
+	glPolygonMode(GL_FRONT_AND_BACK, m_appConfig.polygonMode);
 	glActiveTexture(GL_TEXTURE0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_deferedFBO);
-	AppConfig::deferedShader->use();
+	m_appConfig.deferedShader->use();
 	glBindVertexArray(m_fullFrameQuadVAO);
 	glBindTextureUnit(0, m_gBufferPass->tAlbedo);
 	glBindTextureUnit(1, m_gBufferPass->tMetallic);
@@ -153,14 +154,14 @@ void Renderer::deferedPass()
 
 	if (SceneManager::getSelectedPrimitives().size() > 0)
 	{
-		AppConfig::deferedShader->setIntArray(
+		m_appConfig.deferedShader->setIntArray(
 			"selectedPrimitives", static_cast<uint32_t>(SceneManager::getSelectedPrimitives().size()),
 			reinterpret_cast<const int32_t*>(SceneManager::getSelectedPrimitives().data()));
 	}
 
-	AppConfig::deferedShader->setVec3("viewPos", m_camera.position);
-	AppConfig::deferedShader->setFloat("irradianceMapRotationY", AppConfig::irradianceMapRotationY);
-	AppConfig::deferedShader->setFloat("irradianceMapIntensity", AppConfig::irradianceMapIntensity);
+	m_appConfig.deferedShader->setVec3("viewPos", m_camera.position);
+	m_appConfig.deferedShader->setFloat("irradianceMapRotationY", m_appConfig.irradianceMapRotationY);
+	m_appConfig.deferedShader->setFloat("irradianceMapIntensity", m_appConfig.irradianceMapIntensity);
 
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -181,19 +182,19 @@ void Renderer::render(GLFWwindow* window)
 		m_deltaTime = time - m_lastFrameTime;
 		m_lastFrameTime = time;
 
-		checkFrameBufeerSize();
+		checkFrameBuferSize();
 
-		if (AppConfig::RENDER_WIDTH != 0 && AppConfig::RENDER_HEIGHT != 0)
+		if (m_appConfig.renderWidth != 0 && m_appConfig.renderHeight != 0)
 		{
 			m_projection = glm::perspective(glm::radians(m_camera.zoom),
-				float(AppConfig::RENDER_WIDTH) / float(AppConfig::RENDER_HEIGHT), 0.1f, 100.0f);
+				float(m_appConfig.renderWidth) / float(m_appConfig.renderHeight), 0.1f, 100.0f);
 			m_view = m_camera.getViewMatrix();
 		}
 
-		if (AppConfig::reloadCubeMap)
+		if (m_appConfig.reloadCubeMap)
 		{
-			m_cubemap = new Cubemap(m_camera, AppConfig::cubeMapPath);
-			AppConfig::reloadCubeMap = false;
+			m_cubemap = new Cubemap(m_camera, m_appConfig.cubeMapPath);
+			m_appConfig.reloadCubeMap = false;
 		}
 
 		m_cubemap->draw(m_projection);

@@ -6,7 +6,7 @@
 #include "sceneManager.hpp"
 #include <iostream>
 
-GBuffer::GBuffer()
+GBuffer::GBuffer() : m_appConfig(AppConfig::get())
 {
 	m_gBufferFBO = 0;
 	tAlbedo = 0;
@@ -17,7 +17,6 @@ GBuffer::GBuffer()
 	tDepth = 0;
 
 	createOrResize();
-
 	const std::string fShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\gBuffer.frag").string();
 	const std::string vShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\gBuffer.vert").string();
 
@@ -31,7 +30,7 @@ void GBuffer::initTextures()
 {
 	//Albedo
 	glCreateTextures(GL_TEXTURE_2D, 1, &tAlbedo);
-	glTextureStorage2D(tAlbedo, 1, GL_RGBA16F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureStorage2D(tAlbedo, 1, GL_RGBA16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glTextureParameteri(tAlbedo, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tAlbedo, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tAlbedo, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -40,7 +39,7 @@ void GBuffer::initTextures()
 
 	//Metallic
 	glCreateTextures(GL_TEXTURE_2D, 1, &tMetallic);
-	glTextureStorage2D(tMetallic, 1, GL_R16F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureStorage2D(tMetallic, 1, GL_R16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glTextureParameteri(tMetallic, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tMetallic, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tMetallic, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -49,7 +48,7 @@ void GBuffer::initTextures()
 
 	//Roughness
 	glCreateTextures(GL_TEXTURE_2D, 1, &tRoughness);
-	glTextureStorage2D(tRoughness, 1, GL_R16F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureStorage2D(tRoughness, 1, GL_R16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glTextureParameteri(tRoughness, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tRoughness, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tRoughness, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -58,7 +57,7 @@ void GBuffer::initTextures()
 
 	//Normal
 	glCreateTextures(GL_TEXTURE_2D, 1, &tNormal);
-	glTextureStorage2D(tNormal, 1, GL_RGB16F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureStorage2D(tNormal, 1, GL_RGB16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glTextureParameteri(tNormal, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tNormal, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tNormal, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -67,7 +66,7 @@ void GBuffer::initTextures()
 
 	//tPosition
 	glCreateTextures(GL_TEXTURE_2D, 1, &tPosition);
-	glTextureStorage2D(tPosition, 1, GL_RGBA16F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureStorage2D(tPosition, 1, GL_RGBA16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glTextureParameteri(tPosition, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tPosition, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tPosition, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -76,7 +75,7 @@ void GBuffer::initTextures()
 
 	//Depth
 	glCreateTextures(GL_TEXTURE_2D, 1, &tDepth);
-	glTextureStorage2D(tDepth, 1, GL_DEPTH_COMPONENT32F, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureStorage2D(tDepth, 1, GL_DEPTH_COMPONENT32F, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glTextureParameteri(tDepth, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tDepth, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tDepth, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -134,7 +133,7 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view)
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glViewport(0, 0, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	for (auto& primitive : SceneManager::getPrimitives())

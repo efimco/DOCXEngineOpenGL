@@ -4,6 +4,7 @@
 build/
 out/
 WORK/
+res/skybox/imgui.ini
 # *.ini
 
 # Compiled Object files

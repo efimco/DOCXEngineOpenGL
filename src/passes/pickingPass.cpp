@@ -6,12 +6,11 @@
 #include <glm/glm.hpp>
 #include <iostream>
 
-PickingPass::PickingPass()
+PickingPass::PickingPass() : m_appConfig(AppConfig::get())
 {
 	pickingTexture = 0;
 	m_pickingFBO = 0;
 	m_pickingRBO = 0;
-
 	createOrResize();
 
 	const std::string fPickingShader = std::filesystem::absolute("..\\..\\src\\shaders\\picking.frag").string();
@@ -36,14 +35,14 @@ void PickingPass::createOrResize()
 	glCreateRenderbuffers(1, &m_pickingRBO);
 
 	glNamedFramebufferRenderbuffer(m_pickingFBO, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_pickingRBO);
-	glNamedRenderbufferStorage(m_pickingRBO, GL_DEPTH_COMPONENT24, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glNamedRenderbufferStorage(m_pickingRBO, GL_DEPTH_COMPONENT24, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glNamedFramebufferTexture(m_pickingFBO, GL_COLOR_ATTACHMENT0, pickingTexture, 0);
 }
 
 void PickingPass::initTextures()
 {
 	glCreateTextures(GL_TEXTURE_2D, 1, &pickingTexture);
-	glTextureStorage2D(pickingTexture, 1, GL_R32I, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glTextureStorage2D(pickingTexture, 1, GL_R32I, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glTextureParameteri(pickingTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(pickingTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(pickingTexture, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -60,7 +59,7 @@ void PickingPass::draw(glm::mat4 projection, glm::mat4 view)
 	glEnable(GL_DEPTH_TEST);
 	glClearBufferiv(GL_COLOR, 0, &zero);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, AppConfig::RENDER_WIDTH, AppConfig::RENDER_HEIGHT);
+	glViewport(0, 0, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	for (auto& primitive : SceneManager::getPrimitives())
 	{
