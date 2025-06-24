@@ -1,7 +1,6 @@
 #pragma once
 #include <unordered_map>
 #include <vector>
-
 #include "light.hpp"
 #include "primitive.hpp"
 #include "scene/model.hpp"
@@ -25,6 +24,9 @@ namespace SceneManager
 
 	void addModel(SceneGraph::Model* model);
 	std::vector<SceneGraph::Model*> getModels();
+
+	void addLight(Light* light);
+	void removeLight(Light* light);
 
 	void addShader(Shader* shader);
 	void reloadShaders();

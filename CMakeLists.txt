@@ -1,7 +1,9 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.25.0)
 project(LearnOpenGL VERSION 0.1.0 LANGUAGES C CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
 
 set(RESOURCE_DIR ${CMAKE_SOURCE_DIR}/src/resources)
 set(PASSES_DIR ${CMAKE_SOURCE_DIR}/src/passes)
@@ -21,8 +23,10 @@ set (
 add_subdirectory(${PASSES_DIR})
 add_subdirectory(${RESOURCE_DIR})
 
+add_library(glad STATIC thirdparty/include/glad/glad.c)
+target_include_directories(glad PUBLIC thirdparty/include)
+
 add_executable(OpenGLLearn 
-	thirdparty/include/glad/glad.c
 	src/main.cpp 
 	src/camera.cpp
 	src/stb_image_impl.cpp
@@ -44,6 +48,7 @@ target_include_directories(OpenGLLearn PRIVATE
 
 target_link_directories(OpenGLLearn PRIVATE 
 	${CMAKE_SOURCE_DIR}/thirdparty/lib
+	${CMAKE_SOURCE_DIR}/thirdparty/include
 	${CMAKE_SOURCE_DIR}/src
 	${PASSES_DIR}
 	${RESOURCE_DIR}
@@ -51,6 +56,7 @@ target_link_directories(OpenGLLearn PRIVATE
 )
 
 target_link_libraries(OpenGLLearn PRIVATE
+	glad
 	glfw3
 	opengl32
 	passes

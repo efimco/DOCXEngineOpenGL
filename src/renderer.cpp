@@ -198,7 +198,7 @@ void Renderer::render(GLFWwindow* window)
 
 		m_cubemap->draw(m_projection);
 		m_pickingPass->draw(m_projection, m_view);
-		m_shadowMap->draw(m_camera);
+		// m_shadowMap->draw(m_camera);
 		m_gBufferPass->draw(m_projection, m_view);
 		m_FXAAPass->draw(m_deferedScreenTexture);
 		deferedPass();
@@ -207,7 +207,7 @@ void Renderer::render(GLFWwindow* window)
 		glfwPollEvents();
 		ViewportState viewportState = m_uiManager->getViewportState();
 		m_uiManager->setScreenTexture(m_FXAAPass->m_fxaaTextrue);
-		m_uiManager->setShadowMapTexture(m_shadowMap->depthMap);
+		// m_uiManager->setShadowMapTexture(m_shadowMap->depthMap);
 		m_uiManager->setPickingTexture(m_pickingPass->pickingTexture);
 		m_uiManager->setGBuffer(m_gBufferPass);
 		m_uiManager->draw(m_deltaTime);

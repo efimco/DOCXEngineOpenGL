@@ -4,7 +4,6 @@
 
 #include "camera.hpp"
 #include "cubemap.hpp"
-#include "light.hpp"
 #include "pickingPass.hpp"
 #include "shadowMap.hpp"
 #include "uiManager.hpp"

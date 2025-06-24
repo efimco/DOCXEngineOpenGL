@@ -7,7 +7,7 @@ namespace SceneManager
 	static Primitive* selectedPrimitive = nullptr;
 	static std::vector<SceneGraph::Model*> models;
 	static std::vector<uint32_t> selectedPrimitives;
-	static std::vector<Light> lights;
+	static std::vector<Light*> lights;
 	static std::vector<Primitive*> primitives;
 	static std::vector<Shader*> shaders;
 	static std::unordered_map<uint32_t, std::shared_ptr<Mat>> materials;
@@ -42,7 +42,6 @@ namespace SceneManager
 
 	void selectPrimitive(int32_t vao, bool addToSelection)
 	{
-		auto found = std::find(selectedPrimitives.begin(), selectedPrimitives.end(), vao);
 		if (vao == 0)
 		{
 			std::fill(selectedPrimitives.begin(), selectedPrimitives.end(), 0);
@@ -75,7 +74,6 @@ namespace SceneManager
 			if (selectedPrimitives[i])
 				std::cout << i << " ";
 		}
-		std::cout << std::endl;
 	}
 
 	Primitive* getSelectedPrimitive()
@@ -96,6 +94,24 @@ namespace SceneManager
 	std::vector<SceneGraph::Model*> getModels()
 	{
 		return models;
+	}
+
+	void addLight(Light* light)
+	{
+		lights.push_back(std::move(light));
+	}
+
+	void removeLight(Light* light)
+	{
+		auto it = std::remove_if(lights.begin(), lights.end(), [light](const Light* l)
+			{
+				return l->name == light->name;
+			});
+
+		if (it != lights.end())
+		{
+			lights.erase(it, lights.end());
+		};
 	}
 
 	void addShader(Shader* shader)

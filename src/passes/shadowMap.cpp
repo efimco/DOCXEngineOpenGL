@@ -2,6 +2,7 @@
 #include "appConfig.hpp"
 #include "primitive.hpp"
 #include "sceneManager.hpp"
+
 #include <cstdint>
 #include <filesystem>
 #include <glad/gl.h>
@@ -18,8 +19,6 @@ ShadowMap::ShadowMap(const int width, const int height) : width(width), height(h
 	glTextureParameteri(depthMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTextureParameteri(depthMap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTextureParameteri(depthMap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glTextureParameterfv(depthMap, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	glNamedFramebufferTexture(depthMapFBO, GL_DEPTH_ATTACHMENT, depthMap, 0);
 	glNamedFramebufferDrawBuffer(depthMapFBO, GL_NONE);
@@ -36,7 +35,7 @@ ShadowMap::~ShadowMap()
 	glDeleteFramebuffers(1, &depthMapFBO);
 };
 
-void ShadowMap::draw(Camera& camera)
+void ShadowMap::draw(Camera& camera, Light light)
 {
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Shadow Map Pass");
 	glViewport(0, 0, width, height);
@@ -48,12 +47,9 @@ void ShadowMap::draw(Camera& camera)
 	glm::vec3 sceneCenter = glm::vec3(0.0f);
 	float distance = 10000.0f;
 
-	glm::mat4 lightProjection =
-		glm::ortho(-3.0f, 3.0f, -3.0f, 3.0f, distance + AppConfig::near_plane, distance + AppConfig::far_plane);
+	glm::mat4 lightProjection = glm::ortho(-3.0f, 3.0f, -3.0f, 3.0f, distance + AppConfig::near_plane, distance + AppConfig::far_plane);
 
-	Light light;
-
-	glm::vec3 lightDirection = glm::normalize(light.direction);
+	glm::vec3 lightDirection = glm::normalize(light.getDirection());
 
 	glm::vec3 lightPos = lightDirection * distance;
 
