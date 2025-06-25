@@ -27,8 +27,8 @@ public:
 	Camera(glm::vec3 pos, glm::vec3 upv, float yaw, float pitch);
 
 	glm::mat4 getViewMatrix();
-	void processMouseScroll(float yOffset);
-	void processPanning(float xOffset, float yOffset);
+	void processZoom(float yOffset);
+	void processPanning(float xOffset, float yOffset, glm::vec2 winSize);
 	void processOrbit(float deltaX, float deltaY);
 	void focusOn(Primitive* primitive);
 

@@ -140,9 +140,15 @@ void UIManager::getCursorPos()
 	m_viewportState.cursorPos = cursorPos;
 }
 
-void UIManager::getViewportPos() { m_viewportState.position = m_viewportPos; }
+void UIManager::getViewportPos()
+{
+	m_viewportState.position = m_viewportPos;
+}
 
-ViewportState UIManager::getViewportState() { return m_viewportState; }
+ViewportState UIManager::getViewportState()
+{
+	return m_viewportState;
+}
 
 void UIManager::showViewport(float deltaTime)
 {
@@ -157,6 +163,7 @@ void UIManager::showViewport(float deltaTime)
 	ImVec2 uv1 = ImVec2(1, 0);
 
 	m_vpSize = ImGui::GetContentRegionAvail();
+	m_viewportState.size = m_vpSize;
 	ImVec2 origin = ImGui::GetCursorScreenPos();
 
 	if ((m_appConfig.renderWidth != (int)m_vpSize.x) || (m_appConfig.renderHeight != (int)m_vpSize.y))

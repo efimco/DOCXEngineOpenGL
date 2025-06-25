@@ -60,7 +60,7 @@ void InputManager::scrollCallback(ViewportState viewportState)
 {
     if (viewportState.mouseWheel != 0.0f && viewportState.isHovered)
     {
-        camera.processMouseScroll(viewportState.mouseWheel);
+        camera.processZoom(viewportState.mouseWheel);
     }
 }
 
@@ -130,7 +130,7 @@ void InputManager::cameraMovementCallback(GLFWwindow* window, float deltaTime, V
 
     if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsMouseDown(ImGuiMouseButton_Middle) && viewportState.isHovered)
     {
-        camera.processPanning(xOffset, yOffset);
+        camera.processPanning(xOffset, yOffset, glm::vec2(viewportState.size.x, viewportState.size.y));
     }
 
     if (ImGui::IsMouseDown(ImGuiMouseButton_Middle) && !ImGui::IsKeyDown(ImGuiKey_LeftShift) && viewportState.isHovered)

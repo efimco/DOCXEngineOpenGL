@@ -187,7 +187,7 @@ void Renderer::render(GLFWwindow* window)
 		if (m_appConfig.renderWidth != 0 && m_appConfig.renderHeight != 0)
 		{
 			m_projection = glm::perspective(glm::radians(m_camera.zoom),
-				float(m_appConfig.renderWidth) / float(m_appConfig.renderHeight), 0.1f, 100.0f);
+				float(m_appConfig.renderWidth) / float(m_appConfig.renderHeight), 0.01f, 10000.0f);
 			m_view = m_camera.getViewMatrix();
 		}
 

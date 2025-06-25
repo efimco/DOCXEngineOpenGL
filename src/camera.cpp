@@ -2,10 +2,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 
-
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
-const float SENSITIVITY = 0.3f;
+const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.f;
 const float SPEED = 1.0f;
 
@@ -24,18 +23,20 @@ Camera::Camera(glm::vec3 pos, glm::vec3 upv, float yaw, float pitch)
 
 glm::mat4 Camera::getViewMatrix() { return glm::lookAt(position, position + front, up); }
 
-void Camera::processMouseScroll(float yOffset)
+void Camera::processZoom(float yOffset)
 {
-
-	position += front * yOffset * sensitivity * 2.0f;
+	float zoomFactor = std::pow(1.1f, yOffset * sensitivity) / 2.0f;
+	auto sign = (yOffset > 0) ? 1 : -1;
+	auto distance = glm::clamp(distanceToOrbitPivot, 0.0f, 1.0f);
+	position += front * (zoomFactor * sign * distance);
 	distanceToOrbitPivot = glm::length(position - orbitPivot);
 }
 
-void Camera::processPanning(float xOffset, float yOffset)
+void Camera::processPanning(float xOffset, float yOffset, glm::vec2 winSize)
 {
-	glm::vec3 rightMove = right * -xOffset * sensitivity * .02f;
-	glm::vec3 upMove = up * -yOffset * sensitivity * .02f;
-
+	float panSpeed = distanceToOrbitPivot * std::tan(glm::radians(zoom * 0.5f)) / (winSize.y * 0.5f);
+	glm::vec3 rightMove = -right * xOffset * panSpeed;
+	glm::vec3 upMove = up * -yOffset * panSpeed;
 	orbitPivot += rightMove + upMove;
 	updateCameraVecotrs();
 }
@@ -70,8 +71,8 @@ void Camera::focusOn(Primitive* primitive)
 
 void Camera::processOrbit(float deltaX, float deltaY)
 {
-	yaw += deltaX * .5f;
-	pitch += deltaY * .5f;
+	yaw += deltaX * sensitivity * 2.5;
+	pitch += deltaY * sensitivity * 2.5;
 
 	if (pitch > 89.0f)
 		pitch = 89.0f;
