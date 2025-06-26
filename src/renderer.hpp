@@ -11,6 +11,7 @@
 #include "scene/scene.hpp"
 #include "gBuffer.hpp"
 #include "FXAAPass.hpp"
+#include "TAAPass.hpp"
 
 class Renderer
 {
@@ -40,6 +41,7 @@ private:
 	GBuffer* m_gBufferPass;
 	FXAAPass* m_FXAAPass;
 	DeferedPass* m_deferedPass;
+	TAAPass* m_TAAPass;
 
 	glm::mat4 m_view;
 	glm::mat4 m_projection;

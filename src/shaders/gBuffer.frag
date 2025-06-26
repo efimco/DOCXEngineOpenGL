@@ -102,6 +102,8 @@ void main()
 	vec3 currentPosNDC = fs_in.currClipPos.xyz / fs_in.currClipPos.w;
 	vec3 previousPosNDC = fs_in.prevClipPos.xyz / fs_in.prevClipPos.w;
 	vec2 velocity = (currentPosNDC.xy - previousPosNDC.xy);
+	velocity = velocity * vec2(0.5, -0.5) + 0.5;
+	velocity -= jitter.xy;
+    velocity -= prevJitter.xy;
 	gVelocity = velocity;
-
 }

@@ -74,6 +74,7 @@ namespace SceneManager
 			if (selectedPrimitives[i])
 				std::cout << i << " ";
 		}
+		std::cout << std::endl;
 	}
 
 	Primitive* getSelectedPrimitive()

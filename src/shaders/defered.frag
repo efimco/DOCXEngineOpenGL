@@ -107,43 +107,39 @@ return 1.055 * pow(color, 1.0 / 2.4) - 0.055;
 
 void main()
 {
-GBuffer gBuffer = getGBuffer();
+	GBuffer gBuffer = getGBuffer();
 
-vec3 F0 = mix(vec3(MIN_REFLECTANCE), gBuffer.albedo, gBuffer.metallic);
+	vec3 F0 = mix(vec3(MIN_REFLECTANCE), gBuffer.albedo, gBuffer.metallic);
 
-vec3 result = calculateIBL(gBuffer, F0);
+	vec3 result = calculateIBL(gBuffer, F0);
 
-vec3 background = texture(envCubemap, TexCoords).rgb;
-bool isBackground = gBuffer.depth >= 1.0 - 1e-5;
+	vec3 background = texture(envCubemap, TexCoords).rgb;
+	bool isBackground = gBuffer.depth >= 1.0 - 1e-5;
 
-int pickingColor = texture(pickingTexture, TexCoords).r;
-int outlineWidth = 2;
+	int pickingColor = texture(pickingTexture, TexCoords).r;
+	int outlineWidth = 2;
 
-vec2 pixelSize = 1.0 / textureSize(pickingTexture, 0);
+	vec2 pixelSize = 1.0 / textureSize(pickingTexture, 0);
 
 	// Use IBL result for geometry, background otherwise
-vec3 finalColor = isBackground ? background : result;
-vec3 tonemapped = vec3(linear_rgb_to_srgb(finalColor.r), linear_rgb_to_srgb(finalColor.g), linear_rgb_to_srgb(finalColor.b));
+	// background = vec3(0.0f);
+	vec3 finalColor = isBackground ? background : result;
 
-FragColor = vec4(tonemapped, 1);
-vec4 outline = vec4(0);
-if(selectedPrimitives[pickingColor] == 1)
-{
-for(int i = - outlineWidth;
-i <= + outlineWidth;
-i ++)
-{
-for(int j = - outlineWidth;
-j <= + outlineWidth;
-j ++)
-{
-vec2 offset = vec2(i, j) * pixelSize;
-if(texture(pickingTexture, TexCoords + offset).r != pickingColor)
-{
-FragColor = vec4(1.0, 0.5, 0.0, gBuffer.depth);
-}
-}
-}
+	FragColor = vec4(finalColor, 1);
+	vec4 outline = vec4(0);
+	if(selectedPrimitives[pickingColor] == 1)
+	{
+	for(int i = - outlineWidth; i <= + outlineWidth; i ++)
+	{
+		for(int j = - outlineWidth; j <= + outlineWidth; j ++)
+		{
+			vec2 offset = vec2(i, j) * pixelSize;
+			if(texture(pickingTexture, TexCoords + offset).r != pickingColor)
+			{
+				FragColor = vec4(1.0, 0.5, 0.0, gBuffer.depth);
+			}
+		}
+	}
 }
 
 }

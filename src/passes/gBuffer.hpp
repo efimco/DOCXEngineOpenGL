@@ -17,7 +17,7 @@ public:
 	uint32_t tDepth;
 	uint32_t tVelocity;
 
-	void draw(glm::mat4 projection, glm::mat4 view);
+	void draw(glm::mat4 projection, glm::mat4 view, float cameraDistance);
 	void createOrResize();
 
 private:

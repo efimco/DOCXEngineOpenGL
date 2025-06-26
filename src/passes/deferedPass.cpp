@@ -32,7 +32,7 @@ void DeferedPass::createOrResize(uint32_t m_nMipLevels)
 	glNamedFramebufferRenderbuffer(m_deferedFBO, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_deferedRBO);
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &deferedTexture);
-	glTextureStorage2D(deferedTexture, m_nMipLevels, GL_RGBA32F, m_appConfig.renderWidth, m_appConfig.renderHeight);
+	glTextureStorage2D(deferedTexture, m_nMipLevels, GL_RGBA16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glTextureParameteri(deferedTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(deferedTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTextureParameteri(deferedTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

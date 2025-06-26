@@ -5,6 +5,10 @@
 #include "appConfig.hpp"
 #include "renderer.hpp"
 
+#ifdef _MSC_VER
+    #define _CRTDBG_MAP_ALLOC
+    #include <crtdbg.h>
+#endif
 
 void framebufferSizeCallback(GLFWwindow *window, int32_t newWINDOW_WIDTH, int32_t newWINDOW_HEIGHT)
 {
@@ -15,6 +19,9 @@ void framebufferSizeCallback(GLFWwindow *window, int32_t newWINDOW_WIDTH, int32_
 
 int main()
 {
+#ifdef _MSC_VER
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
 	GLFWwindow *window;
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);

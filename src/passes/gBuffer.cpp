@@ -159,8 +159,9 @@ float Halton(uint32_t i, uint32_t b)
 	return r;
 }
 
-void GBuffer::draw(glm::mat4 projection, glm::mat4 view)
+void GBuffer::draw(glm::mat4 projection, glm::mat4 view, float cameraDistance)
 {
+
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "gBuffer Pass");
 
 	glBindFramebuffer(GL_FRAMEBUFFER, m_gBufferFBO);
@@ -171,15 +172,18 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 
-	float haltonX = 2.0f * Halton(jitterIndex + 1, 2) - 1.0f;
-	float haltonY = 2.0f * Halton(jitterIndex + 1, 3) - 1.0f;
-	
-	jitterIndex = jitterIndex % 8;
+	// in [-0.5, 0.5] range (fraction of a pixel)
+	float haltonX = 2 * Halton((jitterIndex % 8) + 1, 2) - 0.5f;
+	float haltonY = 2 * Halton((jitterIndex % 8) + 1, 3) - 0.5f;
 
-	float jitterX = (haltonX / m_appConfig.renderWidth);
-	float jitterY = (haltonY / m_appConfig.renderHeight);
+	jitter.x = haltonX / static_cast<float>(m_appConfig.renderWidth);
+	jitter.y = haltonY / static_cast<float>(m_appConfig.renderHeight);
+	float jitterScale = glm::clamp(cameraDistance * 0.1f, 0.01f, 1.0f);
 
-	jitter = glm::vec2(jitterX, jitterY);
+	jitter.x *= jitterScale;
+	jitter.y *= jitterScale;
+
+	projection = glm::translate(projection, glm::vec3(jitter.x * 2.0f, jitter.y * 2.0f, 0.0f));
 
 	for (auto& primitive : SceneManager::getPrimitives())
 	{
@@ -211,9 +215,9 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view)
 		m_gBufferShader->setFloat("ufMetallic", primitive->material->metallic);
 		m_gBufferShader->setVec3("uvAlbedo", primitive->material->albedo);
 
-
 		m_gBufferShader->setVec2("jitter", jitter);
 		m_gBufferShader->setVec2("prevJitter", prevJitter);
+
 		primitive->draw();
 	}
 	jitterIndex++;
