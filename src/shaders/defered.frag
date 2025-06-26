@@ -22,12 +22,15 @@ layout(binding = 11) uniform isampler2D pickingTexture;
 
 layout(std430, binding = 12) buffer selectedPrimitivesBuffer
 {
-int selectedPrimitives[];
+	int selectedPrimitives[];
 };
 
 uniform vec3 viewPos;
 uniform float irradianceMapRotationY;
 uniform float irradianceMapIntensity;
+
+uniform float nearPlane;
+uniform float farPlane;
 
 const float yaw = PI / 180.0;
 const vec2 invAtan = vec2(0.1591, 0.3183); // 1 / (2 * PI), 1 / PI
@@ -36,73 +39,64 @@ const float MIN_REFLECTANCE = 0.04;
 
 struct GBuffer
 {
-vec3 albedo;
-float metallic;
-float roughness;
-vec3 normal;
-vec3 position;
-float depth;
-float albedoAlpha;
+	vec3 albedo;
+	float metallic;
+	float roughness;
+	vec3 normal;
+	vec3 position;
+	float depth;
+	float albedoAlpha;
 };
 
 GBuffer getGBuffer()
 {
-GBuffer gBuffer;
+	GBuffer gBuffer;
 
-gBuffer.albedo = texture(gAlbedo, TexCoords).rgb;
-gBuffer.metallic = texture(gMetallic, TexCoords).r;
-gBuffer.roughness = texture(gRoughness, TexCoords).r;
-gBuffer.normal = texture(gNormal, TexCoords).rgb;
-gBuffer.position = texture(gPosition, TexCoords).rgb;
-gBuffer.depth = texture(gDepth, TexCoords).r;
-gBuffer.albedoAlpha = texture(gAlbedo, TexCoords).a;
-return gBuffer;
+	gBuffer.albedo = texture(gAlbedo, TexCoords).rgb;
+	gBuffer.metallic = texture(gMetallic, TexCoords).r;
+	gBuffer.roughness = texture(gRoughness, TexCoords).r;
+	gBuffer.normal = texture(gNormal, TexCoords).rgb;
+	gBuffer.position = texture(gPosition, TexCoords).rgb;
+	float depth = texture(gDepth, TexCoords).r;
+	gBuffer.depth = (2.0 * nearPlane) / (farPlane + nearPlane - depth * (farPlane - nearPlane));
+	gBuffer.albedoAlpha = texture(gAlbedo, TexCoords).a;
+	return gBuffer;
 }
 
 mat3 getIrradianceMapRotation()
 {
-float angle = irradianceMapRotationY * yaw;
-float cosA = cos(angle);
-float sinA = sin(angle);
-return mat3(cosA, 0.0, - sinA, 0.0, 1.0, 0.0, sinA, 0.0, cosA);
+	float angle = irradianceMapRotationY * yaw;
+	float cosA = cos(angle);
+	float sinA = sin(angle);
+	return mat3(cosA, 0.0, - sinA, 0.0, 1.0, 0.0, sinA, 0.0, cosA);
 }
 
 vec3 calculateIBL(GBuffer gbuffer, vec3 F0)
 {
-mat3 rotationMatrix = getIrradianceMapRotation();
-vec3 viewDir = normalize(viewPos - gbuffer.position);
-vec3 R = reflect(- viewDir, gbuffer.normal);
-float cosTheta = max(dot(gbuffer.normal, viewDir), 0.0);
+	mat3 rotationMatrix = getIrradianceMapRotation();
+	vec3 viewDir = normalize(viewPos - gbuffer.position);
+	vec3 R = reflect(- viewDir, gbuffer.normal);
+	float cosTheta = max(dot(gbuffer.normal, viewDir), 0.0);
 
-	// Calculate Fresnel
-vec3 F = fresnelSchlick(cosTheta, F0, gbuffer.roughness);
+		// Calculate Fresnel
+	vec3 F = fresnelSchlick(cosTheta, F0, gbuffer.roughness);
 
-	// Calculate diffuse and specular factors
-vec3 kS = F;
-vec3 kD = (1.0 - kS) * (1.0 - gbuffer.metallic);
+		// Calculate diffuse and specular factors
+	vec3 kS = F;
+	vec3 kD = (1.0 - kS) * (1.0 - gbuffer.metallic);
 
-	// Diffuse IBL
-vec3 irradiance = texture(irradianceMap, gbuffer.normal * rotationMatrix).rgb;
-vec3 diffuse = gbuffer.albedo * irradiance;
+		// Diffuse IBL
+	vec3 irradiance = texture(irradianceMap, gbuffer.normal * rotationMatrix).rgb;
+	vec3 diffuse = gbuffer.albedo * irradiance;
 
-	// Specular IBL
-vec3 prefilteredColor = textureLod(specularMap, R * rotationMatrix, gbuffer.roughness * MAX_REFLECTION_LOD).rgb;
+		// Specular IBL
+	vec3 prefilteredColor = textureLod(specularMap, R * rotationMatrix, gbuffer.roughness * MAX_REFLECTION_LOD).rgb;
 
-vec2 brdf = texture(brdfLUT, vec2(max(dot(gbuffer.normal, viewDir), 0.0), gbuffer.roughness)).rg;
+	vec2 brdf = texture(brdfLUT, vec2(max(dot(gbuffer.normal, viewDir), 0.0), gbuffer.roughness)).rg;
 
-vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+	vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
-return (kD * diffuse + specular) * irradianceMapIntensity;
-}
-
-float linear_rgb_to_srgb(float color)
-{
-if(color < 0.0031308)
-{
-return (color < 0.0) ? 0.0 : color * 12.92;
-}
-
-return 1.055 * pow(color, 1.0 / 2.4) - 0.055;
+	return (kD * diffuse + specular) * irradianceMapIntensity;
 }
 
 void main()
@@ -113,20 +107,18 @@ void main()
 
 	vec3 result = calculateIBL(gBuffer, F0);
 
-	vec3 background = texture(envCubemap, TexCoords).rgb;
-	bool isBackground = gBuffer.depth >= 1.0 - 1e-5;
+	FragColor = vec4(result, gBuffer.albedoAlpha);
+	if (gBuffer.depth >= 1.0)
+	{
+		FragColor = vec4(vec3(0), 0.0);
+	}
+
+	int outlineWidth = 2;
+	vec4 outline = vec4(0);
 
 	int pickingColor = texture(pickingTexture, TexCoords).r;
-	int outlineWidth = 2;
-
 	vec2 pixelSize = 1.0 / textureSize(pickingTexture, 0);
 
-	// Use IBL result for geometry, background otherwise
-	// background = vec3(0.0f);
-	vec3 finalColor = isBackground ? background : result;
-
-	FragColor = vec4(finalColor, 1);
-	vec4 outline = vec4(0);
 	if(selectedPrimitives[pickingColor] == 1)
 	{
 	for(int i = - outlineWidth; i <= + outlineWidth; i ++)
@@ -136,7 +128,7 @@ void main()
 			vec2 offset = vec2(i, j) * pixelSize;
 			if(texture(pickingTexture, TexCoords + offset).r != pickingColor)
 			{
-				FragColor = vec4(1.0, 0.5, 0.0, gBuffer.depth);
+				FragColor = vec4(1.0, 0.5, 0.0, 1.0);
 			}
 		}
 	}

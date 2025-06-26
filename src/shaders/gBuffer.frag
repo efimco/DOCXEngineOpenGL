@@ -29,7 +29,7 @@ fs_in;
 
 struct Material
 {
-	vec3 albedo;
+	vec4 albedo;
 	float metallic;
 	float roughness;
 	vec3 normal;
@@ -69,11 +69,11 @@ Material getMaterial()
 
 	if(all(lessThanEqual(textureSize(tDiffuse, 0), ivec2(1))))
 	{
-		material.albedo = pow(uvAlbedo, vec3(2.2));
+		material.albedo = pow(vec4(uvAlbedo, 1.0), vec4(2.2));
 	}
 	else
 	{
-		material.albedo = pow(texture(tDiffuse, fs_in.TexCoords).rgb, vec3(2.2));
+		material.albedo = pow(texture(tDiffuse, fs_in.TexCoords), vec4(2.2));
 	}
 
 	ivec2 specTexSize = textureSize(tSpecular, 0);
@@ -94,7 +94,7 @@ Material getMaterial()
 void main()
 {
 	Material material = getMaterial();
-	gAlbedo = vec4(material.albedo, 1.0);
+	gAlbedo = vec4(material.albedo);
 	gMetallic = material.metallic;
 	gRoughness = material.roughness;
 	gNormal = material.normal;
@@ -104,6 +104,6 @@ void main()
 	vec2 velocity = (currentPosNDC.xy - previousPosNDC.xy);
 	velocity = velocity * vec2(0.5, -0.5) + 0.5;
 	velocity -= jitter.xy;
-    velocity -= prevJitter.xy;
+	velocity -= prevJitter.xy;
 	gVelocity = velocity;
 }

@@ -88,6 +88,9 @@ void DeferedPass::draw(uint32_t fullFrameQuadVAO, GBuffer* gBuffer, Cubemap* cub
 	m_appConfig.deferedShader->setFloat("irradianceMapRotationY", m_appConfig.irradianceMapRotationY);
 	m_appConfig.deferedShader->setFloat("irradianceMapIntensity", m_appConfig.irradianceMapIntensity);
 
+	m_appConfig.deferedShader->setFloat("nearPlane", m_appConfig.nearPlane);
+	m_appConfig.deferedShader->setFloat("farPlane", m_appConfig.farPlane);
+
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 

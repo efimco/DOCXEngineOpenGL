@@ -424,7 +424,7 @@ void UIManager::showTools()
 	ImGui::SliderFloat("Backgorund Blur", &m_appConfig.backgroundBlur, 0.0f, 1.0f);
 	ImGui::Checkbox("ObjectID Debug", &m_appConfig.showObjectPicking);
 	ImGui::Checkbox("ShadowMap Debug", &m_appConfig.showShadowMap);
-	ImGui::Checkbox("FXAA", &m_appConfig.isFXAA);
+	ImGui::Checkbox("TAA", &m_appConfig.isTAA);
 	if (ImGui::Button("Load CubeMap"))
 	{
 		std::string filePath = OpenFileDialog(FileType::IMAGE);

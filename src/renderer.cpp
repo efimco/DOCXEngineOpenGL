@@ -33,9 +33,9 @@ m_appConfig(AppConfig::get())
 	m_uiManager = new UIManager(window, m_camera, scene);
 	m_pickingPass = new PickingPass();
 	m_gBufferPass = new GBuffer();
-	m_FXAAPass = new FXAAPass();
 	m_deferedPass = new DeferedPass(m_camera);
 	m_TAAPass = new TAAPass();
+	m_postProcessPass = new PostProcessPass();
 	initScreenQuad();
 
 	m_appConfig.initShaders();
@@ -48,7 +48,6 @@ Renderer::~Renderer()
 	delete m_shadowMap;
 	delete m_cubemap;
 	delete m_gBufferPass;
-	delete m_FXAAPass;
 	delete m_inputManager;
 	delete m_uiManager;
 	delete m_pickingPass;
@@ -84,9 +83,9 @@ void Renderer::checkFrameBuferSize()
 		m_gBufferPass->createOrResize();
 		m_pickingPass->createOrResize();
 		m_cubemap->createOrResize();
-		m_FXAAPass->createOrResize();
 		m_deferedPass->createOrResize(m_nMipLevels);
 		m_TAAPass->createOrResize();
+		m_postProcessPass->createOrResize();
 		glViewport(0, 0, m_appConfig.renderWidth, m_appConfig.renderHeight);
 
 		m_appConfig.isFramebufferSizeSet = true;
@@ -107,7 +106,8 @@ void Renderer::render(GLFWwindow* window)
 		if (m_appConfig.renderWidth != 0 && m_appConfig.renderHeight != 0)
 		{
 			m_projection = glm::perspective(glm::radians(m_camera.zoom),
-				float(m_appConfig.renderWidth) / float(m_appConfig.renderHeight), 0.01f, 10000.0f);
+				float(m_appConfig.renderWidth) / float(m_appConfig.renderHeight),
+				m_appConfig.nearPlane, m_appConfig.farPlane);
 			m_view = m_camera.getViewMatrix();
 		}
 
@@ -122,16 +122,16 @@ void Renderer::render(GLFWwindow* window)
 		// m_shadowMap->draw(m_camera);
 		m_gBufferPass->draw(m_projection, m_view, m_camera.distanceToOrbitPivot);
 		m_deferedPass->draw(m_fullFrameQuadVAO, m_gBufferPass, m_cubemap, m_shadowMap, m_pickingPass);
-		m_FXAAPass->draw(m_deferedPass->deferedTexture);
 		m_TAAPass->setCurrrentTexture(m_deferedPass->deferedTexture);
 		m_TAAPass->setVelocityTexture(m_gBufferPass->tVelocity);
 		m_TAAPass->setDepthTexture(m_gBufferPass->tDepth);
 		m_TAAPass->draw();
+		m_postProcessPass->draw(m_TAAPass->history, m_cubemap->envCubemap, m_gBufferPass->tDepth);
 
 		glfwPollEvents();
 		ViewportState viewportState = m_uiManager->getViewportState();
-		m_uiManager->setScreenTexture(m_TAAPass->history);
-		m_uiManager->setShadowMapTexture(m_FXAAPass->m_fxaaTextrue);
+		m_uiManager->setScreenTexture(m_postProcessPass->getPostProcessedTexture());
+		m_uiManager->setShadowMapTexture(m_deferedPass->deferedTexture);
 		m_uiManager->setPickingTexture(m_pickingPass->pickingTexture);
 		m_uiManager->setGBuffer(m_gBufferPass);
 		m_uiManager->draw(m_deltaTime);

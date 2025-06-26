@@ -51,7 +51,7 @@ void TAAPass::draw()
 	glBindImageTexture(3, m_depth, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
 
 	// Set uniforms
-	m_TAAShader->setInt("frameNumber", m_frameNumber);
+	m_TAAShader->setInt("isTAA", m_appConfig.isTAA ? 1 : 0);
 
 	glDispatchCompute((m_appConfig.renderWidth + 15) / 16, (m_appConfig.renderHeight + 7) / 8, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);

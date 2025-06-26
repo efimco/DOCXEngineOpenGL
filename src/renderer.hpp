@@ -10,8 +10,8 @@
 #include "uiManager.hpp"
 #include "scene/scene.hpp"
 #include "gBuffer.hpp"
-#include "FXAAPass.hpp"
 #include "TAAPass.hpp"
+#include "postProcessPass.hpp"
 
 class Renderer
 {
@@ -39,15 +39,14 @@ private:
 	InputManager* m_inputManager;
 	PickingPass* m_pickingPass;
 	GBuffer* m_gBufferPass;
-	FXAAPass* m_FXAAPass;
 	DeferedPass* m_deferedPass;
 	TAAPass* m_TAAPass;
+	PostProcessPass* m_postProcessPass;
 
 	glm::mat4 m_view;
 	glm::mat4 m_projection;
 
 	void initScreenQuad();
-	void createOrResizeFrameBufferAndRenderTarget();
 	void checkFrameBuferSize();
-	void deferedPass();
+
 };
