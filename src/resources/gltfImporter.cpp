@@ -144,8 +144,10 @@ void GLTFModel::processGLTFModel(tinygltf::Model& model)
 			{
 				transform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
 			}
+
 			transform.matrix = glm::translate(glm::mat4(1.0f), transform.position) * glm::mat4_cast(transform.rotation) *
 				glm::scale(glm::mat4(1.0f), transform.scale);
+			transform.prevMatrix = glm::mat4(1.0f);
 
 			assert(indexBuffer.size() == model.accessors[primitive.indices].count);
 			size_t indexCount = indexBuffer.size();
@@ -193,6 +195,7 @@ std::unique_ptr<SceneGraph::Model> GLTFModel::getModel()
 {
 	Transform modelTransform;
 	modelTransform.matrix = glm::mat4(1.0f);
+	modelTransform.prevMatrix = glm::mat4(1.0f);
 	modelTransform.position = glm::vec3(0.0f, 0.0f, 0.0f);
 	modelTransform.rotation = glm::vec3(0.0f, 0.0f, 0.0f);
 	modelTransform.scale = glm::vec3(1.0f, 1.0f, 1.0f);

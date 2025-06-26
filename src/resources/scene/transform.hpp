@@ -11,4 +11,5 @@ struct Transform
     glm::quat rotation;
     glm::vec3 scale;
     glm::mat4 matrix;
+    glm::mat4 prevMatrix;
 };

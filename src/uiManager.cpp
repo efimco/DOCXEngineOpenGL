@@ -192,7 +192,7 @@ void UIManager::showViewport(float deltaTime)
 	ImVec2 winSize = ImGui::GetWindowSize();
 	ImVec2 padding = ImGui::GetStyle().WindowPadding;
 
-	const ImVec2 debugQuadSize(winSize.x / 10, winSize.y / 10);
+	const ImVec2 debugQuadSize(winSize.x / 4, winSize.y / 4);
 	ImVec2 thumbPos(m_viewportPos.x + winSize.x - debugQuadSize.x,
 		m_viewportPos.y);
 
@@ -220,7 +220,7 @@ void UIManager::showViewport(float deltaTime)
 
 		static int currentBuffer = 0;
 		if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
-			currentBuffer = (currentBuffer + 1) % 6; // Cycle through 6 buffers
+			currentBuffer = (currentBuffer + 1) % 7; // Cycle through 7 buffers
 		}
 
 		ImGui::BeginChild("GBufferPreview", debugQuadSize, false, flags);
@@ -233,6 +233,7 @@ void UIManager::showViewport(float deltaTime)
 		case 3: texToShow = m_gBuffer->tRoughness; break;
 		case 4: texToShow = m_gBuffer->tMetallic; break;
 		case 5: texToShow = m_gBuffer->tDepth; break;
+		case 6: texToShow = m_gBuffer->tVelocity; break;
 		}
 
 		ImGui::Image((ImTextureID)texToShow, debugQuadSize, uv0, uv1);

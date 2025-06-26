@@ -2,6 +2,7 @@
 #include <cstdint>
 #include "shader.hpp"
 #include "appConfig.hpp"
+#include <glm/glm.hpp>
 
 class GBuffer
 {
@@ -14,11 +15,14 @@ public:
 	uint32_t tNormal;
 	uint32_t tPosition;
 	uint32_t tDepth;
+	uint32_t tVelocity;
 
 	void draw(glm::mat4 projection, glm::mat4 view);
 	void createOrResize();
 
 private:
+	glm::mat4 m_prevView;
+	glm::mat4 m_prevProjection;
 	AppConfig& m_appConfig;
 	Shader* m_gBufferShader;
 	uint32_t m_gBufferFBO;

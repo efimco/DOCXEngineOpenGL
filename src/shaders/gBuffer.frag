@@ -4,6 +4,7 @@ layout(location = 1) out float gMetallic;
 layout(location = 2) out float gRoughness;
 layout(location = 3) out vec3 gNormal;
 layout(location = 4) out vec3 gPosition;
+layout(location = 5) out vec2 gVelocity;
 
 layout(binding = 1) uniform sampler2D tDiffuse;
 layout(binding = 2) uniform sampler2D tSpecular;
@@ -13,11 +14,16 @@ uniform vec3 uvAlbedo;
 uniform float ufRoughness;
 uniform float ufMetallic;
 
+uniform vec2 jitter;
+uniform vec2 prevJitter;
+
 layout(location = 0) in VS_OUT
 {
 	vec3 FragPos;
 	vec3 Normal;
 	vec2 TexCoords;
+	vec4 currClipPos;
+	vec4 prevClipPos;
 }
 fs_in;
 
@@ -93,4 +99,9 @@ void main()
 	gRoughness = material.roughness;
 	gNormal = material.normal;
 	gPosition = fs_in.FragPos;
+	vec3 currentPosNDC = fs_in.currClipPos.xyz / fs_in.currClipPos.w;
+	vec3 previousPosNDC = fs_in.prevClipPos.xyz / fs_in.prevClipPos.w;
+	vec2 velocity = (currentPosNDC.xy - previousPosNDC.xy);
+	gVelocity = velocity;
+
 }
