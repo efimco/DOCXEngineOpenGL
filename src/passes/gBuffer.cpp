@@ -174,7 +174,7 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view)
 	float haltonX = 2.0f * Halton(jitterIndex + 1, 2) - 1.0f;
 	float haltonY = 2.0f * Halton(jitterIndex + 1, 3) - 1.0f;
 	
-	jitterIndex = jitterIndex % 100;
+	jitterIndex = jitterIndex % 8;
 
 	float jitterX = (haltonX / m_appConfig.renderWidth);
 	float jitterY = (haltonY / m_appConfig.renderHeight);
