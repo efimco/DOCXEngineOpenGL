@@ -25,16 +25,20 @@ glm::mat4 Camera::getViewMatrix() { return glm::lookAt(position, position + fron
 
 void Camera::processZoom(float yOffset)
 {
-	float zoomFactor = std::pow(1.1f, yOffset * sensitivity) / 2.0f;
-	auto sign = (yOffset > 0) ? 1 : -1;
-	auto distance = glm::clamp(distanceToOrbitPivot, 0.0f, 1.0f);
-	position += front * (zoomFactor * sign * distance);
-	distanceToOrbitPivot = glm::length(position - orbitPivot);
+	// Blender-style zoom: more responsive and distance-independent
+	float zoomSpeed = 0.1f;
+	float zoomFactor = 1.0f + (yOffset * zoomSpeed);
+	
+	// Clamp to prevent getting too close or too far
+	float newDistance = glm::clamp(distanceToOrbitPivot / zoomFactor, 0.01f, 1000.0f);
+	distanceToOrbitPivot = newDistance;
+	updateCameraVecotrs();
 }
 
 void Camera::processPanning(float xOffset, float yOffset, glm::vec2 winSize)
 {
-	float panSpeed = distanceToOrbitPivot * std::tan(glm::radians(zoom * 0.5f)) / (winSize.y * 0.5f);
+	// Blender-style panning: consistent speed regardless of distance
+	float panSpeed = distanceToOrbitPivot * 0.002f; // More consistent scaling
 	glm::vec3 rightMove = -right * xOffset * panSpeed;
 	glm::vec3 upMove = up * -yOffset * panSpeed;
 	orbitPivot += rightMove + upMove;
@@ -61,9 +65,9 @@ void Camera::focusOn(Primitive* primitive)
 	glm::vec3 center = (minPos + maxPos) * 0.5f;
 	float radius = glm::length(maxPos - minPos) * 0.5f;
 	orbitPivot = center;
-	sensitivity = radius * 2 / 5;
-	// Position camera to see the entire bounding box
-	float distance = radius / std::tan(glm::radians(zoom * 0.5f));
+	
+	// Position camera to see the entire bounding box (Blender-style framing)
+	float distance = radius * 2.5f; // More breathing room like Blender
 	distanceToOrbitPivot = distance;
 
 	updateCameraVecotrs();
@@ -71,8 +75,10 @@ void Camera::focusOn(Primitive* primitive)
 
 void Camera::processOrbit(float deltaX, float deltaY)
 {
-	yaw += deltaX * sensitivity * 2.5;
-	pitch += deltaY * sensitivity * 2.5;
+	// Blender-style orbit: consistent angular speed
+	float orbitSensitivity = 0.5f; // Fixed sensitivity like Blender
+	yaw += deltaX * orbitSensitivity;
+	pitch += deltaY * orbitSensitivity;
 
 	if (pitch > 89.0f)
 		pitch = 89.0f;

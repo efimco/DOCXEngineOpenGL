@@ -1,5 +1,5 @@
 #include "gltfImporter.hpp"
-#include "glm/gtx/quaternion.hpp"
+#include <glm/gtc/type_ptr.hpp>
 #include "scene/model.hpp"
 #include "sceneManager.hpp"
 #include <glad/gl.h>
@@ -144,10 +144,25 @@ void GLTFModel::processGLTFModel(tinygltf::Model& model)
 			{
 				transform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
 			}
-
-			transform.matrix = glm::translate(glm::mat4(1.0f), transform.position) * glm::mat4_cast(transform.rotation) *
-				glm::scale(glm::mat4(1.0f), transform.scale);
+			if(model.nodes[meshIndex].matrix.size() == 16)
+			{
+				glm::mat4 mat = glm::make_mat4(model.nodes[meshIndex].matrix.data());
+				transform.matrix = mat;
+				transform.prevMatrix = mat;
+				transform.position = glm::vec3(mat[3][0], mat[3][1], mat[3][2]);
+				transform.rotation = glm::eulerAngles(glm::quat_cast(mat));
+				transform.scale = glm::vec3(glm::length(glm::vec3(mat[0][0], mat[1][0], mat[2][0])),
+					glm::length(glm::vec3(mat[0][1], mat[1][1], mat[2][1])),
+					glm::length(glm::vec3(mat[0][2], mat[1][2], mat[2][2])));
+			}
+			else
+			{
+				transform.matrix = glm::translate(glm::mat4(1.0f), transform.position) * glm::mat4_cast(transform.rotation) *
+					glm::scale(glm::mat4(1.0f), transform.scale);
 			transform.prevMatrix = glm::mat4(1.0f);
+			}
+
+
 
 			assert(indexBuffer.size() == model.accessors[primitive.indices].count);
 			size_t indexCount = indexBuffer.size();
