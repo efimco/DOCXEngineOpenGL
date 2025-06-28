@@ -125,8 +125,9 @@ void Renderer::render(GLFWwindow* window)
 		m_TAAPass->setCurrrentTexture(m_deferedPass->deferedTexture);
 		m_TAAPass->setVelocityTexture(m_gBufferPass->tVelocity);
 		m_TAAPass->setDepthTexture(m_gBufferPass->tDepth);
+		m_TAAPass->setJitterValues(m_gBufferPass->getCurrentJitter(), m_gBufferPass->getPreviousJitter());
 		m_TAAPass->draw();
-		m_postProcessPass->draw(m_TAAPass->history, m_cubemap->envCubemap, m_gBufferPass->tDepth);
+		m_postProcessPass->draw(m_TAAPass->getCurrentOutput(), m_cubemap->envCubemap, m_gBufferPass->tDepth);
 
 		glfwPollEvents();
 		ViewportState viewportState = m_uiManager->getViewportState();

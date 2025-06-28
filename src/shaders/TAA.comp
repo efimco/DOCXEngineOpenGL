@@ -3,67 +3,103 @@
 layout(local_size_x = 16, local_size_y = 8, local_size_z = 1) in;
 
 layout(rgba16f, binding = 0) uniform readonly image2D currentFrame;
-layout(rgba16f, binding = 1) uniform image2D historyFrame;
-layout(rg16f, binding = 2) uniform readonly image2D velocityTexture;
-layout(r32f, binding = 3) uniform readonly image2D depthTexture;
+layout(rgba16f, binding = 1) uniform readonly image2D historyFrame;
+layout(rgba16f, binding = 2) uniform writeonly image2D outputFrame;
+layout(rg16f, binding = 3) uniform readonly image2D velocityTexture;
+layout(r32f, binding = 4) uniform readonly image2D depthTexture;
+layout(r32f, binding = 5) uniform readonly image2D prevDepthTexture;
 
 uniform int isTAA;
+uniform int historyValid;
+uniform int frameNumber;
+uniform int useBicubicSampling;
+uniform int usePostSharpening;
+uniform vec2 cameraJitter;
+uniform vec2 prevCameraJitter;
 
 
-// Store weight in w component
+
 vec4 AdjustHDRColor(vec3 color)
 {
-	float luminance = dot(color, vec3(0.299, 0.587, 0.114));
-	float luminanceWeight = 1.0 / (1.0 + luminance);
-	return vec4(color, 1.0) * luminanceWeight;
+
+	// float luminance = dot(color, vec3(0.299, 0.587, 0.114));
+	// float luminanceWeight = 1.0 / (1.0 + luminance);
+	// return vec4(color, 1.0) * luminanceWeight;
+
+	return vec4(mix(vec3(-10.0), log(color), step(vec3(0.0), color)), 1.0); // Guard against nan
+
+	// return vec4(color, 1.0); // For non-HDR, just return the color as is
+
 }
+
+
+vec2 GetVelocity(ivec2 uv)
+{
+	ivec2 texSize = imageSize(velocityTexture).xy;
+	float closestDepth = 100.0;
+	ivec2 closestUVOffset = ivec2(0);
+	for(int j = -2; j <= 2; ++j)
+	{
+		for(int i = -2; i <= 2; ++i)
+		{
+			
+			ivec2 uvOffset = ivec2(round(ivec2(i, j) / texSize));
+			
+			float neighborDepth = imageLoad(depthTexture, uv + uvOffset).r;
+			if(neighborDepth < closestDepth)
+			{
+				closestUVOffset = uvOffset;
+				closestDepth = neighborDepth;
+			}
+		}
+	}
+	return imageLoad(velocityTexture, uv + closestUVOffset).rg;
+}
+
 
 void main()
 {
-	vec3 result = vec3(0.0);
+	ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
+	ivec2 texSize = imageSize(currentFrame).xy;
+	
+	vec4 currentColor = AdjustHDRColor(imageLoad(currentFrame, uv).rgb);
 	if (isTAA == 1)
 	{
-		vec2 velocityUV = imageLoad(velocityTexture, ivec2(gl_GlobalInvocationID.xy)).xy;
-		vec2 reprojectedUV = (vec2(gl_GlobalInvocationID.xy) + 0.5) / vec2(imageSize(currentFrame)) + velocityUV;
-		reprojectedUV = clamp(reprojectedUV, vec2(0.0), vec2(1.0));
 
-		ivec2 reprojectedCoord = ivec2(reprojectedUV * vec2(imageSize(historyFrame)));
+		vec2 velocity = GetVelocity(uv);
+		// vec2 velocity = imageLoad(velocityTexture, uv).rg;	
+		ivec2 reprojectedUV = uv + ivec2(round(velocity));
+		vec4 previousColor = AdjustHDRColor(imageLoad(historyFrame, reprojectedUV).rgb);
 
-		
-		vec4 currentColor = imageLoad(currentFrame, ivec2(gl_GlobalInvocationID.xy));
-		currentColor = AdjustHDRColor(currentColor.rgb);
 
-		vec4 minColor = vec4(1000.0), maxColor = vec4(-1000.0);
-		
-		// Sample a 3x3 neighborhood to create a box in color space (antiflicker: add small bias to min/max)
+		vec4 minColor = vec4(9999.0), maxColor = vec4(-9999.0);
 		for(int x = -1; x <= 1; ++x)
 		{
 			for(int y = -1; y <= 1; ++y)
-			{
-				ivec2 neighborCoord = ivec2(gl_GlobalInvocationID.xy) + ivec2(x, y);
-				neighborCoord = clamp(neighborCoord, ivec2(0), imageSize(currentFrame) - ivec2(1));
-				vec4 color = imageLoad(currentFrame, neighborCoord);
-				color = AdjustHDRColor(color.rgb);
-				minColor = min(minColor, color); 
+			{	
+				vec4 color = imageLoad(currentFrame, uv + ivec2(x, y));
+				color = AdjustHDRColor(color.rgb); // Sample neighbor
+				minColor = min(minColor, color); // Take min and max
 				maxColor = max(maxColor, color);
 			}
 		}
-	
-		// Clamp previous color to min/max bounding box
-		vec4 previousColor = imageLoad(historyFrame, ivec2(gl_GlobalInvocationID.xy));
-		previousColor = AdjustHDRColor(previousColor.rgb);
-		vec4 previousColorClamped = clamp(previousColor, minColor, maxColor);
+
+		vec3 previousColorClamped = clamp(previousColor.rgb, minColor.rgb, maxColor.rgb);
 
 		float currentWeight = 0.1 * currentColor.a;
 		float previousWeight = 0.9 * previousColor.a;
 
-		// Normalize the blend to avoid darkening/brightening
-		result = (currentColor.rgb * currentWeight + previousColorClamped.rgb * previousWeight) / max(currentWeight + previousWeight, 1e-5);
+		vec3 outputColor = (currentColor.rgb * currentWeight + previousColorClamped.rgb * previousWeight);
+ 
+		// outputColor /= (currentWeight + previousWeight); // Normalize back. Note that this has no effect in the log case
+
+		outputColor = exp(outputColor); // Undo log transformation
+		// vec4 outputColor = mix(currentColor, previousColorClamped, 0.9);
+		imageStore(outputFrame, uv, vec4(outputColor, 1.0));
 	}
 	else
 	{
-		result = imageLoad(currentFrame, ivec2(gl_GlobalInvocationID.xy)).rgb;
+		currentColor = exp(currentColor);
+		imageStore(outputFrame, ivec2(gl_GlobalInvocationID.xy), vec4(currentColor.rgb, 1.0));
 	}
-		
-	imageStore(historyFrame, ivec2(gl_GlobalInvocationID.xy), vec4(result, 1.0));
 }

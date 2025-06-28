@@ -214,7 +214,7 @@ void UIManager::showViewport(float deltaTime)
 		ImGui::Image(passTex, debugQuadSize, uv0, uv1);
 		ImGui::EndChild();
 	}
-
+	
 	// G-Buffer debug view
 	if (m_gBuffer != nullptr) {
 
@@ -237,6 +237,9 @@ void UIManager::showViewport(float deltaTime)
 		}
 
 		ImGui::Image((ImTextureID)texToShow, debugQuadSize, uv0, uv1);
+		ImGui::SetCursorPos(ImVec2(10, 10));
+		ImGui::Text("G-Buffer Preview");
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "Buffer: %d", currentBuffer);
 		ImGui::EndChild();
 	}
 

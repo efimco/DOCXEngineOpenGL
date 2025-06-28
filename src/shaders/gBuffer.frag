@@ -94,16 +94,17 @@ Material getMaterial()
 void main()
 {
 	Material material = getMaterial();
-	gAlbedo = vec4(material.albedo);
+	gAlbedo = material.albedo;
 	gMetallic = material.metallic;
 	gRoughness = material.roughness;
 	gNormal = material.normal;
 	gPosition = fs_in.FragPos;
-	vec3 currentPosNDC = fs_in.currClipPos.xyz / fs_in.currClipPos.w;
-	vec3 previousPosNDC = fs_in.prevClipPos.xyz / fs_in.prevClipPos.w;
-	vec2 velocity = (currentPosNDC.xy - previousPosNDC.xy);
+	vec2 currentPosNDC = fs_in.currClipPos.xy / fs_in.currClipPos.w;
+	vec2 previousPosNDC = fs_in.prevClipPos.xy / fs_in.prevClipPos.w;
+	vec2 velocity = (currentPosNDC - previousPosNDC);
 	velocity = velocity * vec2(0.5, -0.5) + 0.5;
 	velocity -= jitter.xy;
 	velocity -= prevJitter.xy;
 	gVelocity = velocity;
+
 }

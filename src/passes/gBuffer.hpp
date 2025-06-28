@@ -19,6 +19,10 @@ public:
 
 	void draw(glm::mat4 projection, glm::mat4 view, float cameraDistance);
 	void createOrResize();
+	
+	// Get current jitter values for TAA
+	glm::vec2 getCurrentJitter() const;
+	glm::vec2 getPreviousJitter() const;
 
 private:
 	glm::mat4 m_prevView;

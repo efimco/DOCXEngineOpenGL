@@ -172,18 +172,15 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view, float cameraDistance)
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 
-	// in [-0.5, 0.5] range (fraction of a pixel)
-	float haltonX = 2 * Halton((jitterIndex % 8) + 1, 2) - 0.5f;
-	float haltonY = 2 * Halton((jitterIndex % 8) + 1, 3) - 0.5f;
+	float haltonX = 2.0f * Halton((jitterIndex % 8) + 1, 2) - 1.0f; // [-1, 1] range
+	float haltonY = 2.0f * Halton((jitterIndex % 8) + 1, 3) - 1.0f; // [-1, 1] range
 
-	jitter.x = haltonX / static_cast<float>(m_appConfig.renderWidth);
-	jitter.y = haltonY / static_cast<float>(m_appConfig.renderHeight);
-	float jitterScale = glm::clamp(cameraDistance * 0.1f, 0.01f, 1.0f);
-
-	jitter.x *= jitterScale;
-	jitter.y *= jitterScale;
-
-	projection = glm::translate(projection, glm::vec3(jitter.x * 2.0f, jitter.y * 2.0f, 0.0f));
+	jitter.x = haltonX * 0.5f / static_cast<float>(m_appConfig.renderWidth);
+	jitter.y = haltonY * 0.5f / static_cast<float>(m_appConfig.renderHeight);
+	jitter.x *=2.0f; // Scale to [-1, 1] range for jittering
+	jitter.y *=2.0f; // Scale to [-1, 1] range for jittering
+	
+	projection = glm::translate(projection, glm::vec3(jitter.x, jitter.y, 0.0f));
 
 	for (auto& primitive : SceneManager::getPrimitives())
 	{
@@ -221,6 +218,8 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view, float cameraDistance)
 		primitive->draw();
 	}
 	jitterIndex++;
+	
+	// Store previous matrices for next frame
 	m_prevProjection = projection;
 	m_prevView = view;
 	prevJitter = jitter;
@@ -228,5 +227,14 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view, float cameraDistance)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
 	glPopDebugGroup();
+}
 
+glm::vec2 GBuffer::getCurrentJitter() const
+{
+	return jitter;
+}
+
+glm::vec2 GBuffer::getPreviousJitter() const
+{
+	return prevJitter;
 }

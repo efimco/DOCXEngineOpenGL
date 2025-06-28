@@ -43,8 +43,6 @@ void PostProcessPass::draw(uint32_t prePostProcessTexture, uint32_t cubemap, uin
 	glBindImageTexture(0, prePostProcessTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
 	glBindImageTexture(1, m_postProcessedTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 
-	glBindImageTexture(2, cubemap, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
-	glBindImageTexture(3, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
 
 	m_postProcessShader->setFloat("nearPlane", m_appConfig.nearPlane);
 	m_postProcessShader->setFloat("farPlane", m_appConfig.farPlane);

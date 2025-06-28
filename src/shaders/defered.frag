@@ -107,10 +107,12 @@ void main()
 
 	vec3 result = calculateIBL(gBuffer, F0);
 
+	vec3 background = texture(envCubemap, TexCoords).rgb;
+
 	FragColor = vec4(result, gBuffer.albedoAlpha);
 	if (gBuffer.depth >= 1.0)
 	{
-		FragColor = vec4(vec3(0), 0.0);
+		FragColor = vec4(background, 1.0);
 	}
 
 	int outlineWidth = 2;
