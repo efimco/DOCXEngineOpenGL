@@ -52,6 +52,13 @@ void TAAPass::createOrResize()
 	glTextureParameteri(m_prevDepth, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_prevDepth, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+	glCreateTextures(GL_TEXTURE_2D, 1, &m_prevVelocity);
+	glTextureStorage2D(m_prevVelocity, 1, GL_RG16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
+	glTextureParameteri(m_prevVelocity, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTextureParameteri(m_prevVelocity, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(m_prevVelocity, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(m_prevVelocity, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
 	m_frameNumber = 0;
 	m_historyValid = false;
 	m_pingPong = false;
@@ -65,29 +72,42 @@ void TAAPass::draw()
 	// read and write textures for ping-pong
 	uint32_t readTexture = m_pingPong ? history1 : history0;
 	uint32_t writeTexture = m_pingPong ? history0 : history1;
-
-	glBindImageTexture(0, m_current, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
-	glBindImageTexture(1, readTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA16F);
+	glBindTextureUnit(0, m_current);
+	glBindTextureUnit(1, readTexture);
 	glBindImageTexture(2, writeTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
-	glBindImageTexture(3, m_velocity, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RG16F);
-	glBindImageTexture(4, m_depth, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
-	glBindImageTexture(5, m_prevDepth, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+	glBindTextureUnit(3, m_velocity);
+	glBindTextureUnit(4, m_prevVelocity);
+	glBindTextureUnit(5, m_depth);
+	glBindTextureUnit(6, m_prevDepth);
+
+	glm::vec4 resolution(
+		static_cast<float>(m_appConfig.renderWidth),
+		static_cast<float>(m_appConfig.renderHeight),
+		1.0f / static_cast<float>(m_appConfig.renderWidth),
+		1.0f / static_cast<float>(m_appConfig.renderHeight)
+	);
+
 
 	m_TAAShader->setInt("isTAA", m_appConfig.isTAA ? 1 : 0);
-	m_TAAShader->setInt("historyValid", m_historyValid ? 1 : 0);
 	m_TAAShader->setInt("frameNumber", m_frameNumber);
-	m_TAAShader->setInt("useBicubicSampling", 1); // Enable Catmull-Rom sampling for sharper results
-	m_TAAShader->setInt("usePostSharpening", 1);  // Enable post-TAA sharpening
 	m_TAAShader->setVec2("cameraJitter", m_currentJitter);
 	m_TAAShader->setVec2("prevCameraJitter", m_prevJitter);
+	m_TAAShader->setVec4("resolution", resolution);
+
+	m_TAAShader->setFloat("nearPlane", m_appConfig.nearPlane);
+	m_TAAShader->setFloat("farPlane", m_appConfig.farPlane);
 
 	glDispatchCompute((m_appConfig.renderWidth + 15) / 16, (m_appConfig.renderHeight + 7) / 8, 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
 	// сopy current depth to previous depth 
 	glCopyImageSubData(m_depth, GL_TEXTURE_2D, 0, 0, 0, 0,
-					   m_prevDepth, GL_TEXTURE_2D, 0, 0, 0, 0,
-					   m_appConfig.renderWidth, m_appConfig.renderHeight, 1);
+		m_prevDepth, GL_TEXTURE_2D, 0, 0, 0, 0,
+		m_appConfig.renderWidth, m_appConfig.renderHeight, 1);
+
+	glCopyImageSubData(m_velocity, GL_TEXTURE_2D, 0, 0, 0, 0,
+		m_prevVelocity, GL_TEXTURE_2D, 0, 0, 0, 0,
+		m_appConfig.renderWidth, m_appConfig.renderHeight, 1);
 
 	// Flip ping-pong state
 	m_pingPong = !m_pingPong;

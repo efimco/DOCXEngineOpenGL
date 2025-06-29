@@ -20,6 +20,7 @@ public:
 private:
 	uint32_t m_current;
 	uint32_t m_velocity;
+	uint32_t m_prevVelocity;
 	uint32_t m_depth;
 	uint32_t m_prevDepth;
 	uint32_t m_frameNumber;

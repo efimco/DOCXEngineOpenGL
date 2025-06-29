@@ -39,11 +39,25 @@ vec3 aces(vec3 color)
 	return color * (2.51 * color + 0.03) / (color * (2.43 * color + 0.59) + 0.14);
 }
 
+vec3 agx(vec3 color)
+{
+	float a = 0.6;
+	float b = 0.4;
+	float c = 0.3;
+	float d = 0.2;
+	float e = 0.1;
+
+	vec3 agx = (color * (a * color + b) + c) / (color * (d * color + e) + 1.0);
+	return agx;
+}
+
 void main()
 {
 	vec3 color = imageLoad(currentFrame, ivec2(gl_GlobalInvocationID.xy)).rgb;
+	
 	color = reinhard(color); // reinhard, uncharted, or aces
 	color = vec3(linear_rgb_to_srgb(color.r), linear_rgb_to_srgb(color.g), linear_rgb_to_srgb(color.b));
+	
 
 	imageStore(postProcessOutput, ivec2(gl_GlobalInvocationID.xy), vec4(color, 1.0));
 }

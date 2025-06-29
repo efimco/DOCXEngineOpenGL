@@ -419,8 +419,8 @@ void UIManager::showTools()
 
 	ImGui::SliderFloat("FOV", &camera.zoom, 1.f, 100.f, "%.3f");
 	ImGui::SliderFloat("Gamma", &m_appConfig.gamma, 0.01f, 5);
-	ImGui::SliderFloat("Near plane", &m_appConfig.nearPlane, -10.0f, 10.f, "%.6f");
-	ImGui::SliderFloat("Far plane", &m_appConfig.farPlane, -10.0f, 10.f);
+	ImGui::InputFloat("Near plane", &m_appConfig.nearPlane);
+	ImGui::InputFloat("Far plane", &m_appConfig.farPlane);
 	ImGui::Checkbox("Wireframe Mode", &m_appConfig.isWireframe);
 	ImGui::SliderFloat("CubeMap intensity", &m_appConfig.irradianceMapIntensity, 0.0f, 3.0f);
 	ImGui::SliderFloat("CubeMap Rotatation Y", &m_appConfig.irradianceMapRotationY, -180.0f, 180.0f);

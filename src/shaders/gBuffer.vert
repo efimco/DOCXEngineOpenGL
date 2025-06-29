@@ -31,7 +31,6 @@ void main()
 	vs_out.Normal = transpose(inverse(mat3(model))) * aNormal;
 	vs_out.TexCoords = aTexCoords;
 
-	// Current and previous clip-space positions
 	vs_out.currClipPos = projection * view * worldPos;
 	vs_out.prevClipPos = prevProjection * prevView * prevWorldPos;
 

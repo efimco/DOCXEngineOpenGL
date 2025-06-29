@@ -14,7 +14,7 @@ struct AppConfig
 	// Rendering
 	float clearColor[4] = { 0.133f, 0.192f, 0.265f, 1.0f };
 	float gamma = 1.0f;
-	float nearPlane = 0.01f;
+	float nearPlane = 1.0f;
 	float farPlane = 10000.0f;
 	float exposure = 0.1f;
 	uint32_t polygonMode = 0x1B02; // #define GL_FILL 0x1B02

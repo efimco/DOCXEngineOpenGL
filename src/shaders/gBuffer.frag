@@ -99,12 +99,11 @@ void main()
 	gRoughness = material.roughness;
 	gNormal = material.normal;
 	gPosition = fs_in.FragPos;
-	vec2 currentPosNDC = fs_in.currClipPos.xy / fs_in.currClipPos.w;
-	vec2 previousPosNDC = fs_in.prevClipPos.xy / fs_in.prevClipPos.w;
-	vec2 velocity = (currentPosNDC - previousPosNDC);
-	velocity = velocity * vec2(0.5, -0.5) + 0.5;
-	velocity -= jitter.xy;
-	velocity -= prevJitter.xy;
+	vec2 currentPosNDC = (fs_in.currClipPos.xy / fs_in.currClipPos.w); //[-1, 1]
+	vec2 previousPosNDC = (fs_in.prevClipPos.xy / fs_in.prevClipPos.w);
+	vec2 velocity = (previousPosNDC - currentPosNDC);
+	velocity -= jitter - prevJitter; // Adjust velocity by jitter and previous jitter
+
 	gVelocity = velocity;
 
 }

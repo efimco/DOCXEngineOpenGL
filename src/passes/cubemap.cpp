@@ -165,7 +165,7 @@ void Cubemap::createIrradianceMap()
 	glTextureParameteri(irradianceMap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-const uint32_t maxMipLevels = 5;
+const uint32_t maxMipLevels = 6;
 
 void Cubemap::createSpecularMap()
 {

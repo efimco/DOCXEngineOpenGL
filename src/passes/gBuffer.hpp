@@ -23,8 +23,11 @@ public:
 	// Get current jitter values for TAA
 	glm::vec2 getCurrentJitter() const;
 	glm::vec2 getPreviousJitter() const;
+	void setJitter(glm::vec2 jitter);
 
 private:
+	glm::vec2 m_jitter;
+	glm::vec2 m_prevJitter;
 	glm::mat4 m_prevView;
 	glm::mat4 m_prevProjection;
 	AppConfig& m_appConfig;

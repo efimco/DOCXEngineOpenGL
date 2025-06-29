@@ -7,11 +7,6 @@
 #include <iostream>
 
 
-static uint32_t jitterIndex = 0;
-static glm::vec2 jitter;
-static glm::vec2 prevJitter;
-
-
 GBuffer::GBuffer() : m_appConfig(AppConfig::get())
 {
 	m_gBufferFBO = 0;
@@ -31,6 +26,8 @@ GBuffer::GBuffer() : m_appConfig(AppConfig::get())
 
 	m_prevView = glm::mat4(1);
 	m_prevProjection = glm::mat4(1);
+	m_jitter = glm::vec2(0.0f);
+	m_prevJitter = glm::vec2(0.0f);
 }
 
 
@@ -144,21 +141,6 @@ void GBuffer::createOrResize()
 	}
 }
 
-float Halton(uint32_t i, uint32_t b)
-{
-	float f = 1.0f;
-	float r = 0.0f;
-
-	while (i > 0)
-	{
-		f /= static_cast<float>(b);
-		r = r + f * static_cast<float>(i % b);
-		i = static_cast<uint32_t>(floorf(static_cast<float>(i) / static_cast<float>(b)));
-	}
-
-	return r;
-}
-
 void GBuffer::draw(glm::mat4 projection, glm::mat4 view, float cameraDistance)
 {
 
@@ -171,25 +153,11 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view, float cameraDistance)
 	glViewport(0, 0, m_appConfig.renderWidth, m_appConfig.renderHeight);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-
-	float haltonX = 2.0f * Halton((jitterIndex % 8) + 1, 2) - 1.0f; // [-1, 1] range
-	float haltonY = 2.0f * Halton((jitterIndex % 8) + 1, 3) - 1.0f; // [-1, 1] range
-
-	jitter.x = haltonX * 0.5f / static_cast<float>(m_appConfig.renderWidth);
-	jitter.y = haltonY * 0.5f / static_cast<float>(m_appConfig.renderHeight);
-	jitter.x *=2.0f; // Scale to [-1, 1] range for jittering
-	jitter.y *=2.0f; // Scale to [-1, 1] range for jittering
-	
-	projection = glm::translate(projection, glm::vec3(jitter.x, jitter.y, 0.0f));
-
 	for (auto& primitive : SceneManager::getPrimitives())
 	{
-		const bool hasDiffuse =
-			primitive->material && primitive->material->tDiffuse && !primitive->material->tDiffuse->path.empty();
-		const bool hasSpecular =
-			primitive->material && primitive->material->tSpecular && !primitive->material->tSpecular->path.empty();
-		const bool hasNormal =
-			primitive->material && primitive->material->tNormal && !primitive->material->tNormal->path.empty();
+		const bool hasDiffuse = primitive->material && primitive->material->tDiffuse && !primitive->material->tDiffuse->path.empty();
+		const bool hasSpecular = primitive->material && primitive->material->tSpecular && !primitive->material->tSpecular->path.empty();
+		const bool hasNormal = primitive->material && primitive->material->tNormal && !primitive->material->tNormal->path.empty();
 
 		m_gBufferShader->use();
 
@@ -212,29 +180,33 @@ void GBuffer::draw(glm::mat4 projection, glm::mat4 view, float cameraDistance)
 		m_gBufferShader->setFloat("ufMetallic", primitive->material->metallic);
 		m_gBufferShader->setVec3("uvAlbedo", primitive->material->albedo);
 
-		m_gBufferShader->setVec2("jitter", jitter);
-		m_gBufferShader->setVec2("prevJitter", prevJitter);
+		m_gBufferShader->setVec2("jitter", m_jitter);
+		m_gBufferShader->setVec2("prevJitter", m_prevJitter);
 
 		primitive->draw();
 	}
-	jitterIndex++;
-	
+
 	// Store previous matrices for next frame
 	m_prevProjection = projection;
 	m_prevView = view;
-	prevJitter = jitter;
+	m_prevJitter = m_jitter;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDisable(GL_DEPTH_TEST);
 	glPopDebugGroup();
 }
 
+void GBuffer::setJitter(glm::vec2 jitter)
+{
+	m_jitter = jitter;
+}
+
 glm::vec2 GBuffer::getCurrentJitter() const
 {
-	return jitter;
+	return m_jitter;
 }
 
 glm::vec2 GBuffer::getPreviousJitter() const
 {
-	return prevJitter;
+	return m_prevJitter;
 }

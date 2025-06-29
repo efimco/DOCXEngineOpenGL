@@ -115,25 +115,26 @@ void main()
 		FragColor = vec4(background, 1.0);
 	}
 
-	int outlineWidth = 2;
-	vec4 outline = vec4(0);
-
 	int pickingColor = texture(pickingTexture, TexCoords).r;
-	vec2 pixelSize = 1.0 / textureSize(pickingTexture, 0);
-
+	
 	if(selectedPrimitives[pickingColor] == 1)
 	{
-	for(int i = - outlineWidth; i <= + outlineWidth; i ++)
-	{
-		for(int j = - outlineWidth; j <= + outlineWidth; j ++)
+		const int outlineWidth = 2;
+		vec2 pixelSize = 1.0 / textureSize(pickingTexture, 0);
+		
+		// Check outline with early exit
+		for(int i = -outlineWidth; i <= outlineWidth && FragColor.rgb != vec3(1.0, 0.5, 0.0); i++)
 		{
-			vec2 offset = vec2(i, j) * pixelSize;
-			if(texture(pickingTexture, TexCoords + offset).r != pickingColor)
+			for(int j = -outlineWidth; j <= outlineWidth; j++)
 			{
-				FragColor = vec4(1.0, 0.5, 0.0, 1.0);
+				vec2 offset = vec2(i, j) * pixelSize;
+				if(texture(pickingTexture, TexCoords + offset).r != pickingColor)
+				{
+					FragColor = vec4(1.0, 0.5, 0.0, 1.0);
+					break;
+				}
 			}
 		}
 	}
 }
 
-}
