@@ -94,8 +94,8 @@ void Renderer::checkFrameBuferSize()
 	}
 }
 
-static glm::vec2 jitter;
-static int jitterIndex = 0;
+glm::vec2 jitter;
+int jitterIndex = 0;
 float halton(int32_t index, int32_t base)
 {
 	float f = 1.0f, result = 0.0f;
@@ -135,13 +135,13 @@ void Renderer::render(GLFWwindow* window)
 			m_cubemap = new Cubemap(m_camera, m_appConfig.cubeMapPath);
 			m_appConfig.reloadCubeMap = false;
 		}
-
+		const int accumulationLimit = 32;
 		if (m_appConfig.isTAA)
 		{
-			const float basePhaseCount = 1024.0f;
+			const float basePhaseCount = float(accumulationLimit);
 			int denominator = (m_appConfig.renderWidth == 0 ? 1 : m_appConfig.renderWidth);
-			const int32_t jitterPhaseCount = int32_t(basePhaseCount * pow((float(m_appConfig.windowWidth) / denominator), 2.0f));
-
+			int32_t jitterPhaseCount = int32_t(basePhaseCount * pow((float(m_appConfig.windowWidth) / denominator), 2.0f));
+			jitterPhaseCount = (jitterPhaseCount == 0.0f ? 1.0f : jitterPhaseCount);
 			const float x = halton((jitterIndex % jitterPhaseCount) + 1, 2) - 0.5f;
 			const float y = halton((jitterIndex % jitterPhaseCount) + 1, 3) - 0.5f;
 			jitterIndex++;
@@ -165,6 +165,8 @@ void Renderer::render(GLFWwindow* window)
 		m_gBufferPass->draw(m_projection, m_view, m_camera.distanceToOrbitPivot);
 		m_deferedPass->draw(m_fullFrameQuadVAO, m_gBufferPass, m_cubemap, m_shadowMap, m_pickingPass);
 		m_TAAPass->setCurrrentTexture(m_deferedPass->deferedTexture);
+		m_TAAPass->setAccumulationLimit(accumulationLimit);
+		m_TAAPass->setCurrentFrameNumber(jitterIndex);
 		m_TAAPass->setVelocityTexture(m_gBufferPass->tVelocity);
 		m_TAAPass->setDepthTexture(m_gBufferPass->tDepth);
 		m_TAAPass->setJitterValues(m_gBufferPass->getCurrentJitter(), m_gBufferPass->getPreviousJitter());
@@ -178,8 +180,9 @@ void Renderer::render(GLFWwindow* window)
 		m_uiManager->setPickingTexture(m_pickingPass->pickingTexture);
 		m_uiManager->setGBuffer(m_gBufferPass);
 		m_uiManager->draw(m_deltaTime);
-
+		m_inputManager->setFrameCounterPointer(&jitterIndex);
 		m_inputManager->processInput(m_deltaTime, viewportState, m_pickingPass->pickingTexture);
+		
 		glfwSwapBuffers(window);
 	}
 }

@@ -12,11 +12,35 @@ layout(binding = 6) uniform sampler2D prevDepthTexture;
 
 uniform int isTAA;
 uniform int frameNumber;
+uniform int accumulationLimit; 
 uniform vec4 resolution; // x: width, y: height, z: 1/width, w: 1/height
 uniform vec2 cameraJitter;
 uniform vec2 prevCameraJitter;
 uniform float nearPlane;
 uniform float farPlane;
+
+
+
+// Helper functions for YCoCg conversion
+vec3 rgb2ycocg(vec3 rgb) {
+	float Y = dot(rgb, vec3(0.25, 0.5, 0.25));
+	float Co = dot(rgb, vec3(0.5, 0.0, -0.5));
+	float Cg = dot(rgb, vec3(-0.25, 0.5, -0.25));
+	return vec3(Y, Co, Cg);
+}
+
+vec3 ycocg2rgb(vec3 ycocg) {
+	float Y = ycocg.x;
+	float Co = ycocg.y;
+	float Cg = ycocg.z;
+	float R = Y + Co - Cg;
+	float G = Y + Cg;
+	float B = Y - Co - Cg;
+	return vec3(R, G, B);
+}
+
+
+
 
 void main()
 {
@@ -30,76 +54,52 @@ void main()
 		return;
 	}
 
-	//just use current frame  to establish history For the first few frames
-	if (frameNumber < 180)
-	{
-		imageStore(outputFrame, st, vec4(currentColorSample, 1.0));
-		return;
-	}
+	vec2 velocity = texture(velocityTexture, uv).rg;
+	float velocityMagnitude = length(velocity);
 
-	
-	vec2 maxVelocity = texture(velocityTexture, uv).rg;
-	float maxVelocityMagnitude = length(maxVelocity);
 
-	for(int x = -1; x <= 1; ++x)
-	{
-		for(int y = -1; y <= 1; ++y)
-		{
-			vec2 neighborUV = uv + vec2(x, y) * resolution.zw;
-			vec2 neighborVelocity = texture(velocityTexture, neighborUV).rg;
-			float neighborMagnitude = length(neighborVelocity);
-			
-			if(neighborMagnitude > maxVelocityMagnitude)
-			{
-				// maxVelocity = neighborVelocity;
-				maxVelocityMagnitude = neighborMagnitude;
-			}
-		}
-	}
-
-	vec2 reprojectedUV = uv; 
-
+	vec2 reprojectedUV = uv;
 	vec3 historyColorSample = texture(historyFrame, reprojectedUV).rgb;
 		
-	if (maxVelocityMagnitude > 0.01) // Large motion, potentially a camera cut
+	if (velocityMagnitude > 0.005) // Large motion, potentially a camera cut
 	{
 		imageStore(outputFrame, st, vec4(currentColorSample, 1.0));
 		return;	
 	}
 
-	
-	// if reprojection is within bounds
-	if ( any(lessThan(reprojectedUV, vec2(0.0))) || any(greaterThan(reprojectedUV, vec2(1.0))) )
-	{
-		imageStore(outputFrame, st, vec4(currentColorSample, 1.0));
-		return;
-	}
-
 	vec3 minColor = vec3(9999.0), maxColor = vec3(-9999.0);
 
-	// neighborhood bounding box
+	// Convert current sample to YCoCg for better temporal stability
+	vec3 currentYCoCg = rgb2ycocg(currentColorSample);
+
+	// neighborhood bounding box in YCoCg space
 	for(int x = -1; x <= 1; ++x)
 	{
 		for(int y = -1; y <= 1; ++y)
 		{	
 			vec2 neighborUV = uv + vec2(x, y) * resolution.zw; 
 			vec3 color = texture(currentFrame, neighborUV).rgb;
-			minColor = min(minColor, color); 
-			maxColor = max(maxColor, color);
+			vec3 colorYCoCg = rgb2ycocg(color);
+			minColor = min(minColor, colorYCoCg); 
+			maxColor = max(maxColor, colorYCoCg);
 		}
 	}
 
-	// historyColorSample = clamp(historyColorSample, minColor, maxColor);
-	
+	// Convert history to YCoCg and clamp
+	vec3 historyYCoCg = rgb2ycocg(historyColorSample);
+	historyYCoCg = clamp(historyYCoCg, minColor, maxColor);
+	historyColorSample = ycocg2rgb(historyYCoCg);
 
-	vec3 colorVariance = maxColor - minColor;
-	float variance = dot(colorVariance, vec3(1.0)) / 3.0; // average variance across RGB channels
-	
-	// if variance is high - more of current frame usage
-	float blendFactor = mix(0.01, 0.1, smoothstep(0.001, 0.01, variance));
 
-	vec3 outputColor = currentColorSample * blendFactor + historyColorSample * (1.0 - blendFactor);
-	outputColor = mix(historyColorSample, currentColorSample, 0.1); 
+
+	vec3 outputColor = mix(historyColorSample, currentColorSample, .1); 
+	
 	
 	imageStore(outputFrame, st, vec4(outputColor, 1.0));
+	
+	if (frameNumber >= accumulationLimit)
+    {
+        imageStore(outputFrame, st, vec4(historyColorSample, 1.0));
+        return;
+    }
 }

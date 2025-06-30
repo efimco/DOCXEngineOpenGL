@@ -28,6 +28,11 @@ void InputManager::processInput(float deltaTime, ViewportState viewportState, ui
     deleteObjectCallback();
 }
 
+void InputManager::setFrameCounterPointer(int* frameCounter)
+{
+    m_frameCounter = frameCounter;
+}
+
 void InputManager::cameraFocusCallback()
 {
     if (ImGui::IsKeyPressed(ImGuiKey_F, false))
@@ -130,11 +135,13 @@ void InputManager::cameraMovementCallback(GLFWwindow* window, float deltaTime, V
 
     if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && ImGui::IsMouseDown(ImGuiMouseButton_Middle) && viewportState.isHovered)
     {
+        *m_frameCounter = 0;
         camera.processPanning(xOffset, yOffset, glm::vec2(viewportState.size.x, viewportState.size.y));
     }
 
     if (ImGui::IsMouseDown(ImGuiMouseButton_Middle) && !ImGui::IsKeyDown(ImGuiKey_LeftShift) && viewportState.isHovered)
     {
+        *m_frameCounter = 0;
         camera.processOrbit(xOffset, yOffset);
     }
 }

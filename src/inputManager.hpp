@@ -13,6 +13,7 @@ public:
 	~InputManager() = default;
 
 	void processInput(float deltaTime, ViewportState viewportState, uint32_t pickingTexture);
+	void setFrameCounterPointer(int* frameCounter);
 
 private:
 	AppConfig& m_appConfig;
@@ -24,7 +25,8 @@ private:
 	bool firstMouse;
 	double mousePosx;
 	double mousePosy;
-
+	int* m_frameCounter;
+	
 	void scrollCallback(ViewportState viewportState);
 	void cameraFocusCallback();
 	void deleteObjectCallback();

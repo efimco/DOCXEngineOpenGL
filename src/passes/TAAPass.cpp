@@ -9,11 +9,6 @@ TAAPass::TAAPass() : m_appConfig(AppConfig::get())
 	const std::string computeShaderPath = std::filesystem::absolute("..\\..\\src\\shaders\\TAA.comp").string();
 	m_TAAShader = new Shader(computeShaderPath);
 	SceneManager::addShader(m_TAAShader);
-	history0 = 0;
-	history1 = 0;
-	m_current = 0;
-	m_prevDepth = 0;
-	m_frameNumber = 0;
 	m_historyValid = false;
 	m_pingPong = false;
 	m_currentJitter = glm::vec2(0.0f);
@@ -90,10 +85,10 @@ void TAAPass::draw()
 
 	m_TAAShader->setInt("isTAA", m_appConfig.isTAA ? 1 : 0);
 	m_TAAShader->setInt("frameNumber", m_frameNumber);
+	m_TAAShader->setInt("accumulationLimit", m_accumulationLimit);
 	m_TAAShader->setVec2("cameraJitter", m_currentJitter);
 	m_TAAShader->setVec2("prevCameraJitter", m_prevJitter);
 	m_TAAShader->setVec4("resolution", resolution);
-
 	m_TAAShader->setFloat("nearPlane", m_appConfig.nearPlane);
 	m_TAAShader->setFloat("farPlane", m_appConfig.farPlane);
 
@@ -135,6 +130,16 @@ void TAAPass::setVelocityTexture(uint32_t velocityTexture)
 void TAAPass::setDepthTexture(uint32_t depthTexture)
 {
 	m_depth = depthTexture;
+}
+
+void TAAPass::setAccumulationLimit(uint32_t accumulationLimit)
+{
+	m_accumulationLimit = accumulationLimit;
+}
+
+void TAAPass::setCurrentFrameNumber(uint32_t frameNumber)
+{
+	m_frameNumber = frameNumber;
 }
 
 void TAAPass::setJitterValues(glm::vec2 currentJitter, glm::vec2 prevJitter)

@@ -10,6 +10,8 @@ public:
 	void setCurrrentTexture(uint32_t curentTexture);
 	void setVelocityTexture(uint32_t velocityTexture);
 	void setDepthTexture(uint32_t depthTexture);
+	void setAccumulationLimit(uint32_t accumulationLimit);
+	void setCurrentFrameNumber(uint32_t frameNumber);
 	void setJitterValues(glm::vec2 currentJitter, glm::vec2 prevJitter);
 	uint32_t getCurrentOutput();
 	
@@ -24,6 +26,7 @@ private:
 	uint32_t m_depth;
 	uint32_t m_prevDepth;
 	uint32_t m_frameNumber;
+	uint32_t m_accumulationLimit;
 	bool m_historyValid;
 	bool m_pingPong; // false = write to history0, true = write to history1
 	glm::vec2 m_currentJitter;
