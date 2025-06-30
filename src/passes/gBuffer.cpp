@@ -40,8 +40,8 @@ void GBuffer::initTextures()
 	glTextureParameteri(tAlbedo, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tAlbedo, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tAlbedo, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(tAlbedo, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(tAlbedo, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(tAlbedo, GL_TEXTURE_MIN_FILTER, GL_POINT);
+	glTextureParameteri(tAlbedo, GL_TEXTURE_MAG_FILTER, GL_POINT);
 
 	//Metallic
 	glCreateTextures(GL_TEXTURE_2D, 1, &tMetallic);
@@ -49,8 +49,8 @@ void GBuffer::initTextures()
 	glTextureParameteri(tMetallic, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tMetallic, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tMetallic, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(tMetallic, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(tMetallic, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(tMetallic, GL_TEXTURE_MIN_FILTER, GL_POINT);
+	glTextureParameteri(tMetallic, GL_TEXTURE_MAG_FILTER, GL_POINT);
 
 	//Roughness
 	glCreateTextures(GL_TEXTURE_2D, 1, &tRoughness);
@@ -58,8 +58,8 @@ void GBuffer::initTextures()
 	glTextureParameteri(tRoughness, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tRoughness, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tRoughness, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(tRoughness, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(tRoughness, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(tRoughness, GL_TEXTURE_MIN_FILTER, GL_POINT);
+	glTextureParameteri(tRoughness, GL_TEXTURE_MAG_FILTER, GL_POINT);
 
 	//Normal
 	glCreateTextures(GL_TEXTURE_2D, 1, &tNormal);
@@ -67,8 +67,8 @@ void GBuffer::initTextures()
 	glTextureParameteri(tNormal, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tNormal, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tNormal, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(tNormal, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(tNormal, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(tNormal, GL_TEXTURE_MIN_FILTER, GL_POINT);
+	glTextureParameteri(tNormal, GL_TEXTURE_MAG_FILTER, GL_POINT);
 
 	//tPosition
 	glCreateTextures(GL_TEXTURE_2D, 1, &tPosition);
@@ -76,8 +76,8 @@ void GBuffer::initTextures()
 	glTextureParameteri(tPosition, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tPosition, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tPosition, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(tPosition, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(tPosition, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(tPosition, GL_TEXTURE_MIN_FILTER, GL_POINT);
+	glTextureParameteri(tPosition, GL_TEXTURE_MAG_FILTER, GL_POINT);
 
 	//Depth
 	glCreateTextures(GL_TEXTURE_2D, 1, &tDepth);
@@ -85,8 +85,8 @@ void GBuffer::initTextures()
 	glTextureParameteri(tDepth, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tDepth, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tDepth, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(tDepth, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(tDepth, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(tDepth, GL_TEXTURE_MIN_FILTER, GL_POINT);
+	glTextureParameteri(tDepth, GL_TEXTURE_MAG_FILTER, GL_POINT);
 
 	//Velocity
 	glCreateTextures(GL_TEXTURE_2D, 1, &tVelocity);
@@ -94,8 +94,8 @@ void GBuffer::initTextures()
 	glTextureParameteri(tVelocity, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tVelocity, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(tVelocity, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTextureParameteri(tVelocity, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(tVelocity, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(tVelocity, GL_TEXTURE_MIN_FILTER, GL_POINT);
+	glTextureParameteri(tVelocity, GL_TEXTURE_MAG_FILTER, GL_POINT);
 
 }
 

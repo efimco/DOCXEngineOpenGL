@@ -21,7 +21,7 @@ uniform float farPlane;
 void main()
 {
 	ivec2 st = ivec2(gl_GlobalInvocationID.xy);
-	vec2 uv = (vec2(st) + 0.5) / resolution.xy; // cuz we need to sample at the center of the pixel
+	vec2 uv = (vec2(st) + vec2(0.5)) / resolution.xy; // cuz we need to sample at the center of the pixel
 	vec3 currentColorSample = texture(currentFrame, uv).rgb;
 	
 	if (isTAA == 0)
@@ -51,17 +51,17 @@ void main()
 			
 			if(neighborMagnitude > maxVelocityMagnitude)
 			{
-				maxVelocity = neighborVelocity;
+				// maxVelocity = neighborVelocity;
 				maxVelocityMagnitude = neighborMagnitude;
 			}
 		}
 	}
 
-	vec2 reprojectedUV = uv + maxVelocity; 
+	vec2 reprojectedUV = uv; 
 
 	vec3 historyColorSample = texture(historyFrame, reprojectedUV).rgb;
 		
-	if (maxVelocityMagnitude > 0.1) // Large motion, potentially a camera cut
+	if (maxVelocityMagnitude > 0.01) // Large motion, potentially a camera cut
 	{
 		imageStore(outputFrame, st, vec4(currentColorSample, 1.0));
 		return;	
@@ -89,7 +89,7 @@ void main()
 		}
 	}
 
-	historyColorSample = clamp(historyColorSample, minColor, maxColor);
+	// historyColorSample = clamp(historyColorSample, minColor, maxColor);
 	
 
 	vec3 colorVariance = maxColor - minColor;
@@ -99,6 +99,7 @@ void main()
 	float blendFactor = mix(0.01, 0.1, smoothstep(0.001, 0.01, variance));
 
 	vec3 outputColor = currentColorSample * blendFactor + historyColorSample * (1.0 - blendFactor);
+	outputColor = mix(historyColorSample, currentColorSample, 0.1); 
 	
 	imageStore(outputFrame, st, vec4(outputColor, 1.0));
 }

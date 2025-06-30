@@ -166,7 +166,7 @@ void UIManager::showViewport(float deltaTime)
 	m_viewportState.size = m_vpSize;
 	ImVec2 origin = ImGui::GetCursorScreenPos();
 
-	if ((m_appConfig.renderWidth != (int)m_vpSize.x) || (m_appConfig.renderHeight != (int)m_vpSize.y))
+	if (glm::abs(m_appConfig.renderWidth - (int)m_vpSize.x) >=2 || glm::abs(m_appConfig.renderHeight - (int)m_vpSize.y) >=2)
 	{
 		viewportSizeSetteled = false;
 	}

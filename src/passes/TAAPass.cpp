@@ -32,30 +32,30 @@ void TAAPass::createOrResize()
 	// ping-pong history textures
 	glCreateTextures(GL_TEXTURE_2D, 1, &history0);
 	glTextureStorage2D(history0, 1, GL_RGBA16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
-	glTextureParameteri(history0, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTextureParameteri(history0, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTextureParameteri(history0, GL_TEXTURE_MIN_FILTER, GL_POINT);
+	glTextureParameteri(history0, GL_TEXTURE_MAG_FILTER, GL_POINT);
 	glTextureParameteri(history0, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(history0, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &history1);
 	glTextureStorage2D(history1, 1, GL_RGBA16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
-	glTextureParameteri(history1, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTextureParameteri(history1, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTextureParameteri(history1, GL_TEXTURE_MIN_FILTER, GL_POINT);
+	glTextureParameteri(history1, GL_TEXTURE_MAG_FILTER, GL_POINT);
 	glTextureParameteri(history1, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(history1, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	// previous depth texture for depth rejection
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_prevDepth);
 	glTextureStorage2D(m_prevDepth, 1, GL_R32F, m_appConfig.renderWidth, m_appConfig.renderHeight);
-	glTextureParameteri(m_prevDepth, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(m_prevDepth, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(m_prevDepth, GL_TEXTURE_MIN_FILTER, GL_POINT);
+	glTextureParameteri(m_prevDepth, GL_TEXTURE_MAG_FILTER, GL_POINT);
 	glTextureParameteri(m_prevDepth, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_prevDepth, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_prevVelocity);
 	glTextureStorage2D(m_prevVelocity, 1, GL_RG16F, m_appConfig.renderWidth, m_appConfig.renderHeight);
-	glTextureParameteri(m_prevVelocity, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(m_prevVelocity, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(m_prevVelocity, GL_TEXTURE_MIN_FILTER, GL_POINT);
+	glTextureParameteri(m_prevVelocity, GL_TEXTURE_MAG_FILTER, GL_POINT);
 	glTextureParameteri(m_prevVelocity, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(m_prevVelocity, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
