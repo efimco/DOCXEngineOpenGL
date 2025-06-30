@@ -31,7 +31,7 @@ void main()
 	}
 
 	//just use current frame  to establish history For the first few frames
-	if (frameNumber < 2)
+	if (frameNumber < 180)
 	{
 		imageStore(outputFrame, st, vec4(currentColorSample, 1.0));
 		return;
@@ -41,9 +41,9 @@ void main()
 	vec2 maxVelocity = texture(velocityTexture, uv).rg;
 	float maxVelocityMagnitude = length(maxVelocity);
 
-	for(int x = -2; x <= 2; ++x)
+	for(int x = -1; x <= 1; ++x)
 	{
-		for(int y = -2; y <= 2; ++y)
+		for(int y = -1; y <= 1; ++y)
 		{
 			vec2 neighborUV = uv + vec2(x, y) * resolution.zw;
 			vec2 neighborVelocity = texture(velocityTexture, neighborUV).rg;
@@ -68,7 +68,7 @@ void main()
 	}
 
 	
-	// Check if reprojection is within bounds
+	// if reprojection is within bounds
 	if ( any(lessThan(reprojectedUV, vec2(0.0))) || any(greaterThan(reprojectedUV, vec2(1.0))) )
 	{
 		imageStore(outputFrame, st, vec4(currentColorSample, 1.0));
@@ -96,8 +96,9 @@ void main()
 	float variance = dot(colorVariance, vec3(1.0)) / 3.0; // average variance across RGB channels
 	
 	// if variance is high - more of current frame usage
-	float blendFactor = mix(0.95, 0.7, smoothstep(0.0, 0.1, variance));
+	float blendFactor = mix(0.01, 0.1, smoothstep(0.001, 0.01, variance));
+
+	vec3 outputColor = currentColorSample * blendFactor + historyColorSample * (1.0 - blendFactor);
 	
-	vec3 outputColor = mix(currentColorSample, historyColorSample, blendFactor);
 	imageStore(outputFrame, st, vec4(outputColor, 1.0));
 }

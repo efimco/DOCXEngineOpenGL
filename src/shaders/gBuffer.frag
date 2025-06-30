@@ -101,8 +101,10 @@ void main()
 	gPosition = fs_in.FragPos;
 	vec2 currentPosNDC = (fs_in.currClipPos.xy / fs_in.currClipPos.w); //[-1, 1]
 	vec2 previousPosNDC = (fs_in.prevClipPos.xy / fs_in.prevClipPos.w);
-	vec2 velocity = (previousPosNDC - currentPosNDC);
-	velocity -= jitter - prevJitter; // Adjust velocity by jitter and previous jitter
+    vec2 currentPosUV = currentPosNDC * 0.5 + 0.5; //[0, 1]
+    vec2 previousPosUV = previousPosNDC * 0.5 + 0.5;
+	vec2 velocity = (previousPosUV - currentPosUV);
+	velocity -= (jitter - prevJitter) * 0.5; 
 
 	gVelocity = velocity;
 

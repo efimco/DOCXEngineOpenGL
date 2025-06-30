@@ -134,22 +134,31 @@ void Renderer::render(GLFWwindow* window)
 			m_appConfig.reloadCubeMap = false;
 		}
 
-		const float basePhaseCount = 16.0f;
-		int denominator = (m_appConfig.renderWidth == 0 ? 1 : m_appConfig.renderWidth);
-		const int32_t jitterPhaseCount = int32_t(basePhaseCount * pow((float(m_appConfig.windowWidth) / denominator), 2.0f));
-
-		const float x = halton((jitterIndex % jitterPhaseCount) + 1, 2) - 0.5f;
-		const float y = halton((jitterIndex % jitterPhaseCount) + 1, 3) - 0.5f;
-		if (jitterIndex % jitterPhaseCount == 0)
+		if (m_appConfig.isTAA)
 		{
-			jitterIndex = 0;
-			jitter = glm::vec2(0.0f, 0.0f);
+			const float basePhaseCount = 16.0f;
+			int denominator = (m_appConfig.renderWidth == 0 ? 1 : m_appConfig.renderWidth);
+			const int32_t jitterPhaseCount = int32_t(basePhaseCount * pow((float(m_appConfig.windowWidth) / denominator), 2.0f));
+
+			const float x = halton((jitterIndex % jitterPhaseCount) + 1, 2) - 0.5f;
+			const float y = halton((jitterIndex % jitterPhaseCount) + 1, 3) - 0.5f;
+			if (jitterIndex % jitterPhaseCount == 0)
+			{
+				jitterIndex = 0;
+				jitter = glm::vec2(0.0f, 0.0f);
+			}
+			jitterIndex++;
+			jitter.x = 2.0f * x / float(m_appConfig.renderWidth);
+			jitter.y = 2.0f * y / float(m_appConfig.renderHeight);
+			glm::mat4 jitteredTranslation = glm::translate(glm::mat4(1.0f), glm::vec3(jitter, 0.0f));
+			m_projection = jitteredTranslation * m_projection;
 		}
-		jitterIndex++;
-		jitter.x = 2.0f * x / float(m_appConfig.renderWidth);
-		jitter.y = 2.0f * y / float(m_appConfig.renderHeight);
-		glm::mat4 jitteredTranslation = glm::translate(glm::mat4(1.0f), glm::vec3(jitter, 0.0f));
-		m_projection = jitteredTranslation * m_projection;
+		else
+		{
+			// Reset jitter when TAA is disabled
+			jitter = glm::vec2(0.0f, 0.0f);
+			jitterIndex = 0;
+		}
 
 
 		m_cubemap->draw(m_projection);
