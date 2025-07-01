@@ -21,7 +21,6 @@ uniform float farPlane;
 
 
 
-// Helper functions for YCoCg conversion
 vec3 rgb2ycocg(vec3 rgb) {
 	float Y = dot(rgb, vec3(0.25, 0.5, 0.25));
 	float Co = dot(rgb, vec3(0.5, 0.0, -0.5));
@@ -38,7 +37,6 @@ vec3 ycocg2rgb(vec3 ycocg) {
 	float B = Y - Co - Cg;
 	return vec3(R, G, B);
 }
-
 
 
 
@@ -68,11 +66,9 @@ void main()
 	}
 
 	vec3 minColor = vec3(9999.0), maxColor = vec3(-9999.0);
-
-	// Convert current sample to YCoCg for better temporal stability
 	vec3 currentYCoCg = rgb2ycocg(currentColorSample);
 
-	// neighborhood bounding box in YCoCg space
+
 	for(int x = -1; x <= 1; ++x)
 	{
 		for(int y = -1; y <= 1; ++y)
@@ -85,18 +81,14 @@ void main()
 		}
 	}
 
-	// Convert history to YCoCg and clamp
 	vec3 historyYCoCg = rgb2ycocg(historyColorSample);
 	historyYCoCg = clamp(historyYCoCg, minColor, maxColor);
 	historyColorSample = ycocg2rgb(historyYCoCg);
 
-
-
 	vec3 outputColor = mix(historyColorSample, currentColorSample, .1); 
 	
-	
 	imageStore(outputFrame, st, vec4(outputColor, 1.0));
-	
+
 	if (frameNumber >= accumulationLimit)
     {
         imageStore(outputFrame, st, vec4(historyColorSample, 1.0));

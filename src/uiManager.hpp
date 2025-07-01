@@ -37,6 +37,7 @@ public:
 	void setPickingTexture(uint32_t texId);
 	void setShadowMapTexture(uint32_t texId);
 	void setGBuffer(GBuffer* gBuffer);
+	void setFrameCounterPointer(int* frameCounter);
 	void draw(float deltaTime);
 
 private:
@@ -49,6 +50,7 @@ private:
 	uint32_t m_shadowMapTexture;
 	ImVec2 m_vpSize;
 	Tex* m_noTexture;
+	int* m_frameCounter;
 
 	std::string OpenFileDialog(FileType type);
 

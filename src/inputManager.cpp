@@ -89,6 +89,7 @@ void InputManager::pickObjectCallback(ViewportState viewportState, uint32_t pick
         {
             SceneManager::selectPrimitive(pixel, false); // select new primitive
         }
+        *m_frameCounter = 0;
     }
 }
 

@@ -135,7 +135,7 @@ void Renderer::render(GLFWwindow* window)
 			m_cubemap = new Cubemap(m_camera, m_appConfig.cubeMapPath);
 			m_appConfig.reloadCubeMap = false;
 		}
-		const int accumulationLimit = 32;
+		const int accumulationLimit = 64;
 		if (m_appConfig.isTAA)
 		{
 			const float basePhaseCount = float(accumulationLimit);
@@ -175,6 +175,7 @@ void Renderer::render(GLFWwindow* window)
 
 		glfwPollEvents();
 		ViewportState viewportState = m_uiManager->getViewportState();
+		m_uiManager->setFrameCounterPointer(&jitterIndex);
 		m_uiManager->setScreenTexture(m_postProcessPass->getPostProcessedTexture());
 		m_uiManager->setShadowMapTexture(m_deferedPass->deferedTexture);
 		m_uiManager->setPickingTexture(m_pickingPass->pickingTexture);

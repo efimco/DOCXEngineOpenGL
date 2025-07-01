@@ -166,7 +166,7 @@ void UIManager::showViewport(float deltaTime)
 	m_viewportState.size = m_vpSize;
 	ImVec2 origin = ImGui::GetCursorScreenPos();
 
-	if (glm::abs(m_appConfig.renderWidth - (int)m_vpSize.x) >=2 || glm::abs(m_appConfig.renderHeight - (int)m_vpSize.y) >=2)
+	if (glm::abs(m_appConfig.renderWidth - (int)m_vpSize.x) >= 2 || glm::abs(m_appConfig.renderHeight - (int)m_vpSize.y) >= 2)
 	{
 		viewportSizeSetteled = false;
 	}
@@ -214,7 +214,7 @@ void UIManager::showViewport(float deltaTime)
 		ImGui::Image(passTex, debugQuadSize, uv0, uv1);
 		ImGui::EndChild();
 	}
-	
+
 	// G-Buffer debug view
 	if (m_gBuffer != nullptr) {
 
@@ -259,6 +259,11 @@ void UIManager::setGBuffer(GBuffer* gBuffer)
 	m_gBuffer = gBuffer;
 }
 
+void UIManager::setFrameCounterPointer(int* frameCounter)
+{
+	m_frameCounter = frameCounter;
+}
+
 void UIManager::showCameraTransforms()
 {
 	ImGui::SetNextWindowPos(ImVec2(100, 10), ImGuiCond_Always);
@@ -299,7 +304,13 @@ void UIManager::showObjectInspector()
 		ImGui::Begin("Object Inspector");
 		ImGui::Text("Object: %s", SceneManager::getSelectedPrimitive()->name.c_str());
 		ImGui::Text("Material: %s", SceneManager::getSelectedPrimitive()->material->name.c_str());
-		ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform.matrix[3]), 0.01f, -100.0f, 100.0f);
+		if (ImGui::DragFloat3("Position", glm::value_ptr(SceneManager::getSelectedPrimitive()->transform.matrix[3]), 0.01f, -100.0f, 100.0f))
+		{
+			if (m_frameCounter != nullptr)
+			{
+				*m_frameCounter = 0;
+			}
+		}
 
 		bool hasDiffuse = SceneManager::getSelectedPrimitive()->material->tDiffuse != nullptr && SceneManager::getSelectedPrimitive()->material->tDiffuse->id > 0;
 		bool hasSpecular = SceneManager::getSelectedPrimitive()->material->tSpecular != nullptr && SceneManager::getSelectedPrimitive()->material->tSpecular->id > 0;
@@ -342,6 +353,12 @@ void UIManager::showObjectInspector()
 				material->tSpecular->setPath(filePath);
 				glActiveTexture(GL_TEXTURE0);
 			}
+
+			if (m_frameCounter != nullptr)
+			{
+				*m_frameCounter = 0;
+			}
+
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Normal", ImVec2(64, 20)))
@@ -351,6 +368,10 @@ void UIManager::showObjectInspector()
 			{
 				material->tNormal->setPath(filePath);
 				glActiveTexture(GL_TEXTURE0);
+			}
+			if (m_frameCounter != nullptr)
+			{
+				*m_frameCounter = 0;
 			}
 		}
 
@@ -404,9 +425,27 @@ void UIManager::showObjectInspector()
 			ImGui::End();
 			return;
 		}
-		ImGui::ColorEdit4("Albedo", glm::value_ptr(SceneManager::getSelectedPrimitive()->material->albedo));
-		ImGui::SliderFloat("Roughness", &SceneManager::getSelectedPrimitive()->material->roughness, 0.04f, 1.0f);
-		ImGui::SliderFloat("Metallic", &SceneManager::getSelectedPrimitive()->material->metallic, 0.0f, 1.0f);
+		if (ImGui::ColorEdit4("Albedo", glm::value_ptr(SceneManager::getSelectedPrimitive()->material->albedo)))
+		{
+			if (m_frameCounter != nullptr)
+			{
+				*m_frameCounter = 0;
+			}
+		}
+		if (ImGui::SliderFloat("Roughness", &SceneManager::getSelectedPrimitive()->material->roughness, 0.04f, 1.0f))
+		{
+			if (m_frameCounter != nullptr)
+			{
+				*m_frameCounter = 0;
+			}
+		}
+		if (ImGui::SliderFloat("Metallic", &SceneManager::getSelectedPrimitive()->material->metallic, 0.0f, 1.0f))
+		{
+			if (m_frameCounter != nullptr)
+			{
+				*m_frameCounter = 0;
+			}
+		}
 
 		ImGui::End();
 	}
@@ -422,12 +461,30 @@ void UIManager::showTools()
 	ImGui::InputFloat("Near plane", &m_appConfig.nearPlane);
 	ImGui::InputFloat("Far plane", &m_appConfig.farPlane);
 	ImGui::Checkbox("Wireframe Mode", &m_appConfig.isWireframe);
-	ImGui::SliderFloat("CubeMap intensity", &m_appConfig.irradianceMapIntensity, 0.0f, 3.0f);
-	ImGui::SliderFloat("CubeMap Rotatation Y", &m_appConfig.irradianceMapRotationY, -180.0f, 180.0f);
+	if (ImGui::SliderFloat("CubeMap intensity", &m_appConfig.irradianceMapIntensity, 0.0f, 3.0f))
+	{
+		if (m_frameCounter != nullptr)
+		{
+			*m_frameCounter = 0;
+		}
+	}
+	if (ImGui::SliderFloat("CubeMap Rotatation Y", &m_appConfig.irradianceMapRotationY, -180.0f, 180.0f))
+	{
+		if (m_frameCounter != nullptr)
+		{
+			*m_frameCounter = 0;
+		}
+	}
 	ImGui::SliderFloat("Backgorund Blur", &m_appConfig.backgroundBlur, 0.0f, 1.0f);
 	ImGui::Checkbox("ObjectID Debug", &m_appConfig.showObjectPicking);
 	ImGui::Checkbox("ShadowMap Debug", &m_appConfig.showShadowMap);
-	ImGui::Checkbox("TAA", &m_appConfig.isTAA);
+	if (ImGui::Checkbox("TAA", &m_appConfig.isTAA))
+	{
+		if (m_frameCounter != nullptr)
+		{
+			*m_frameCounter = 0;
+		}
+	}
 	if (ImGui::Button("Load CubeMap"))
 	{
 		std::string filePath = OpenFileDialog(FileType::IMAGE);
@@ -436,6 +493,10 @@ void UIManager::showTools()
 			// Signal that a new cubemap needs to be loaded
 			m_appConfig.cubeMapPath = filePath;
 			m_appConfig.reloadCubeMap = true;
+		}
+		if (m_frameCounter != nullptr)
+		{
+			*m_frameCounter = 0;
 		}
 	}
 	if (ImGui::Button("Import Model"))
@@ -446,12 +507,19 @@ void UIManager::showTools()
 			GLTFModel model(filePath);
 			scene->addChild(std::move(model.getModel()));
 		}
+		if (m_frameCounter != nullptr)
+		{
+			*m_frameCounter = 0;
+		}
 	}
 	m_appConfig.polygonMode = m_appConfig.isWireframe ? GL_LINE : GL_FILL;
 	if (ImGui::Button("Reload Shaders"))
 	{
+		if (m_frameCounter != nullptr)
+		{
+			*m_frameCounter = 0;
+		}
 		SceneManager::reloadShaders();
-		// m_appConfig.screenShader->reload();
 		std::cout << "Shaders reloaded successfully!" << std::endl;
 	}
 	ImGui::End();
@@ -629,6 +697,10 @@ void UIManager::showMaterialBrowser()
 						mat->tDiffuse->setPath(filePath);
 						glActiveTexture(GL_TEXTURE0);
 					}
+					if (m_frameCounter != nullptr)
+					{
+						*m_frameCounter = 0;
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Specular", ImVec2(imageSize, 0)))
@@ -639,10 +711,26 @@ void UIManager::showMaterialBrowser()
 						mat->tSpecular->setPath(filePath);
 						glActiveTexture(GL_TEXTURE0);
 					}
+					if (m_frameCounter != nullptr)
+					{
+						*m_frameCounter = 0;
+					}
 				}
 
-				ImGui::SliderFloat("Roughness", &mat->roughness, 0.04f, 1.0f);
-				ImGui::SliderFloat("Metallic", &mat->metallic, 0.0f, 1.0f);
+				if (ImGui::SliderFloat("Roughness", &mat->roughness, 0.04f, 1.0f))
+				{
+					if (m_frameCounter != nullptr)
+					{
+						*m_frameCounter = 0;
+					}
+				}
+				if (ImGui::SliderFloat("Metallic", &mat->metallic, 0.0f, 1.0f))
+				{
+					if (m_frameCounter != nullptr)
+					{
+						*m_frameCounter = 0;
+					}
+				}
 
 				ImGui::PopID();
 			}
