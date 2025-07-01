@@ -22,13 +22,13 @@ m_appConfig(AppConfig::get())
 
 	// import
 	scene = new Scene("Main Scene");
-	GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\portal.glb").string());
+	GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Train.glb").string());
 	scene->addChild(std::move(model.getModel()));
 
 	m_deltaTime = 0;
 	m_lastFrameTime = 0;
 	m_shadowMap = new ShadowMap(2048, 2048);
-	m_cubemap = new Cubemap(m_camera, std::filesystem::absolute("..\\..\\res\\skybox\\river_walk_1_2k.hdr").string());
+	m_cubemap = new Cubemap(m_camera, std::filesystem::absolute("..\\..\\res\\skybox\\studio_small_03_4k.hdr").string());
 	m_inputManager = new InputManager(window, m_camera);
 	m_uiManager = new UIManager(window, m_camera, scene);
 	m_pickingPass = new PickingPass();
