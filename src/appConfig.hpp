@@ -26,12 +26,13 @@ struct AppConfig
 	bool showShadowMap = false;
 	float irradianceMapIntensity = 1.0f;
 	float irradianceMapRotationY = 0.0f;
+	float backgroundIntensity = 1.0f;
 	std::string cubeMapPath;
 	bool reloadCubeMap = false;
 
 	// Post-processing
 	float backgroundBlur = 0.0f;
-	bool isTAA = false;
+	bool isTAA = true;
 
 	// Shaders
 	Shader* deferedShader = nullptr;

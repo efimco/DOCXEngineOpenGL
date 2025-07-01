@@ -12,8 +12,11 @@
 
 void framebufferSizeCallback(GLFWwindow *window, int32_t newWINDOW_WIDTH, int32_t newWINDOW_HEIGHT)
 {
+	
 	AppConfig::get().windowWidth = newWINDOW_WIDTH;
-	AppConfig::get().windowHeight = newWINDOW_HEIGHT;
+	AppConfig::get().windowWidth += newWINDOW_WIDTH % 2; // Ensure width is even
+	AppConfig::get().windowHeight = newWINDOW_WIDTH;
+	AppConfig::get().windowHeight += newWINDOW_HEIGHT % 2;; // Ensure height is even
 	AppConfig::get().isFramebufferSizeSet = false;
 }
 

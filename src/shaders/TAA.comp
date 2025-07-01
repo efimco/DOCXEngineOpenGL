@@ -65,6 +65,7 @@ void main()
 		return;	
 	}
 
+
 	vec3 minColor = vec3(9999.0), maxColor = vec3(-9999.0);
 	vec3 currentYCoCg = rgb2ycocg(currentColorSample);
 
@@ -85,13 +86,14 @@ void main()
 	historyYCoCg = clamp(historyYCoCg, minColor, maxColor);
 	historyColorSample = ycocg2rgb(historyYCoCg);
 
-	vec3 outputColor = mix(historyColorSample, currentColorSample, .1); 
 	
+	if (frameNumber > accumulationLimit)
+	{
+		imageStore(outputFrame, st, vec4(historyColorSample, 1.0));
+		return;
+	}
+	vec3 outputColor = mix(historyColorSample, currentColorSample, .1); 
 	imageStore(outputFrame, st, vec4(outputColor, 1.0));
 
-	if (frameNumber >= accumulationLimit)
-    {
-        imageStore(outputFrame, st, vec4(historyColorSample, 1.0));
-        return;
-    }
+
 }

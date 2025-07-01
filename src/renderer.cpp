@@ -72,15 +72,17 @@ void Renderer::initScreenQuad()
 	glVertexArrayAttribBinding(m_fullFrameQuadVAO, 1, 0);
 }
 
-
+int jitterIndex = 0;
+glm::vec2 jitter;
 void Renderer::checkFrameBuferSize()
 {
 	if (!m_appConfig.isFramebufferSizeSet || !m_uiManager->viewportSizeSetteled)
 	{
+		jitterIndex = 0;
 		m_appConfig.renderWidth = (int)m_uiManager->getViewportSize().x;
 		m_appConfig.renderHeight = (int)m_uiManager->getViewportSize().y;
-		m_appConfig.windowWidth += m_appConfig.renderWidth % 2;
-		m_appConfig.windowHeight += m_appConfig.renderHeight % 2;
+		m_appConfig.renderWidth += m_appConfig.renderWidth % 2;
+		m_appConfig.renderHeight += m_appConfig.renderHeight % 2;
 		m_nMipLevels = (int)floor(log2(std::max(m_appConfig.renderWidth, m_appConfig.renderHeight))) + 1;
 		m_gBufferPass->createOrResize();
 		m_pickingPass->createOrResize();
@@ -89,13 +91,12 @@ void Renderer::checkFrameBuferSize()
 		m_TAAPass->createOrResize();
 		m_postProcessPass->createOrResize();
 		glViewport(0, 0, m_appConfig.renderWidth, m_appConfig.renderHeight);
-
 		m_appConfig.isFramebufferSizeSet = true;
 	}
 }
 
-glm::vec2 jitter;
-int jitterIndex = 0;
+
+
 float halton(int32_t index, int32_t base)
 {
 	float f = 1.0f, result = 0.0f;
@@ -140,7 +141,7 @@ void Renderer::render(GLFWwindow* window)
 		{
 			const float basePhaseCount = float(accumulationLimit);
 			int denominator = (m_appConfig.renderWidth == 0 ? 1 : m_appConfig.renderWidth);
-			int32_t jitterPhaseCount = int32_t(basePhaseCount * pow((float(m_appConfig.windowWidth) / denominator), 2.0f));
+			int32_t jitterPhaseCount = int32_t(basePhaseCount * pow((static_cast<double>(m_appConfig.windowWidth) / denominator), 2.0f));
 			jitterPhaseCount = (jitterPhaseCount == 0.0f ? 1.0f : jitterPhaseCount);
 			const float x = halton((jitterIndex % jitterPhaseCount) + 1, 2) - 0.5f;
 			const float y = halton((jitterIndex % jitterPhaseCount) + 1, 3) - 0.5f;
@@ -183,7 +184,7 @@ void Renderer::render(GLFWwindow* window)
 		m_uiManager->draw(m_deltaTime);
 		m_inputManager->setFrameCounterPointer(&jitterIndex);
 		m_inputManager->processInput(m_deltaTime, viewportState, m_pickingPass->pickingTexture);
-		
+
 		glfwSwapBuffers(window);
 	}
 }

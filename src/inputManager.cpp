@@ -66,6 +66,7 @@ void InputManager::scrollCallback(ViewportState viewportState)
     if (viewportState.mouseWheel != 0.0f && viewportState.isHovered)
     {
         camera.processZoom(viewportState.mouseWheel);
+        *m_frameCounter = 0;
     }
 }
 

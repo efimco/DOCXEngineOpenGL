@@ -377,7 +377,7 @@ void Cubemap::draw(glm::mat4 projection)
 	glBindTextureUnit(0, specularMap);
 	backgroundShader.setInt("environmentMap", 0);
 	backgroundShader.setFloat("rotationY", m_appConfig.irradianceMapRotationY);
-	backgroundShader.setFloat("intensity", m_appConfig.irradianceMapIntensity);
+	backgroundShader.setFloat("intensity", m_appConfig.backgroundIntensity);
 	backgroundShader.setFloat("blur", m_appConfig.backgroundBlur);
 	renderCube();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

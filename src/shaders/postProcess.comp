@@ -39,25 +39,47 @@ vec3 aces(vec3 color)
 	return color * (2.51 * color + 0.03) / (color * (2.43 * color + 0.59) + 0.14);
 }
 
-vec3 agx(vec3 color)
-{
-	float a = 0.6;
-	float b = 0.4;
-	float c = 0.3;
-	float d = 0.2;
-	float e = 0.1;
+vec3 PBRNeutralToneMapping( vec3 color ) {
+  const float startCompression = 0.8 - 0.04;
+  const float desaturation = 0.15;
 
-	vec3 agx = (color * (a * color + b) + c) / (color * (d * color + e) + 1.0);
-	return agx;
+  float x = min(color.r, min(color.g, color.b));
+  float offset = x < 0.08 ? x - 6.25 * x * x : 0.04;
+  color -= offset;
+
+  float peak = max(color.r, max(color.g, color.b));
+  if (peak < startCompression) return color;
+
+  const float d = 1. - startCompression;
+  float newPeak = 1. - d * d / (peak + d - startCompression);
+  color *= newPeak / peak;
+
+  float g = 1. - 1. / (desaturation * (peak - newPeak) + 1.);
+  return mix(color, newPeak * vec3(1, 1, 1), g);
 }
+
+vec3 adjustContrast(vec3 color, float contrast, float brightness, float exposure) 
+{
+
+    color *= exposure;
+    
+    color += brightness;
+    
+    color = (color - 0.5) * contrast + 0.5;
+	return color;
+}
+  
+
 
 void main()
 {
-	vec3 color = imageLoad(currentFrame, ivec2(gl_GlobalInvocationID.xy)).rgb;
+	ivec2 st = ivec2(gl_GlobalInvocationID.xy);
+	vec3 color = imageLoad(currentFrame, st).rgb;
 	
-	color = reinhard(color); // reinhard, uncharted, or aces
+	color = aces(color); // reinhard, uncharted, or aces
+	// color = adjustContrast(color, 1.0, 0.01, 1.0); // Adjust contrast, brightness, and exposure as needed
 	color = vec3(linear_rgb_to_srgb(color.r), linear_rgb_to_srgb(color.g), linear_rgb_to_srgb(color.b));
-	
 
-	imageStore(postProcessOutput, ivec2(gl_GlobalInvocationID.xy), vec4(color, 1.0));
+
+	imageStore(postProcessOutput, st, vec4(color, 1.0));
 }

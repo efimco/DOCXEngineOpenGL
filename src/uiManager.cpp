@@ -166,7 +166,8 @@ void UIManager::showViewport(float deltaTime)
 	m_viewportState.size = m_vpSize;
 	ImVec2 origin = ImGui::GetCursorScreenPos();
 
-	if (glm::abs(m_appConfig.renderWidth - (int)m_vpSize.x) >= 2 || glm::abs(m_appConfig.renderHeight - (int)m_vpSize.y) >= 2)
+	if (std::abs(m_appConfig.renderWidth - static_cast<int>(std::round(m_vpSize.x))) > 1 ||
+		std::abs(m_appConfig.renderHeight - static_cast<int>(std::round(m_vpSize.y))) > 1)
 	{
 		viewportSizeSetteled = false;
 	}
@@ -461,6 +462,7 @@ void UIManager::showTools()
 	ImGui::InputFloat("Near plane", &m_appConfig.nearPlane);
 	ImGui::InputFloat("Far plane", &m_appConfig.farPlane);
 	ImGui::Checkbox("Wireframe Mode", &m_appConfig.isWireframe);
+	if (ImGui::SliderFloat("Background intensity", &m_appConfig.backgroundIntensity, 0.0f, 1.0f));
 	if (ImGui::SliderFloat("CubeMap intensity", &m_appConfig.irradianceMapIntensity, 0.0f, 3.0f))
 	{
 		if (m_frameCounter != nullptr)
@@ -475,7 +477,13 @@ void UIManager::showTools()
 			*m_frameCounter = 0;
 		}
 	}
-	ImGui::SliderFloat("Backgorund Blur", &m_appConfig.backgroundBlur, 0.0f, 1.0f);
+	if (ImGui::SliderFloat("Backgorund Blur", &m_appConfig.backgroundBlur, 0.0f, 1.0f))
+	{
+		if (m_frameCounter != nullptr)
+		{
+			*m_frameCounter = 0;
+		}
+	}
 	ImGui::Checkbox("ObjectID Debug", &m_appConfig.showObjectPicking);
 	ImGui::Checkbox("ShadowMap Debug", &m_appConfig.showShadowMap);
 	if (ImGui::Checkbox("TAA", &m_appConfig.isTAA))
