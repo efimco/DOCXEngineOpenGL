@@ -5,7 +5,7 @@
 #include <iostream>
 
 
-Tex::Tex() : id(-1), path(""), tiled(false) {};
+Tex::Tex() : id(-1), path(""), tiled(true) {};
 
 void Tex::setTiled(bool tiled)
 {
@@ -23,7 +23,7 @@ void Tex::setTiled(bool tiled)
 	}
 }
 
-Tex::Tex(const char* path) : path(path), tiled(false)
+Tex::Tex(const char* path) : path(path), tiled(true)
 {
 	if (path && path[0] != '\0')
 	{
@@ -34,7 +34,7 @@ Tex::Tex(const char* path) : path(path), tiled(false)
 		id = 0;
 };
 
-Tex::Tex(tinygltf::Image& image) : path(path), tiled(false)
+Tex::Tex(tinygltf::Image& image) : path(path), tiled(true)
 {
 	id = TextureFromGlb(image);
 	std::cout << "Loaded texture from gltf: " << image.name << std::endl;

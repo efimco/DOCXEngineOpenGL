@@ -109,7 +109,7 @@ void main()
 
 	vec3 background = texture(envCubemap, TexCoords).rgb;
 
-	FragColor = vec4(result, gBuffer.albedoAlpha);
+	FragColor = vec4(result, 1.0f);
 	if (gBuffer.depth >= 1.0)
 	{
 		FragColor = vec4(background, 1.0);

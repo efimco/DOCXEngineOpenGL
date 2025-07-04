@@ -15,6 +15,7 @@ mat3 rotationMat = mat3(
 );
 void main()
 {		
+
 	vec3 envColor = textureLod(environmentMap, WorldPos * rotationMat, blur*2).rgb; 
 	FragColor = vec4(envColor.rgb * (pow(2.0, intensity)-1), 1.0);
 }

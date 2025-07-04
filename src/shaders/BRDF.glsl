@@ -99,7 +99,7 @@ vec2 IntegrateBRDF(float NdotV, float roughness)
 
 	vec3 N = vec3(0.0, 0.0, 1.0);
 
-	const uint SAMPLE_COUNT = 1024u;
+	const uint SAMPLE_COUNT = 512u * 512u; //like in blender
 	for(uint i = 0u; i < SAMPLE_COUNT; ++i)
 	{
 		// generates a sample vector that's biased towards the

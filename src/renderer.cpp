@@ -22,7 +22,7 @@ m_appConfig(AppConfig::get())
 
 	// import
 	scene = new Scene("Main Scene");
-	GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Train.glb").string());
+	GLTFModel model(std::filesystem::absolute("..\\..\\res\\GltfModels\\Knight.glb").string());
 	scene->addChild(std::move(model.getModel()));
 
 	m_deltaTime = 0;

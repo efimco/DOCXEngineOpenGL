@@ -65,7 +65,7 @@ void main()
 	vec3 R = N;
 	vec3 V = R;
 
-	const uint SAMPLE_COUNT = 4096u*4; // Number of samples for convolution
+	const uint SAMPLE_COUNT = 4096u*4u; // Number of samples for convolution
 	float totalWeight = 0.0;   
 	vec3 prefilteredColor = vec3(0.0);     
 	for(uint i = 0u; i < SAMPLE_COUNT; ++i)

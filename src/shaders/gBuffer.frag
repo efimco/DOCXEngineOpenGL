@@ -95,6 +95,10 @@ void main()
 {
 	Material material = getMaterial();
 	gAlbedo = material.albedo;
+	if(material.albedo.a <= 0.0002) 
+	{
+		discard;
+	}
 	gMetallic = material.metallic;
 	gRoughness = material.roughness;
 	gNormal = material.normal;

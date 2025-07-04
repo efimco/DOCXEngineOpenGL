@@ -18,9 +18,9 @@ public:
 	{
 		glm::vec4 position; // w - type
 		glm::vec4 direction; // w - innerCutOff
-		glm::vec4 ambient; // W - padding
-		glm::vec4 diffuse; // W - padding
-		glm::vec4 specular; // W - padding
+		glm::vec4 ambient; // w - padding
+		glm::vec4 diffuse; // w - padding
+		glm::vec4 specular; // w - padding
 		glm::vec4 attenuation; // (constant, linear, quadratic, outerCutOff)
 		glm::vec4 extra; // (intensity, 0,0,0) – can be repurposed
 	};
