@@ -117,7 +117,7 @@ void Renderer::render(GLFWwindow* window)
 {
 	while (!glfwWindowShouldClose(window))
 	{
-		const float time = (float)glfwGetTime();
+		const float time = (float)glfwGetTime();	
 		m_deltaTime = time - m_lastFrameTime;
 		m_lastFrameTime = time;
 

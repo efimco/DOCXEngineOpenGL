@@ -33,7 +33,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
     AppConfig::get().windowWidth = AppConfig::get().windowHeight = 1024;
-	window = glfwCreateWindow(AppConfig::get().windowWidth, AppConfig::get().windowHeight, "Main Window", NULL, NULL);
+	window = glfwCreateWindow(AppConfig::get().windowWidth, AppConfig::get().windowHeight, "DOCXEngineOpengl", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;

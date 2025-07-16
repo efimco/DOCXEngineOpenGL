@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25.0)
-project(LearnOpenGL VERSION 0.1.0 LANGUAGES C CXX)
+project(DOCXEngineOpenGL VERSION 0.1.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -26,7 +26,7 @@ add_subdirectory(${RESOURCE_DIR})
 add_library(glad STATIC thirdparty/include/glad/glad.c)
 target_include_directories(glad PUBLIC thirdparty/include)
 
-add_executable(OpenGLLearn 
+add_executable(DOCXEngineOpenGL 
 	src/main.cpp 
 	src/camera.cpp
 	src/stb_image_impl.cpp
@@ -39,14 +39,14 @@ add_executable(OpenGLLearn
 	${IMGUI_SRC}
 )
 
-target_include_directories(OpenGLLearn PRIVATE 
+target_include_directories(DOCXEngineOpenGL PRIVATE 
 	${CMAKE_SOURCE_DIR}/thirdparty/include
 	${CMAKE_SOURCE_DIR}/src
 	${PASSES_DIR}
 	${RESOURCE_DIR}
 )
 
-target_link_directories(OpenGLLearn PRIVATE 
+target_link_directories(DOCXEngineOpenGL PRIVATE 
 	${CMAKE_SOURCE_DIR}/thirdparty/lib
 	${CMAKE_SOURCE_DIR}/thirdparty/include
 	${CMAKE_SOURCE_DIR}/src
@@ -55,7 +55,7 @@ target_link_directories(OpenGLLearn PRIVATE
 
 )
 
-target_link_libraries(OpenGLLearn PRIVATE
+target_link_libraries(DOCXEngineOpenGL PRIVATE
 	glad
 	glfw3
 	opengl32
